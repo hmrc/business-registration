@@ -55,9 +55,6 @@ class MetadataMongoRepository(implicit mongo: () => DB)
 
   override def createMetadata(metadata: Metadata): Future[Metadata] = {
     collection.insert(metadata).map { res =>
-      if (res.hasErrors) {
-        Logger.error(s"Failed to store metadata. Error: ${res.errmsg.getOrElse("")} for registration id ${metadata.registrationID}")
-      }
       metadata
     }
   }

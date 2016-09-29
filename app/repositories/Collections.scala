@@ -17,7 +17,7 @@
 package repositories
 
 object Collections {
-  final val metadata = "registration-information"
-  final val userdata = "scrs-beta-users"
-  final val sequence = "sequence"
+  final val metadata: String = "registration-information"
+  final val userdata: String = "scrs-beta-users"
+  final val sequence: String = "sequence"
 }
