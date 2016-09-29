@@ -33,13 +33,12 @@ trait UserDetailsRepository extends Repository[WhiteListDetailsSubmit, BSONObjec
   def removeBetaUsers() : Future[Option[Response]]
 }
 
-// scalastyle:off
-class UserDetailsMongoRepository(implicit mongo: () => DB) extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](Collections.userdata, mongo, WhiteListDetailsSubmit.format, ReactiveMongoFormats.objectIdFormats) with UserDetailsRepository {
+class UserDetailsMongoRepository(implicit mongo: () => DB)
+  extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](Collections.userdata, mongo, WhiteListDetailsSubmit.format, ReactiveMongoFormats.objectIdFormats)
+    with UserDetailsRepository {
+
   override def createRegistration(details: WhiteListDetailsSubmit) : Future[WhiteListDetailsSubmit] = {
     collection.insert(details).map { res =>
-      if(res.hasErrors) {
-        Logger.error(s"Failed to store registration data. Error: ${res.errmsg.getOrElse("")} for user ${details.email}")
-      }
       details
     }
   }
