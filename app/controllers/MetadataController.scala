@@ -18,7 +18,7 @@ package controllers
 
 import auth._
 import connectors.AuthConnector
-import models.{ErrorResponse, Metadata, MetadataRequest}
+import models.{ErrorResponse, Metadata, MetadataRequest, MetadataResponse}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
@@ -73,6 +73,29 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case Authorised(_) => metadataService.retrieveMetadataRecord(registrationID) map {
           case Some(response) => Ok(Json.toJson(response))
           case None => NotFound(ErrorResponse.MetadataNotFound)
+        }
+        case NotLoggedInOrAuthorised => {
+          Logger.info(s"[MetadataController] [retrieveMetadata] User not logged in")
+          Future.successful(Forbidden)
+        }
+        case NotAuthorised(_) => {
+          Logger.info(s"[MetadataController] [retrieveMetadata] User logged in but not authorised for resource $registrationID")
+          Future.successful(Forbidden)
+        }
+        case AuthResourceNotFound(_) => Future.successful(NotFound(ErrorResponse.MetadataNotFound))
+      }
+  }
+
+  def updateMetaData(registrationID : String) : Action[JsValue] = Action.async[JsValue](parse.json) {
+    implicit request =>
+      authorised(registrationID) {
+        case Authorised(_) => {
+          withJsonBody[MetadataResponse] {
+            metaData =>
+              metadataService.updateMetaDataRecord(registrationID, metaData) map {
+                metaDataResp => Ok(Json.toJson(metaDataResp))
+              }
+          }
         }
         case NotLoggedInOrAuthorised => {
           Logger.info(s"[MetadataController] [retrieveMetadata] User not logged in")

@@ -17,7 +17,7 @@
 package repositories
 
 import auth.AuthorisationResource
-import models.Metadata
+import models.{Metadata, MetadataResponse}
 import play.api.Logger
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -32,6 +32,7 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
   def createMetadata(metadata: Metadata): Future[Metadata]
   def searchMetadata(oid: String): Future[Option[Metadata]]
   def retrieveMetadata(regI: String): Future[Option[Metadata]]
+  def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
   def oIDMetadataSelector(oID: String): BSONDocument
   def regIDMetadataSelector(registrationID: String): BSONDocument
   }
@@ -65,6 +66,16 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   override def retrieveMetadata(registrationID: String): Future[Option[Metadata]] = {
     val selector = regIDMetadataSelector(registrationID)
     collection.find(selector).one[Metadata]
+  }
+
+  override def updateMetaData(regID: String, newMetaData : MetadataResponse): Future[MetadataResponse] = {
+    val selector = regIDMetadataSelector(regID)
+    collection.update(selector, BSONDocument("$set" -> BSONDocument("completionCapacity" -> newMetaData.completionCapacity))) map { res =>
+      if(res.hasErrors) {
+        Logger.error(s"Failed to update metadata. Error: ${res.errmsg.getOrElse("")} for registration ud ${newMetaData.registrationID}")
+      }
+      newMetaData
+    }
   }
 
   def getOid(id: String) : Future[Option[(String,String)]] = {

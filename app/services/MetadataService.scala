@@ -71,4 +71,8 @@ trait MetadataService {
       case None => None
     }
   }
+
+  def updateMetaDataRecord(registrationID : String, newMetaData : MetadataResponse) : Future[MetadataResponse] = {
+    metadataRepository.updateMetaData(registrationID, newMetaData)
+  }
 }
