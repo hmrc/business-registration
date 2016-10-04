@@ -18,7 +18,11 @@ package services
 
 import fixtures.{MetadataFixture, MongoFixture}
 import helpers.SCRSSpec
-import repositories.{SequenceRepository, MetadataRepository, Repositories}
+import org.mockito.Mockito._
+import org.mockito.Matchers
+import repositories.{MetadataRepository, Repositories, SequenceRepository}
+
+import scala.concurrent.Future
 
 class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixture{
 
@@ -77,5 +81,15 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
       await(result) shouldBe None
     }
 
+  }
+
+  "updateMetaDataRecord" should {
+    "return a meta data response" in new Setup {
+      when(mockMetadataRepository.updateMetaData(Matchers.eq("testOID"), Matchers.eq(validMetadataResponse)))
+        .thenReturn(Future.successful(validMetadataResponse))
+
+      val result = service.updateMetaDataRecord("testOID", validMetadataResponse)
+      await(result) shouldBe validMetadataResponse
+    }
   }
 }

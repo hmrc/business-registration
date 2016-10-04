@@ -18,8 +18,9 @@ package repositories
 
 import java.util.UUID
 
+import fixtures.MetadataFixture
 import helpers.MongoMocks
-import models.Metadata
+import models.{Metadata, MetadataResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -30,7 +31,7 @@ import uk.gov.hmrc.mongo.MongoSpecSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with MongoMocks with MockitoSugar with BeforeAndAfter {
+class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with MongoMocks with MockitoSugar with BeforeAndAfter with MetadataFixture {
 
   class MockedMetadataRepository extends MetadataMongoRepository {
     override lazy val collection = mockCollection()
@@ -152,6 +153,18 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
       val result = await(repository.getOid(randomRegid))
 
       result should be(None)
+    }
+  }
+
+  "MetaDataMongoRepo update cc data" should {
+    "return a metadataresponse" in {
+      val selector = BSONDocument("registrationID" -> "testRegID")
+
+      setupAnyUpdateOn(repository.collection)
+
+      val result = repository.updateMetaData("testRegID", validMetadataResponse)
+
+      await(result) shouldBe validMetadataResponse
     }
   }
 }
