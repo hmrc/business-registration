@@ -31,13 +31,13 @@ trait MetadataFixture {
     language = "en",
     submissionResponseEmail = "test@email.co.uk",
     completionCapacity = "String",
-    completionCapacityOther = "String",
     declareAccurateAndComplete = "String")
 
   lazy val validMetadataResponse = MetadataResponse(
     "0123456789",
     "2001-12-31T12:00:00Z",
     "en",
+    "String",
     Links(Some("/business-tax-registration/0123456789"))
   )
 

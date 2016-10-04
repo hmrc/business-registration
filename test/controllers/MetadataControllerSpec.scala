@@ -153,4 +153,42 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       await(jsonBodyOf(result)) shouldBe ErrorResponse.MetadataNotFound
     }
   }
+
+  "updateMetaData" should {
+    "return a 200 - if Json body can be parsed and meta data has been updated" in new Setup {
+      val regId = "testRegId"
+      AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
+
+      when(mockMetadataRepository.getOid(Matchers.eq(regId))).
+        thenReturn(Future.successful(Some((regId,validAuthority.oid))))
+
+      when(mockMetadataService.updateMetaDataRecord(Matchers.eq(regId), Matchers.eq(validMetadataResponse)))
+        .thenReturn(Future.successful(validMetadataResponse))
+
+      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(validMetadataResponse)))
+      status(result) shouldBe OK
+      await(jsonBodyOf(result)).asOpt[MetadataResponse] shouldBe Some(validMetadataResponse)
+    }
+
+    "return a 403 - forbidden when the user is not authenticated" in new Setup {
+      val regId = "testRegId"
+      AuthenticationMocks.getCurrentAuthority(None)
+
+      when(mockMetadataRepository.getOid(Matchers.any())).
+        thenReturn(Future.successful(None))
+
+      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(validMetadataResponse)))
+      status(result) shouldBe FORBIDDEN
+    }
+
+    "return a 403 - forbidden when the user is logged in but not authorised to access the resource" in new Setup {
+      val regId = "testRegId"
+      AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
+      when(mockMetadataRepository.getOid(Matchers.eq(regId))).
+        thenReturn(Future.successful(Some((regId, validAuthority.oid+"xxx"))))
+
+      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(validMetadataResponse)))
+      status(result) shouldBe FORBIDDEN
+    }
+  }
 }

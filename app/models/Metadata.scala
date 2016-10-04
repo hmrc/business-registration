@@ -25,13 +25,13 @@ case class Metadata(OID: String,
                     language: String,
                     submissionResponseEmail: String,
                     completionCapacity: String,
-                    completionCapacityOther: String,
                     declareAccurateAndComplete: String){
   def toResponse = {
     MetadataResponse(
       registrationID,
       formCreationTimestamp,
       language,
+      completionCapacity,
       Links(Some(s"/business-tax-registration/$registrationID"))
     )
   }
@@ -41,7 +41,7 @@ object Metadata {
   implicit val formats = Json.format[Metadata]
 
   def empty: Metadata = {
-    Metadata("", "", "", "", "", "", "", "", "")
+    Metadata("", "", "", "", "", "", "", "")
   }
 }
 
@@ -54,6 +54,7 @@ object MetadataRequest {
 case class MetadataResponse(registrationID: String,
                             formCreationTimestamp: String,
                             language: String,
+                            completionCapacity : String,
                             links: Links)
 
 case class Links(self: Option[String],
@@ -68,6 +69,7 @@ object MetadataResponse {
       metadata.registrationID,
       metadata.formCreationTimestamp,
       metadata.language,
+      metadata.completionCapacity,
       Links(Some(s"/business-tax-registration/${metadata.registrationID}"))
     )
   }
