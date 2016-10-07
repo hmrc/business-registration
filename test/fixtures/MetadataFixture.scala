@@ -27,7 +27,6 @@ trait MetadataFixture {
     OID = "0123456789",
     registrationID = "0123456789",
     formCreationTimestamp = "2001-12-31T12:00:00Z",
-    openIDContentId = "0123456789",
     language = "en",
     submissionResponseEmail = "test@email.co.uk",
     completionCapacity = "String",
