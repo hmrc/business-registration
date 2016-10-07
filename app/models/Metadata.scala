@@ -21,7 +21,6 @@ import play.api.libs.json.Json
 case class Metadata(OID: String,
                     registrationID: String,
                     formCreationTimestamp: String,
-                    openIDContentId: String,
                     language: String,
                     submissionResponseEmail: String,
                     completionCapacity: String,
@@ -41,7 +40,7 @@ object Metadata {
   implicit val formats = Json.format[Metadata]
 
   def empty: Metadata = {
-    Metadata("", "", "", "", "", "", "", "")
+    Metadata("", "", "", "", "", "", "")
   }
 }
 
