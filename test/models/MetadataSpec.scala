@@ -16,11 +16,12 @@
 
 package models
 
+import fixtures.MetadataFixture
 import play.api.data.validation.ValidationError
 import play.api.libs.json.{JsPath, Json}
 import uk.gov.hmrc.play.test.UnitSpec
 
-class MetadataSpec extends UnitSpec with JsonFormatValidation {
+class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixture {
 
   "Metadata" should {
 
@@ -80,7 +81,25 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation {
   "MetadataResponse" should {
 
     "Be able to be parsed from JSON" in {
-      //val json = Json.toJson(MetadataResponse("regId", "2001-12-31T12:00:00Z", "ENG", Some("Director")), "")
+      val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"ENG","completionCapacity":"Director"}""")
+      val expected = buildMetadataResponse()
+      val result = json.validate[MetadataResponse]
+
+      shouldBeSuccess(expected, result)
+    }
+
+    "fail validation when an incorrect language is present" in {
+      val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"test-to-fail","completionCapacity":"Director"}""")
+      val result = json.validate[MetadataResponse]
+
+      shouldHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+    }
+
+    "fail validation when an incorrect completion capacity is present" in {
+      val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"ENG","completionCapacity":"123£$test-to-fail"}""")
+      val result = json.validate[MetadataResponse]
+
+      shouldHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
     }
   }
 

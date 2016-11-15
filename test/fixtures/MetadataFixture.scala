@@ -17,28 +17,53 @@
 package fixtures
 
 import models.{MetadataRequest, Links, MetadataResponse, Metadata}
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsObject, Json, JsValue}
 
 trait MetadataFixture {
 
-  lazy val validMetadataRequest = MetadataRequest("ENG")
+  private val OID = "0123456789"
+  private val REG_ID = "0123456789"
+  private val TIMESTAMP = "2001-12-31T12:00:00Z"
+  private val LANG = "ENG"
+  private val SUB_RESP_EMAIL = Some("test@email.co.uk")
+  private val COMPLETION_CAPACITY = Some("Director")
+  private val DECLARE = true
 
-  lazy val validMetadata = Metadata(
-    OID = "0123456789",
-    registrationID = "0123456789",
-    formCreationTimestamp = "2001-12-31T12:00:00Z",
-    language = "ENG",
-    submissionResponseEmail = Some("test@email.co.uk"),
-    completionCapacity = Some("String"),
-    declareAccurateAndComplete = true)
+  def buildMetadataRequest(lang: String = LANG) = MetadataRequest(lang)
 
-  lazy val validMetadataResponse = MetadataResponse(
-    "0123456789",
-    "2001-12-31T12:00:00Z",
-    "ENG",
-    Some("String"),
-    Links(Some("/business-registration/business-tax-registration/0123456789"))
-  )
+  def buildMetadata(oid: String = OID,
+                    regId: String = REG_ID,
+                    timeStamp: String = TIMESTAMP,
+                    lang: String = LANG,
+                    subRespEmail: Option[String] = SUB_RESP_EMAIL,
+                    completionCapacity: Option[String] = COMPLETION_CAPACITY,
+                    declare: Boolean = DECLARE) = {
+    Metadata(
+      OID = oid,
+      registrationID = regId,
+      formCreationTimestamp = timeStamp,
+      language = lang,
+      submissionResponseEmail = subRespEmail,
+      completionCapacity = completionCapacity,
+      declareAccurateAndComplete = declare
+    )
+  }
 
-  lazy val validMetadataJson: JsValue = Json.toJson(validMetadata)
+  def buildMetadataResponse(regId: String = REG_ID,
+                            timeStamp: String = TIMESTAMP,
+                            lang: String = LANG,
+                            completionCapacity: Option[String] = COMPLETION_CAPACITY) = {
+    MetadataResponse(
+      registrationID = regId,
+      formCreationTimestamp = timeStamp,
+      language = lang,
+      completionCapacity = completionCapacity
+    )
+  }
+
+  def buildSelfLinkJsObj(regId: String = REG_ID) = Json.obj("links" ->Links(Some(s"/business-registration/business-tax-registration/$regId")))
+
+  lazy val metadataResponseJsObj = Json.toJson(buildMetadataResponse()).as[JsObject] ++ buildSelfLinkJsObj()
+
+  lazy val validMetadataJson: JsValue = Json.toJson(buildMetadata())
 }

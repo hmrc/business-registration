@@ -87,4 +87,34 @@ trait SCRSMocks {
         .thenReturn(Future.successful(authority))
     }
   }
+
+  object AuthorisationMock {
+    def mockSuccessfulAuthorisation(registrationId: String, authority: Authority) = {
+      when(mockMetadataRepository.getOid(Matchers.eq(registrationId))).
+        thenReturn(Future.successful(Some((registrationId, authority.oid))))
+      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+        .thenReturn(Future.successful(Some(authority)))
+    }
+
+    def mockNotLoggedIn = {
+      when(mockAuthConnector.getCurrentAuthority()(Matchers.any[HeaderCarrier]()))
+        .thenReturn(Future.successful(None))
+      when(mockMetadataRepository.getOid(Matchers.any())).
+        thenReturn(Future.successful(None))
+    }
+
+    def mockNotAuthorised(registrationId: String, authority: Authority) = {
+      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+        .thenReturn(Future.successful(Some(authority)))
+      when(mockMetadataRepository.getOid(Matchers.eq(registrationId))).
+        thenReturn(Future.successful(Some((registrationId, authority.oid + "xxx"))))
+    }
+
+    def mockAuthResourceNotFound(authority: Authority) = {
+      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+        .thenReturn(Future.successful(Some(authority)))
+      when(mockMetadataRepository.getOid(Matchers.any())).
+        thenReturn(Future.successful(None))
+    }
+  }
 }

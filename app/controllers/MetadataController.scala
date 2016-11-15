@@ -18,7 +18,7 @@ package controllers
 
 import auth._
 import connectors.AuthConnector
-import models.{ErrorResponse, Metadata, MetadataRequest, MetadataResponse}
+import models._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
@@ -47,7 +47,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
           withJsonBody[MetadataRequest] {
             request => {
               metadataService.createMetadataRecord(context.oid, request.language) map {
-                r => Created(Json.toJson(r))
+                response => Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
               }
             }
           }
@@ -60,7 +60,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) => {
           metadataService.searchMetadataRecord(context.oid) map {
-            case Some(response) => Ok(Json.toJson(response))
+            case Some(response) => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             case None => NotFound(ErrorResponse.MetadataNotFound)
           }
         }
@@ -71,15 +71,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
     implicit request =>
       authorisedFor(registrationID) { _ =>
         metadataService.retrieveMetadataRecord(registrationID) map {
-          case Some(response) =>
-            Ok(
-              Json.toJson(response)
-//                .as[JsObject] ++
-//              Json.obj("links" -> Json.obj(
-//                  "xxx" -> "yyy"
-//                )
-//              )
-            )
+          case Some(response) => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
           case None => NotFound(ErrorResponse.MetadataNotFound)
         }
       }
@@ -91,9 +83,13 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         withJsonBody[MetadataResponse] {
           metaData =>
             metadataService.updateMetaDataRecord(registrationID, metaData) map {
-              metaDataResp => Ok(Json.toJson(metaDataResp))
+              response => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
             }
         }
       }
+  }
+
+  private[controllers] def buildSelfLink(registrationId: String): JsObject = {
+    Json.obj("links" -> Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url)))
   }
 }

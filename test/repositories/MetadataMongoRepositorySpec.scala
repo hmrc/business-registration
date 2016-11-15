@@ -162,9 +162,9 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       setupAnyUpdateOn(repository.collection)
 
-      val result = repository.updateMetaData("testRegID", validMetadataResponse)
+      val result = repository.updateMetaData("testRegID", buildMetadataResponse())
 
-      await(result) shouldBe validMetadataResponse
+      await(result) shouldBe buildMetadataResponse()
     }
   }
 }

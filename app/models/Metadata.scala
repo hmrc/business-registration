@@ -26,18 +26,7 @@ case class Metadata(OID: String,
                     language: String,
                     submissionResponseEmail: Option[String],
                     completionCapacity: Option[String],
-                    declareAccurateAndComplete: Boolean){
-
-  def toMetadataResponse = {
-    MetadataResponse(
-      registrationID,
-      formCreationTimestamp,
-      language,
-      completionCapacity,
-      Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationID).url))
-    )
-  }
-}
+                    declareAccurateAndComplete: Boolean)
 
 object Metadata extends MetadataValidator {
   implicit val formats = (
@@ -62,8 +51,7 @@ object MetadataRequest extends MetadataValidator {
 
 
 case class Links(self: Option[String],
-
-registration: Option[String] = None)
+                 registration: Option[String] = None)
 
 object Links {
   implicit val formats = Json.format[Links]
@@ -72,8 +60,7 @@ object Links {
 case class MetadataResponse(registrationID: String,
                             formCreationTimestamp: String,
                             language: String,
-                            completionCapacity : Option[String],
-                            links: Links)
+                            completionCapacity : Option[String])
 
 object MetadataResponse extends MetadataValidator {
 
@@ -81,8 +68,7 @@ object MetadataResponse extends MetadataValidator {
     (__ \ "registrationID").format[String] and
     (__ \ "formCreationTimestamp").format[String] and
     (__ \ "language").format[String](languageValidator) and
-    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator) and
-    (__ \ "links").format[Links]
+    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator)
     )(MetadataResponse.apply, unlift(MetadataResponse.unapply))
 
   def toMetadataResponse(metadata: Metadata) : MetadataResponse = {
@@ -90,12 +76,7 @@ object MetadataResponse extends MetadataValidator {
       metadata.registrationID,
       metadata.formCreationTimestamp,
       metadata.language,
-      metadata.completionCapacity,
-      buildLinks(metadata.registrationID)
+      metadata.completionCapacity
     )
-  }
-
-  private def buildLinks(registrationId: String): Links = {
-    Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url))
   }
 }
