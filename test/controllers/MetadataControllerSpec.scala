@@ -125,7 +125,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val regId = "testRegId"
       AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
       when(mockMetadataRepository.getOid(Matchers.eq(regId))).
-        thenReturn(Future.successful(Some((regId, validAuthority.oid+"xxx"))))
+        thenReturn(Future.successful(Some((regId, validAuthority.oid + "xxx"))))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
       status(result) shouldBe FORBIDDEN
@@ -138,7 +138,6 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
       status(result) shouldBe NOT_FOUND
-      await(jsonBodyOf(result)) shouldBe ErrorResponse.MetadataNotFound
     }
 
     "return a 404 - not found logged in the requested document doesn't exist but got through auth" in new Setup {

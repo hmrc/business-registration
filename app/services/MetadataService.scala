@@ -47,7 +47,7 @@ trait MetadataService {
         None,
         declareAccurateAndComplete = false
       )
-      metadataRepository.createMetadata(newMetadata).map(_.toResponse)
+      metadataRepository.createMetadata(newMetadata).map(_.toMetadataResponse)
     }
   }
 

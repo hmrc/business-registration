@@ -21,13 +21,13 @@ import play.api.libs.json.{Json, JsValue}
 
 trait MetadataFixture {
 
-  lazy val validMetadataRequest = MetadataRequest("en")
+  lazy val validMetadataRequest = MetadataRequest("ENG")
 
   lazy val validMetadata = Metadata(
     OID = "0123456789",
     registrationID = "0123456789",
     formCreationTimestamp = "2001-12-31T12:00:00Z",
-    language = "en",
+    language = "ENG",
     submissionResponseEmail = Some("test@email.co.uk"),
     completionCapacity = Some("String"),
     declareAccurateAndComplete = true)
@@ -35,9 +35,9 @@ trait MetadataFixture {
   lazy val validMetadataResponse = MetadataResponse(
     "0123456789",
     "2001-12-31T12:00:00Z",
-    "en",
+    "ENG",
     Some("String"),
-    Links(Some("/business-tax-registration/0123456789"))
+    Links(Some("/business-registration/business-tax-registration/0123456789"))
   )
 
   lazy val validMetadataJson: JsValue = Json.toJson(validMetadata)

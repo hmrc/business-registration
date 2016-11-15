@@ -16,7 +16,6 @@
 
 package models
 
-import play.api.data.validation.ValidationError
 import play.api.libs.json.Json
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -28,19 +27,28 @@ case class Metadata(OID: String,
                     submissionResponseEmail: Option[String],
                     completionCapacity: Option[String],
                     declareAccurateAndComplete: Boolean){
-  def toResponse = {
+
+  def toMetadataResponse = {
     MetadataResponse(
       registrationID,
       formCreationTimestamp,
       language,
       completionCapacity,
-      Links(Some(s"/business-tax-registration/$registrationID"))
+      Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationID).url))
     )
   }
 }
 
-object Metadata {
-  implicit val formats = Json.format[Metadata]
+object Metadata extends MetadataValidator {
+  implicit val formats = (
+    (__ \ "OID").format[String] and
+    (__ \ "registrationID").format[String] and
+    (__ \ "formCreationTimestamp").format[String] and
+    (__ \ "language").format[String](languageValidator) and
+    (__ \ "submissionResponseEmail").formatNullable[String] and
+    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator) and
+    (__ \ "declareAccurateAndComplete").format[Boolean]
+    )(Metadata.apply, unlift(Metadata.unapply))
 }
 
 case class MetadataRequest(language: String)
@@ -52,18 +60,30 @@ object MetadataRequest extends MetadataValidator {
     (MetadataRequest.apply _, unlift(MetadataRequest.unapply))
 }
 
+
+case class Links(self: Option[String],
+
+registration: Option[String] = None)
+
+object Links {
+  implicit val formats = Json.format[Links]
+}
+
 case class MetadataResponse(registrationID: String,
                             formCreationTimestamp: String,
                             language: String,
                             completionCapacity : Option[String],
                             links: Links)
 
-case class Links(self: Option[String],
-                 registration: Option[String] = None)
+object MetadataResponse extends MetadataValidator {
 
-object MetadataResponse {
-  implicit val formatLinks = Json.format[Links]
-  implicit val formats = Json.format[MetadataResponse]
+  implicit val formats = (
+    (__ \ "registrationID").format[String] and
+    (__ \ "formCreationTimestamp").format[String] and
+    (__ \ "language").format[String](languageValidator) and
+    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator) and
+    (__ \ "links").format[Links]
+    )(MetadataResponse.apply, unlift(MetadataResponse.unapply))
 
   def toMetadataResponse(metadata: Metadata) : MetadataResponse = {
     MetadataResponse(
@@ -71,7 +91,11 @@ object MetadataResponse {
       metadata.formCreationTimestamp,
       metadata.language,
       metadata.completionCapacity,
-      Links(Some(s"/business-tax-registration/${metadata.registrationID}"))
+      buildLinks(metadata.registrationID)
     )
+  }
+
+  private def buildLinks(registrationId: String): Links = {
+    Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url))
   }
 }

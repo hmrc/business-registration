@@ -36,5 +36,7 @@ trait MetadataValidator {
 
   import Validation.readToFmt
 
-  val languageValidator = readToFmt(pattern("""^(cy|CY|en|EN)$""".r))
+  val languageValidator = readToFmt(pattern("""^(ENG|CYM)$""".r, "Language must either be 'ENG' or 'CYM'"))
+
+  val completionCapacityValidator = readToFmt(pattern("""^[A-Za-z0-9 '\\-]{1,100}$""".r, "Invalid completion capacity"))
 }
