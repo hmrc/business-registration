@@ -28,15 +28,15 @@ trait MetadataFixture {
     registrationID = "0123456789",
     formCreationTimestamp = "2001-12-31T12:00:00Z",
     language = "en",
-    submissionResponseEmail = "test@email.co.uk",
-    completionCapacity = "String",
-    declareAccurateAndComplete = "String")
+    submissionResponseEmail = Some("test@email.co.uk"),
+    completionCapacity = Some("String"),
+    declareAccurateAndComplete = true)
 
   lazy val validMetadataResponse = MetadataResponse(
     "0123456789",
     "2001-12-31T12:00:00Z",
     "en",
-    "String",
+    Some("String"),
     Links(Some("/business-tax-registration/0123456789"))
   )
 

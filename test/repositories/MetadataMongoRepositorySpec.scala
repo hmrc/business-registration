@@ -103,7 +103,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       val captor = ArgumentCaptor.forClass(classOf[Metadata])
 
-      val metadata = Metadata.empty.copy(OID = randomOid, registrationID = randomRegid)
+      val metadata = Metadata(randomOid, randomRegid, "", "en", None, None, false)
 
       setupAnyInsertOn(repository.collection, fails = false)
 

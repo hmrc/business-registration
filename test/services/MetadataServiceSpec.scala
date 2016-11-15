@@ -46,7 +46,7 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
       MetadataRepositoryMocks.createMetadata(validMetadata)
       SequenceRepositoryMocks.getNext("registrationID", 1)
 
-      val result = service.createMetadataRecord(validMetadata)
+      val result = service.createMetadataRecord("oid", "en")
       await(result) shouldBe validMetadataResponse
     }
   }

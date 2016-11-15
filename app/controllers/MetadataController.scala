@@ -27,6 +27,7 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object MetadataController extends MetadataController {
   val metadataService = MetadataService
@@ -44,9 +45,8 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>
           withJsonBody[MetadataRequest] {
-            metadata => {
-              val m = Metadata.empty.copy(OID = context.oid, language = metadata.language)
-              metadataService.createMetadataRecord(m) map {
+            request => {
+              metadataService.createMetadataRecord(context.oid, request.language) map {
                 r => Created(Json.toJson(r))
               }
             }

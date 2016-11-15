@@ -36,11 +36,16 @@ trait MetadataService {
   val metadataRepository: MetadataRepository
   val sequenceRepository: SequenceRepository
 
-  def createMetadataRecord(metadata: Metadata) : Future[MetadataResponse] = {
+  def createMetadataRecord(oid: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
-      val newMetadata = metadata.copy(
-        registrationID = regID.toString,
-        formCreationTimestamp = generateTimestamp(new DateTime())
+      val newMetadata = Metadata(
+        oid,
+        regID.toString,
+        generateTimestamp(new DateTime()),
+        lang,
+        None,
+        None,
+        declareAccurateAndComplete = false
       )
       metadataRepository.createMetadata(newMetadata).map(_.toResponse)
     }

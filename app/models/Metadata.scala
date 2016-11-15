@@ -16,15 +16,18 @@
 
 package models
 
+import play.api.data.validation.ValidationError
 import play.api.libs.json.Json
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 case class Metadata(OID: String,
                     registrationID: String,
                     formCreationTimestamp: String,
                     language: String,
-                    submissionResponseEmail: String,
-                    completionCapacity: String,
-                    declareAccurateAndComplete: String){
+                    submissionResponseEmail: Option[String],
+                    completionCapacity: Option[String],
+                    declareAccurateAndComplete: Boolean){
   def toResponse = {
     MetadataResponse(
       registrationID,
@@ -38,22 +41,21 @@ case class Metadata(OID: String,
 
 object Metadata {
   implicit val formats = Json.format[Metadata]
-
-  def empty: Metadata = {
-    Metadata("", "", "", "", "", "", "")
-  }
 }
 
 case class MetadataRequest(language: String)
 
-object MetadataRequest {
-  implicit val formats = Json.format[MetadataRequest]
+object MetadataRequest extends MetadataValidator {
+
+  implicit val formats =
+    (__ \ "language").format[String](languageValidator).inmap(lang => MetadataRequest(lang), (mR: MetadataRequest) => mR.language)
+    (MetadataRequest.apply _, unlift(MetadataRequest.unapply))
 }
 
 case class MetadataResponse(registrationID: String,
                             formCreationTimestamp: String,
                             language: String,
-                            completionCapacity : String,
+                            completionCapacity : Option[String],
                             links: Links)
 
 case class Links(self: Option[String],

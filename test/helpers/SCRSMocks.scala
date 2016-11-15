@@ -49,7 +49,7 @@ trait SCRSMocks {
 
   object MetadataServiceMocks {
     def createMetadataRecord(result: MetadataResponse): OngoingStubbing[Future[MetadataResponse]] = {
-      when(mockMetadataService.createMetadataRecord(Matchers.any[Metadata]()))
+      when(mockMetadataService.createMetadataRecord(Matchers.any(), Matchers.any()))
         .thenReturn(Future.successful(result))
     }
 
