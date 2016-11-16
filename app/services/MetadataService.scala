@@ -80,4 +80,8 @@ trait MetadataService {
   def updateMetaDataRecord(registrationID : String, newMetaData : MetadataResponse) : Future[MetadataResponse] = {
     metadataRepository.updateMetaData(registrationID, newMetaData)
   }
+
+  def removeMetadata(registrationId: String): Future[Boolean] = {
+    metadataRepository.removeMetadata(registrationId)
+  }
 }

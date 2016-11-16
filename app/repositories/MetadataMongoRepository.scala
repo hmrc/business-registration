@@ -35,6 +35,7 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
   def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
   def oIDMetadataSelector(oID: String): BSONDocument
   def regIDMetadataSelector(registrationID: String): BSONDocument
+  def removeMetadata(registrationId: String): Future[Boolean]
   }
 
 class MetadataMongoRepository(implicit mongo: () => DB)
@@ -86,5 +87,10 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   override def searchMetadata(oID: String): Future[Option[Metadata]] = {
     val selector = oIDMetadataSelector(oID)
     collection.find(selector).one[Metadata]
+  }
+
+  override def removeMetadata(registrationId: String): Future[Boolean] = {
+    val selector = regIDMetadataSelector(registrationId)
+    collection.remove(selector, firstMatchOnly = true).map(_.ok)
   }
 }
