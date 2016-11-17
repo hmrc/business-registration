@@ -46,7 +46,7 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val randomOid = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata.empty.copy(OID = randomOid, registrationID = randomRegid)
+      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
@@ -64,7 +64,7 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val randomOid = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata.empty.copy(OID = randomOid, registrationID = randomRegid)
+      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
@@ -82,7 +82,7 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val randomOid = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata.empty.copy(OID = randomOid, registrationID = randomRegid)
+      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 

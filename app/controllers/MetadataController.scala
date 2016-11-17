@@ -18,8 +18,8 @@ package controllers
 
 import auth._
 import connectors.AuthConnector
-import models.{ErrorResponse, Metadata, MetadataRequest, MetadataResponse}
-import play.api.libs.json.{JsValue, Json}
+import models._
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
 import services.MetadataService
@@ -27,6 +27,7 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object MetadataController extends MetadataController {
   val metadataService = MetadataService
@@ -44,10 +45,9 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>
           withJsonBody[MetadataRequest] {
-            metadata => {
-              val m = Metadata.empty.copy(OID = context.oid, language = metadata.language)
-              metadataService.createMetadataRecord(m) map {
-                r => Created(Json.toJson(r))
+            request => {
+              metadataService.createMetadataRecord(context.oid, request.language) map {
+                response => Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
               }
             }
           }
@@ -60,7 +60,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) => {
           metadataService.searchMetadataRecord(context.oid) map {
-            case Some(response) => Ok(Json.toJson(response))
+            case Some(response) => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             case None => NotFound(ErrorResponse.MetadataNotFound)
           }
         }
@@ -69,43 +69,37 @@ trait MetadataController extends BaseController with Authenticated with Authoris
 
   def retrieveMetadata(registrationID: String) = Action.async {
     implicit request =>
-      authorised(registrationID) {
-        case Authorised(_) => metadataService.retrieveMetadataRecord(registrationID) map {
-          case Some(response) => Ok(Json.toJson(response))
+      authorisedFor(registrationID) { _ =>
+        metadataService.retrieveMetadataRecord(registrationID) map {
+          case Some(response) => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
           case None => NotFound(ErrorResponse.MetadataNotFound)
         }
-        case NotLoggedInOrAuthorised => {
-          Logger.info(s"[MetadataController] [retrieveMetadata] User not logged in")
-          Future.successful(Forbidden)
+      }
+  }
+
+  def removeMetadata(registrationID: String) = Action.async {
+    implicit request =>
+      authorisedFor(registrationID) { _ =>
+        metadataService.removeMetadata(registrationID) map {
+          case true => Ok
+          case false => NotFound
         }
-        case NotAuthorised(_) => {
-          Logger.info(s"[MetadataController] [retrieveMetadata] User logged in but not authorised for resource $registrationID")
-          Future.successful(Forbidden)
-        }
-        case AuthResourceNotFound(_) => Future.successful(NotFound(ErrorResponse.MetadataNotFound))
       }
   }
 
   def updateMetaData(registrationID : String) : Action[JsValue] = Action.async[JsValue](parse.json) {
     implicit request =>
-      authorised(registrationID) {
-        case Authorised(_) => {
-          withJsonBody[MetadataResponse] {
-            metaData =>
-              metadataService.updateMetaDataRecord(registrationID, metaData) map {
-                metaDataResp => Ok(Json.toJson(metaDataResp))
-              }
-          }
+      authorisedFor(registrationID) { _ =>
+        withJsonBody[MetadataResponse] {
+          metaData =>
+            metadataService.updateMetaDataRecord(registrationID, metaData) map {
+              response => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
+            }
         }
-        case NotLoggedInOrAuthorised => {
-          Logger.info(s"[MetadataController] [retrieveMetadata] User not logged in")
-          Future.successful(Forbidden)
-        }
-        case NotAuthorised(_) => {
-          Logger.info(s"[MetadataController] [retrieveMetadata] User logged in but not authorised for resource $registrationID")
-          Future.successful(Forbidden)
-        }
-        case AuthResourceNotFound(_) => Future.successful(NotFound(ErrorResponse.MetadataNotFound))
       }
+  }
+
+  private[controllers] def buildSelfLink(registrationId: String): JsObject = {
+    Json.obj("links" -> Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url)))
   }
 }

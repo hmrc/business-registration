@@ -43,20 +43,20 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
 
   "createMetadataRecord" should {
     "create a new metadata document" in new Setup {
-      MetadataRepositoryMocks.createMetadata(validMetadata)
+      MetadataRepositoryMocks.createMetadata(buildMetadata())
       SequenceRepositoryMocks.getNext("registrationID", 1)
 
-      val result = service.createMetadataRecord(validMetadata)
-      await(result) shouldBe validMetadataResponse
+      val result = service.createMetadataRecord("oid", "en")
+      await(result) shouldBe buildMetadataResponse()
     }
   }
 
   "retrieveMetadataRecord" should {
     "return MetadataResponse when a metadata document is retrieved" in new Setup {
-      MetadataRepositoryMocks.retrieveMetadata("testRegID", Some(validMetadata))
+      MetadataRepositoryMocks.retrieveMetadata("testRegID", Some(buildMetadata()))
 
       val result = service.retrieveMetadataRecord("testRegID")
-      await(result) shouldBe Some(validMetadataResponse)
+      await(result) shouldBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in new Setup {
@@ -68,10 +68,10 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
   }
   "searchMetadataRecord" should {
     "return MetadataResponse when a metadata document is retrieved" in new Setup {
-      MetadataRepositoryMocks.searchMetadata("testOID", Some(validMetadata))
+      MetadataRepositoryMocks.searchMetadata("testOID", Some(buildMetadata()))
 
       val result = service.searchMetadataRecord("testOID")
-      await(result) shouldBe Some(validMetadataResponse)
+      await(result) shouldBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in new Setup {
@@ -85,11 +85,11 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
 
   "updateMetaDataRecord" should {
     "return a meta data response" in new Setup {
-      when(mockMetadataRepository.updateMetaData(Matchers.eq("testOID"), Matchers.eq(validMetadataResponse)))
-        .thenReturn(Future.successful(validMetadataResponse))
+      when(mockMetadataRepository.updateMetaData(Matchers.eq("testOID"), Matchers.eq(buildMetadataResponse())))
+        .thenReturn(Future.successful(buildMetadataResponse()))
 
-      val result = service.updateMetaDataRecord("testOID", validMetadataResponse)
-      await(result) shouldBe validMetadataResponse
+      val result = service.updateMetaDataRecord("testOID", buildMetadataResponse())
+      await(result) shouldBe buildMetadataResponse()
     }
   }
 }

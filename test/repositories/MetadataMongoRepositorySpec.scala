@@ -103,7 +103,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       val captor = ArgumentCaptor.forClass(classOf[Metadata])
 
-      val metadata = Metadata.empty.copy(OID = randomOid, registrationID = randomRegid)
+      val metadata = Metadata(randomOid, randomRegid, "", "en", None, None, false)
 
       setupAnyInsertOn(repository.collection, fails = false)
 
@@ -162,9 +162,9 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       setupAnyUpdateOn(repository.collection)
 
-      val result = repository.updateMetaData("testRegID", validMetadataResponse)
+      val result = repository.updateMetaData("testRegID", buildMetadataResponse())
 
-      await(result) shouldBe validMetadataResponse
+      await(result) shouldBe buildMetadataResponse()
     }
   }
 }
