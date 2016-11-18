@@ -18,14 +18,14 @@ private object AppDependencies {
   import play.PlayImport._
   import play.core.PlayVersion
 
-  private val microserviceBootstrapVersion = "4.2.1"
-  private val playAuthVersion = "3.1.0"
+  private val microserviceBootstrapVersion = "4.4.0"
+  private val playAuthVersion = "3.4.0"
   private val playHealthVersion = "1.1.0"
-  private val playJsonLoggerVersion = "2.1.1"  
+  private val playJsonLoggerVersion = "2.1.1"
   private val playUrlBindersVersion = "1.1.0"
   private val playConfigVersion = "2.1.0"
   private val domainVersion = "3.7.0"
-  private val hmrcTestVersion = "1.8.0"
+  private val hmrcTestVersion = "1.9.0"
   private val playReactivemongoVersion = "4.8.0"
 
   val compile = Seq(
