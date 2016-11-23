@@ -16,7 +16,7 @@
 
 package auth
 
-import connectors.{AuthConnector, Authority}
+import connectors.{AuthConnector, Authority, UserIds}
 import org.mockito.Matchers
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -66,7 +66,7 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
 
       val regId = "xxx"
       val oid = "yyy"
-      val a = Authority("x", oid, "z")
+      val a = Authority("x", oid, "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
       when(mockResource.getOid(Matchers.eq(regId))).thenReturn(Future.successful(Some((regId, oid))))
@@ -83,7 +83,7 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
 
       val regId = "xxx"
       val oid = "yyy"
-      val a = Authority("x", oid, "z")
+      val a = Authority("x", oid, "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
       when(mockResource.getOid(Matchers.eq(regId))).thenReturn(Future.successful(Some((regId, oid+"xxx"))))
@@ -99,7 +99,7 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
 
     "provided a not-found result when logged in and no resource for the identifier" in {
 
-      val a = Authority("x", "y", "z")
+      val a = Authority("x", "y", "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
       when(mockResource.getOid(Matchers.any())).thenReturn(Future.successful(None))

@@ -66,7 +66,7 @@ class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMat
       val result = TestAuthConnector.getCurrentAuthority()
       val authority = await(result)
 
-      authority shouldBe Some(Authority(uri, oid, userDetailsLink))
+      authority shouldBe Some(Authority(uri, oid, userDetailsLink, UserIds("tiid","teid")))
     }
 
     "return None when an authority isn't found" in {

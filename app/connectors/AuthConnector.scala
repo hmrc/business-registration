@@ -22,6 +22,7 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
 import play.api.Logger
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,8 +34,16 @@ object OidExtractor {
 case class Authority(
                       uri: String,
                       oid: String,
-                      userDetailsLink: String
+                      userDetailsLink: String,
+                      ids: UserIds
                     )
+
+case class UserIds(internalId : String,
+                   externalId : String)
+
+object UserIds {
+  implicit val format = Json.format[UserIds]
+}
 
 trait AuthConnector extends ServicesConfig with RawResponseReads {
 
@@ -47,7 +56,7 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
   def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]] = {
     val getUrl = s"""$serviceUrl/$authorityUri"""
     Logger.debug(s"[AuthConnector][getCurrentAuthority] - GET $getUrl")
-    http.GET[HttpResponse](getUrl).map {
+    http.GET[HttpResponse](getUrl) flatMap {
       response =>
         Logger.debug(s"[AuthConnector][getCurrentAuthority] - RESPONSE status: ${response.status}, body: ${response.body}")
         response.status match {
@@ -55,9 +64,15 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
             val uri = (response.json \ "uri").as[String]
             val oid = OidExtractor.userIdToOid(uri)
             val userDetails = (response.json \ "userDetailsLink").as[String]
-            Some(Authority(uri, oid, userDetails))
+            val idsLink = (response.json \ "ids").as[String]
+
+            http.GET[HttpResponse](idsLink) map {
+              response =>
+                val ids = response.json.as[UserIds]
+                Some(Authority(uri, oid, userDetails, ids))
+            }
           }
-          case status => None
+          case status => Future.successful(None)
         }
     }
   }

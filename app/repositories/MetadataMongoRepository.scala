@@ -30,10 +30,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
   def createMetadata(metadata: Metadata): Future[Metadata]
-  def searchMetadata(oid: String): Future[Option[Metadata]]
+  def searchMetadata(internalID: String): Future[Option[Metadata]]
   def retrieveMetadata(regI: String): Future[Option[Metadata]]
   def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
-  def oIDMetadataSelector(oID: String): BSONDocument
+  def internalIDMetadataSelector(internalID: String): BSONDocument
   def regIDMetadataSelector(registrationID: String): BSONDocument
   def removeMetadata(registrationId: String): Future[Boolean]
   }
@@ -44,11 +44,11 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   with AuthorisationResource[String] {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = Future.sequence(
-    Seq(collection.indexesManager.ensure(Index(Seq("OID" -> IndexType.Ascending), name = Some("oidIndex"), unique = true)),
+    Seq(collection.indexesManager.ensure(Index(Seq("internalID" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),
         collection.indexesManager.ensure(Index(Seq("registrationID" -> IndexType.Ascending), name = Some("regIDIndex"), unique = true))))
 
-  override def oIDMetadataSelector(oID: String): BSONDocument = BSONDocument(
-    "OID" -> BSONString(oID)
+  override def internalIDMetadataSelector(internalID: String): BSONDocument = BSONDocument(
+    "OID" -> BSONString(internalID)
   )
 
   override def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(
@@ -80,12 +80,12 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   // TODO : this can be made more efficient by performing an index scan rather than document lookup
   retrieveMetadata(id) map {
       case None => None
-      case Some(m) => Some((m.registrationID, m.OID))
+      case Some(m) => Some((m.registrationID, m.internalId))
     }
   }
 
-  override def searchMetadata(oID: String): Future[Option[Metadata]] = {
-    val selector = oIDMetadataSelector(oID)
+  override def searchMetadata(internalID: String): Future[Option[Metadata]] = {
+    val selector = internalIDMetadataSelector(internalID)
     collection.find(selector).one[Metadata]
   }
 

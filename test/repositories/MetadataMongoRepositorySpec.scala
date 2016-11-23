@@ -111,10 +111,10 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       verifyInsertOn(repository.collection, captor)
 
-      captor.getValue.OID shouldBe randomOid
+      captor.getValue.internalId shouldBe randomOid
       captor.getValue.registrationID shouldBe randomRegid
 
-      metadataResult.OID shouldBe randomOid
+      metadataResult.internalId shouldBe randomOid
       metadataResult.registrationID shouldBe randomRegid
     }
   }
@@ -129,7 +129,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
       val metadataModel = mock[Metadata]
 
       when(metadataModel.registrationID) thenReturn randomRegid
-      when(metadataModel.OID) thenReturn randomOid
+      when(metadataModel.internalId) thenReturn randomOid
 
       val selector = BSONDocument("registrationID" -> BSONString(randomRegid))
       setupFindFor(repository.collection, selector, Some(metadataModel))
@@ -145,7 +145,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
       val metadataModel = mock[Metadata]
 
       when(metadataModel.registrationID) thenReturn randomRegid
-      when(metadataModel.OID) thenReturn randomOid
+      when(metadataModel.internalId) thenReturn randomOid
 
       val selector = BSONDocument("registrationID" -> BSONString(randomRegid))
       setupFindFor(repository.collection, selector, None)

@@ -50,12 +50,12 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
-      metdataResponse.OID shouldBe randomOid
+      metdataResponse.internalId shouldBe randomOid
 
       val mdByOid = await(repository.searchMetadata(randomOid))
 
       mdByOid shouldBe (defined)
-      mdByOid.get.OID shouldBe (randomOid)
+      mdByOid.get.internalId shouldBe (randomOid)
       mdByOid.get.registrationID shouldBe (randomRegid)
     }
 
@@ -73,7 +73,7 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val mdByRegId = await(repository.retrieveMetadata(randomRegid))
 
       mdByRegId shouldBe (defined)
-      mdByRegId.get.OID shouldBe (randomOid)
+      mdByRegId.get.internalId shouldBe (randomOid)
       mdByRegId.get.registrationID shouldBe (randomRegid)
     }
 
