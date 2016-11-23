@@ -44,11 +44,11 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   with AuthorisationResource[String] {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = Future.sequence(
-    Seq(collection.indexesManager.ensure(Index(Seq("internalID" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),
+    Seq(collection.indexesManager.ensure(Index(Seq("internalId" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),
         collection.indexesManager.ensure(Index(Seq("registrationID" -> IndexType.Ascending), name = Some("regIDIndex"), unique = true))))
 
   override def internalIDMetadataSelector(internalID: String): BSONDocument = BSONDocument(
-    "OID" -> BSONString(internalID)
+    "internalId" -> BSONString(internalID)
   )
 
   override def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(

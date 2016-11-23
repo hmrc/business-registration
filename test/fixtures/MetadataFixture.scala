@@ -21,7 +21,7 @@ import play.api.libs.json.{JsObject, Json, JsValue}
 
 trait MetadataFixture {
 
-  private val OID = "0123456789"
+  private val INTERNAL_ID = "0123456789"
   private val REG_ID = "0123456789"
   private val TIMESTAMP = "2001-12-31T12:00:00Z"
   private val LANG = "ENG"
@@ -31,7 +31,7 @@ trait MetadataFixture {
 
   def buildMetadataRequest(lang: String = LANG) = MetadataRequest(lang)
 
-  def buildMetadata(oid: String = OID,
+  def buildMetadata(internalId: String = INTERNAL_ID,
                     regId: String = REG_ID,
                     timeStamp: String = TIMESTAMP,
                     lang: String = LANG,
@@ -39,7 +39,7 @@ trait MetadataFixture {
                     completionCapacity: Option[String] = COMPLETION_CAPACITY,
                     declare: Boolean = DECLARE) = {
     Metadata(
-      OID = oid,
+      internalId = internalId,
       registrationID = regId,
       formCreationTimestamp = timeStamp,
       language = lang,

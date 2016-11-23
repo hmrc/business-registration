@@ -16,7 +16,7 @@
 
 package auth
 
-import connectors.{AuthConnector, Authority}
+import connectors.{AuthConnector, Authority, UserIds}
 import org.mockito.Matchers
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
@@ -46,7 +46,7 @@ class AuthenticatedHelperSpec extends FakeApplication with WordSpecLike with Sho
 
     "provided a logged in auth result when there is a valid bearer token" in {
 
-      val a = Authority("x", "y", "z")
+      val a = Authority("x", "y", "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(Matchers.any())).
         thenReturn(Future.successful(Some(a)))

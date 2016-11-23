@@ -66,8 +66,10 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
             val userDetails = (response.json \ "userDetailsLink").as[String]
             val idsLink = (response.json \ "ids").as[String]
 
-            http.GET[HttpResponse](idsLink) map {
+            http.GET[HttpResponse](s"$serviceUrl$idsLink") map {
               response =>
+                Logger.info(s"[AuthConnector] - [getCurrentAuthority] API call : $serviceUrl/$idsLink")
+                Logger.info(s"[AuthConnector] - [getCurrentAuthority] response from ids call : ${response.json}")
                 val ids = response.json.as[UserIds]
                 Some(Authority(uri, oid, userDetails, ids))
             }

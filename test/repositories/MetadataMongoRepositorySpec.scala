@@ -43,9 +43,9 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
     reset(repository.collection)
   }
 
-  "MetadataMongoRepository search by OID" should {
+  "MetadataMongoRepository search by internalId" should {
 
-    val randomOid = UUID.randomUUID().toString
+    val randomInternalId = UUID.randomUUID().toString
     val randomRegid = UUID.randomUUID().toString
 
     "Find a document keyed on oid when one exists" in {
@@ -54,10 +54,10 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       when(metadataModel.registrationID) thenReturn randomRegid
 
-      val selector = BSONDocument("OID" -> BSONString(randomOid))
+      val selector = BSONDocument("internalId" -> BSONString(randomInternalId))
       setupFindFor(repository.collection, selector, Some(metadataModel))
 
-      val result = await(repository.searchMetadata(randomOid))
+      val result = await(repository.searchMetadata(randomInternalId))
 
       result should be(defined)
       result.get should be(metadataModel)
