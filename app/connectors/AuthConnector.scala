@@ -27,13 +27,8 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object OidExtractor {
-  def userIdToOid(userId: String): String = userId.substring(userId.lastIndexOf("/") + 1)
-}
-
 case class Authority(
                       uri: String,
-                      oid: String,
                       userDetailsLink: String,
                       ids: UserIds
                     )
@@ -62,7 +57,6 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
         response.status match {
           case OK => {
             val uri = (response.json \ "uri").as[String]
-            val oid = OidExtractor.userIdToOid(uri)
             val userDetails = (response.json \ "userDetailsLink").as[String]
             val idsLink = (response.json \ "ids").as[String]
 
@@ -71,7 +65,7 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
                 Logger.info(s"[AuthConnector] - [getCurrentAuthority] API call : $serviceUrl/$idsLink")
                 Logger.info(s"[AuthConnector] - [getCurrentAuthority] response from ids call : ${response.json}")
                 val ids = response.json.as[UserIds]
-                Some(Authority(uri, oid, userDetails, ids))
+                Some(Authority(uri, userDetails, ids))
             }
           }
           case status => Future.successful(None)

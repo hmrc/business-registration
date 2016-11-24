@@ -46,7 +46,7 @@ class AuthenticatedHelperSpec extends FakeApplication with WordSpecLike with Sho
 
     "provided a logged in auth result when there is a valid bearer token" in {
 
-      val a = Authority("x", "y", "z", UserIds("tiid","teid"))
+      val a = Authority("x", "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(Matchers.any())).
         thenReturn(Future.successful(Some(a)))

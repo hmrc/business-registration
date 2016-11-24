@@ -134,7 +134,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 404 - not found logged in the requested document doesn't exist but got through auth" in new Setup {
       AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
-      when(mockMetadataRepository.getOid(Matchers.eq(regId))).
+      when(mockMetadataRepository.getInternalId(Matchers.eq(regId))).
         thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
       MetadataServiceMocks.retrieveMetadataRecord(regId, None)
 

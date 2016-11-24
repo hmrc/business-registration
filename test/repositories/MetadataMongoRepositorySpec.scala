@@ -48,7 +48,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
     val randomInternalId = UUID.randomUUID().toString
     val randomRegid = UUID.randomUUID().toString
 
-    "Find a document keyed on oid when one exists" in {
+    "Find a document keyed on internalID when one exists" in {
 
       val metadataModel = mock[Metadata]
 
@@ -71,7 +71,7 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
   "MetadataMongoRepository retrieve by registration id" should {
 
-    val randomOid = UUID.randomUUID().toString
+    val randomInternalId = UUID.randomUUID().toString
     val randomRegid = UUID.randomUUID().toString
 
     "Find a document keyed on registration id when one exists" in {
@@ -96,14 +96,14 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
   }
 
   "MetadataMongoRepository create metadata" should {
-    val randomOid = UUID.randomUUID().toString
+    val randomInternalId = UUID.randomUUID().toString
     val randomRegid = UUID.randomUUID().toString
 
     "Store a document " in {
 
       val captor = ArgumentCaptor.forClass(classOf[Metadata])
 
-      val metadata = Metadata(randomOid, randomRegid, "", "en", None, None, false)
+      val metadata = Metadata(randomInternalId, randomRegid, "", "en", None, None, false)
 
       setupAnyInsertOn(repository.collection, fails = false)
 
@@ -111,17 +111,17 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
 
       verifyInsertOn(repository.collection, captor)
 
-      captor.getValue.internalId shouldBe randomOid
+      captor.getValue.internalId shouldBe randomInternalId
       captor.getValue.registrationID shouldBe randomRegid
 
-      metadataResult.internalId shouldBe randomOid
+      metadataResult.internalId shouldBe randomInternalId
       metadataResult.registrationID shouldBe randomRegid
     }
   }
 
   "MetadataMongoRepository retrieve by id for authorisation" should {
 
-    val randomOid = UUID.randomUUID().toString
+    val randomInternalID = UUID.randomUUID().toString
     val randomRegid = UUID.randomUUID().toString
 
     "Find a document keyed on registration id when one exists" in {
@@ -129,15 +129,15 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
       val metadataModel = mock[Metadata]
 
       when(metadataModel.registrationID) thenReturn randomRegid
-      when(metadataModel.internalId) thenReturn randomOid
+      when(metadataModel.internalId) thenReturn randomInternalID
 
       val selector = BSONDocument("registrationID" -> BSONString(randomRegid))
       setupFindFor(repository.collection, selector, Some(metadataModel))
 
-      val result = await(repository.getOid(randomRegid))
+      val result = await(repository.getInternalId(randomRegid))
 
       result should be(defined)
-      result should be(Some((randomRegid, randomOid)))
+      result should be(Some((randomRegid, randomInternalID)))
     }
 
     "return None when no document exists" in {
@@ -145,12 +145,12 @@ class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with Mo
       val metadataModel = mock[Metadata]
 
       when(metadataModel.registrationID) thenReturn randomRegid
-      when(metadataModel.internalId) thenReturn randomOid
+      when(metadataModel.internalId) thenReturn randomInternalID
 
       val selector = BSONDocument("registrationID" -> BSONString(randomRegid))
       setupFindFor(repository.collection, selector, None)
 
-      val result = await(repository.getOid(randomRegid))
+      val result = await(repository.getInternalId(randomRegid))
 
       result should be(None)
     }

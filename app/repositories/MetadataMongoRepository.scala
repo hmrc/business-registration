@@ -76,7 +76,7 @@ class MetadataMongoRepository(implicit mongo: () => DB)
     }
   }
 
-  def getOid(id: String) : Future[Option[(String,String)]] = {
+  def getInternalId(id: String) : Future[Option[(String,String)]] = {
   // TODO : this can be made more efficient by performing an index scan rather than document lookup
   retrieveMetadata(id) map {
       case None => None

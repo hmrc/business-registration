@@ -42,10 +42,17 @@ class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMat
     override val http: HttpGet with HttpPost = mockHttp
   }
 
-  def authResponseJson(uri:String, userDetailsLink: String ) = Json.parse(
+  def authResponseJson(uri: String, userDetailsLink: String, idsLink: String) = Json.parse(
     s"""{
            "uri":"$uri",
-           "userDetailsLink":"$userDetailsLink"
+           "userDetailsLink":"$userDetailsLink",
+           "ids":"$idsLink"
+        }""")
+
+  def idsResponseJson(internalId: String, externalId: String) = Json.parse(
+    s"""{
+           "internalId":"$internalId",
+           "externalId":"$externalId"
         }""")
 
   before {
@@ -53,26 +60,31 @@ class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMat
   }
 
   "The auth connector" should {
-    val oid = "foo"
-    val uri = s"""x/y/$oid"""
+    val uri = "x/y/foo"
     val userDetailsLink = "bar"
+    val idsLink = "/auth/ids"
 
     "return auth info when an authority is found" in {
+      val userIDs: UserIds = UserIds("tiid", "teid")
+      val expected = Authority(uri, userDetailsLink, userIDs)
 
       when(mockHttp.GET[HttpResponse](Matchers.eq("localhost/auth/authority"))(Matchers.any(), Matchers.any())).
-        thenReturn(Future.successful(HttpResponse(200,Some(authResponseJson(uri, userDetailsLink)))))
+        thenReturn(Future.successful(HttpResponse(200, Some(authResponseJson(uri, userDetailsLink, idsLink)))))
+
+      when(mockHttp.GET[HttpResponse](Matchers.eq(s"localhost${idsLink}"))(Matchers.any(), Matchers.any())).
+        thenReturn(Future.successful(HttpResponse(200, Some(idsResponseJson(userIDs.internalId, userIDs.externalId)))))
 
       implicit val hc = new HeaderCarrier(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
       val result = TestAuthConnector.getCurrentAuthority()
       val authority = await(result)
 
-      authority shouldBe Some(Authority(uri, oid, userDetailsLink, UserIds("tiid","teid")))
+      authority shouldBe Some(expected)
     }
 
     "return None when an authority isn't found" in {
 
       when(mockHttp.GET[HttpResponse](Matchers.eq("localhost/auth/authority"))(Matchers.any(), Matchers.any())).
-        thenReturn(Future.successful(HttpResponse(404,None)))
+        thenReturn(Future.successful(HttpResponse(404, None)))
 
       implicit val hc = new HeaderCarrier(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
       val result = TestAuthConnector.getCurrentAuthority()
