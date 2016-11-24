@@ -53,7 +53,7 @@ trait SCRSMocks {
         .thenReturn(Future.successful(result))
     }
 
-    def searchMetadataRecord(oid: String, result: Option[MetadataResponse]): OngoingStubbing[Future[Option[MetadataResponse]]] = {
+    def searchMetadataRecord(internalId: String, result: Option[MetadataResponse]): OngoingStubbing[Future[Option[MetadataResponse]]] = {
       when(mockMetadataService.searchMetadataRecord(Matchers.any()))
         .thenReturn(Future.successful(result))
     }
@@ -70,7 +70,7 @@ trait SCRSMocks {
         .thenReturn(Future.successful(metadata))
     }
 
-    def searchMetadata(oID: String, metadata: Option[Metadata]): OngoingStubbing[Future[Option[Metadata]]] = {
+    def searchMetadata(internalID: String, metadata: Option[Metadata]): OngoingStubbing[Future[Option[Metadata]]] = {
       when(mockMetadataRepository.searchMetadata(Matchers.any()))
         .thenReturn(Future.successful(metadata))
     }
@@ -90,8 +90,8 @@ trait SCRSMocks {
 
   object AuthorisationMock {
     def mockSuccessfulAuthorisation(registrationId: String, authority: Authority) = {
-      when(mockMetadataRepository.getOid(Matchers.eq(registrationId))).
-        thenReturn(Future.successful(Some((registrationId, authority.oid))))
+      when(mockMetadataRepository.getInternalId(Matchers.eq(registrationId))).
+        thenReturn(Future.successful(Some((registrationId, authority.ids.internalId))))
       when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
         .thenReturn(Future.successful(Some(authority)))
     }
@@ -99,21 +99,21 @@ trait SCRSMocks {
     def mockNotLoggedIn = {
       when(mockAuthConnector.getCurrentAuthority()(Matchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(None))
-      when(mockMetadataRepository.getOid(Matchers.any())).
+      when(mockMetadataRepository.getInternalId(Matchers.any())).
         thenReturn(Future.successful(None))
     }
 
     def mockNotAuthorised(registrationId: String, authority: Authority) = {
       when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
         .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getOid(Matchers.eq(registrationId))).
-        thenReturn(Future.successful(Some((registrationId, authority.oid + "xxx"))))
+      when(mockMetadataRepository.getInternalId(Matchers.eq(registrationId))).
+        thenReturn(Future.successful(Some((registrationId, authority.ids.internalId + "xxx"))))
     }
 
     def mockAuthResourceNotFound(authority: Authority) = {
       when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
         .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getOid(Matchers.any())).
+      when(mockMetadataRepository.getInternalId(Matchers.any())).
         thenReturn(Future.successful(None))
     }
   }

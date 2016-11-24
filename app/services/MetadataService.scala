@@ -36,10 +36,10 @@ trait MetadataService {
   val metadataRepository: MetadataRepository
   val sequenceRepository: SequenceRepository
 
-  def createMetadataRecord(oid: String, lang: String) : Future[MetadataResponse] = {
+  def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
       val newMetadata = Metadata(
-        oid,
+        internalID,
         regID.toString,
         generateTimestamp(new DateTime()),
         lang,
@@ -63,8 +63,8 @@ trait MetadataService {
     format.format(new Date(timeStamp.getMillis))
   }
 
-  def searchMetadataRecord(oID: String): Future[Option[MetadataResponse]] = {
-    metadataRepository.searchMetadata(oID).map{
+  def searchMetadataRecord(internalID: String): Future[Option[MetadataResponse]] = {
+    metadataRepository.searchMetadata(internalID).map{
       case Some(data) => Some(MetadataResponse.toMetadataResponse(data))
       case None => None
     }

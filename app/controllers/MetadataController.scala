@@ -46,7 +46,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
         case LoggedIn(context) =>
           withJsonBody[MetadataRequest] {
             request => {
-              metadataService.createMetadataRecord(context.oid, request.language) map {
+              metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
                 response => Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
               }
             }
@@ -59,7 +59,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
       authenticated {
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) => {
-          metadataService.searchMetadataRecord(context.oid) map {
+          metadataService.searchMetadataRecord(context.ids.internalId) map {
             case Some(response) => Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             case None => NotFound(ErrorResponse.MetadataNotFound)
           }

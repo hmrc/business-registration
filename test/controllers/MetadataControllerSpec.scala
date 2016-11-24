@@ -74,7 +74,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 200 and a MetadataResponse as json if metadata is found" in new Setup {
       AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
-      MetadataServiceMocks.searchMetadataRecord(validAuthority.oid, Some(buildMetadataResponse()))
+      MetadataServiceMocks.searchMetadataRecord(validAuthority.ids.internalId, Some(buildMetadataResponse()))
 
       val result = call(controller.searchMetadata, FakeRequest())
       status(result) shouldBe OK
@@ -90,7 +90,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 404 - NotFound when the resource doesn't exist" in new Setup {
       AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
-      MetadataServiceMocks.searchMetadataRecord(validAuthority.oid, None)
+      MetadataServiceMocks.searchMetadataRecord(validAuthority.ids.internalId, None)
 
       val result = call(controller.searchMetadata, FakeRequest())
       status(result) shouldBe NOT_FOUND
@@ -134,8 +134,8 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 404 - not found logged in the requested document doesn't exist but got through auth" in new Setup {
       AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
-      when(mockMetadataRepository.getOid(Matchers.eq(regId))).
-        thenReturn(Future.successful(Some((regId,validAuthority.oid))))
+      when(mockMetadataRepository.getInternalId(Matchers.eq(regId))).
+        thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
       MetadataServiceMocks.retrieveMetadataRecord(regId, None)
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())

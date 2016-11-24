@@ -26,11 +26,11 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
   "Metadata" should {
 
     "Be able to be parsed from JSON" in {
-      val expected = Metadata("oid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true)
+      val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true)
       val json = Json.parse(
         """
           |{
-          | "OID":"oid",
+          | "internalId":"tiid",
           | "registrationID":"regId",
           | "formCreationTimestamp":"2001-12-31T12:00:00Z",
           | "language":"ENG",
@@ -47,7 +47,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val json = Json.parse(
         """
           |{
-          | "OID":"oid",
+          | "internalId":"tiid",
           | "registrationID":"regId",
           | "formCreationTimestamp":"2001-12-31T12:00:00Z",
           | "language":"ENG",
@@ -64,7 +64,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val json = Json.parse(
         """
           |{
-          | "OID":"oid",
+          | "internalId":"tiid",
           | "registrationID":"regId",
           | "formCreationTimestamp":"2001-12-31T12:00:00Z",
           | "language":"test-to-fail",

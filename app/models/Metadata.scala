@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-case class Metadata(OID: String,
+case class Metadata(internalId: String,
                     registrationID: String,
                     formCreationTimestamp: String,
                     language: String,
@@ -30,7 +30,7 @@ case class Metadata(OID: String,
 
 object Metadata extends MetadataValidator {
   implicit val formats = (
-    (__ \ "OID").format[String] and
+    (__ \ "internalId").format[String] and
     (__ \ "registrationID").format[String] and
     (__ \ "formCreationTimestamp").format[String] and
     (__ \ "language").format[String](languageValidator) and

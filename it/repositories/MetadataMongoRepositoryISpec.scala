@@ -41,30 +41,30 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
 
   "MetadataRepository" should {
 
-    "be able to retrieve a document that has been created by OID" in new Setup {
+    "be able to retrieve a document that has been created by internalID" in new Setup {
 
-      val randomOid = UUID.randomUUID().toString
+      val randomIntId = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
+      val metadata = Metadata(randomIntId, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
-      metdataResponse.OID shouldBe randomOid
+      metdataResponse.internalId shouldBe randomIntId
 
-      val mdByOid = await(repository.searchMetadata(randomOid))
+      val mdByIntId = await(repository.searchMetadata(randomIntId))
 
-      mdByOid shouldBe (defined)
-      mdByOid.get.OID shouldBe (randomOid)
-      mdByOid.get.registrationID shouldBe (randomRegid)
+      mdByIntId shouldBe (defined)
+      mdByIntId.get.internalId shouldBe (randomIntId)
+      mdByIntId.get.registrationID shouldBe (randomRegid)
     }
 
     "be able to retrieve a document that has been created by registration id" in new Setup {
 
-      val randomOid = UUID.randomUUID().toString
+      val randomIntId = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
+      val metadata = Metadata(randomIntId, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
@@ -73,30 +73,30 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val mdByRegId = await(repository.retrieveMetadata(randomRegid))
 
       mdByRegId shouldBe (defined)
-      mdByRegId.get.OID shouldBe (randomOid)
+      mdByRegId.get.internalId shouldBe (randomIntId)
       mdByRegId.get.registrationID shouldBe (randomRegid)
     }
 
     "be able to use the authorisation call to check a document" in new Setup {
 
-      val randomOid = UUID.randomUUID().toString
+      val randomIntId = UUID.randomUUID().toString
       val randomRegid = UUID.randomUUID().toString
 
-      val metadata = Metadata(randomOid, randomRegid, "", "ENG", None, None, false)
+      val metadata = Metadata(randomIntId, randomRegid, "", "ENG", None, None, false)
 
       val metdataResponse = await(repository.createMetadata(metadata))
 
       metdataResponse.registrationID shouldBe (randomRegid)
 
-      val auth = await(repository.getOid(randomRegid))
+      val auth = await(repository.getInternalId(randomRegid))
 
       auth shouldBe (defined)
-      auth shouldBe Some((randomRegid, randomOid))
+      auth shouldBe Some((randomRegid, randomIntId))
     }
 
     "return None for the authorisation call when there's no document" in new Setup {
       val randomRegid = UUID.randomUUID().toString
-      val auth = await(repository.getOid(randomRegid))
+      val auth = await(repository.getInternalId(randomRegid))
       auth shouldBe None
     }
   }

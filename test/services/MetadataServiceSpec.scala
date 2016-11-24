@@ -46,7 +46,7 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
       MetadataRepositoryMocks.createMetadata(buildMetadata())
       SequenceRepositoryMocks.getNext("registrationID", 1)
 
-      val result = service.createMetadataRecord("oid", "en")
+      val result = service.createMetadataRecord("intId", "en")
       await(result) shouldBe buildMetadataResponse()
     }
   }
@@ -68,16 +68,16 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
   }
   "searchMetadataRecord" should {
     "return MetadataResponse when a metadata document is retrieved" in new Setup {
-      MetadataRepositoryMocks.searchMetadata("testOID", Some(buildMetadata()))
+      MetadataRepositoryMocks.searchMetadata("testIntID", Some(buildMetadata()))
 
-      val result = service.searchMetadataRecord("testOID")
+      val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in new Setup {
-      MetadataRepositoryMocks.searchMetadata("testOID", None)
+      MetadataRepositoryMocks.searchMetadata("testIntID", None)
 
-      val result = service.searchMetadataRecord("testOID")
+      val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe None
     }
 
@@ -85,10 +85,10 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
 
   "updateMetaDataRecord" should {
     "return a meta data response" in new Setup {
-      when(mockMetadataRepository.updateMetaData(Matchers.eq("testOID"), Matchers.eq(buildMetadataResponse())))
+      when(mockMetadataRepository.updateMetaData(Matchers.eq("testIntID"), Matchers.eq(buildMetadataResponse())))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
-      val result = service.updateMetaDataRecord("testOID", buildMetadataResponse())
+      val result = service.updateMetaDataRecord("testIntID", buildMetadataResponse())
       await(result) shouldBe buildMetadataResponse()
     }
   }
