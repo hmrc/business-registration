@@ -42,6 +42,8 @@ trait MetadataController extends BaseController with Authenticated with Authoris
   val metricsService: MetricsService
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
+    metricsService.createFootprintCounter.inc()
+
     implicit request =>
       authenticated {
         case NotLoggedIn => Future.successful(Forbidden)
@@ -50,10 +52,16 @@ trait MetadataController extends BaseController with Authenticated with Authoris
           withJsonBody[MetadataRequest]
             {
             request => {
+              println("#########################################################")
+              metricsService.createFootprintCounter.inc()
+              println("#########################################################")
               metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
-                response => timer.stop()
-                            Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
+                response => {
+                  timer.stop()
+                  Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
+                }
               }
+
             }
           }
         }
