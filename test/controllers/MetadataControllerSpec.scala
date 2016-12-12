@@ -19,10 +19,11 @@ package controllers
 import connectors.AuthConnector
 import fixtures.{AuthFixture, MetadataFixture}
 import helpers.SCRSSpec
+import mocks.MetricServiceMock
 import models.{ErrorResponse, Metadata, MetadataResponse}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.FakeRequest
-import services.MetadataService
+import services.{MetadataService, MetricsService}
 import play.api.mvc.Results.{Created, Ok}
 import play.api.test.Helpers._
 
@@ -37,6 +38,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val metadataService = mockMetadataService
       val resourceConn = mockMetadataRepository
       val auth = mockAuthConnector
+      override val metricsService: MetricsService = MetricServiceMock
     }
   }
 

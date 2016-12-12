@@ -52,9 +52,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
           withJsonBody[MetadataRequest]
             {
             request => {
-              println("#########################################################")
               metricsService.createFootprintCounter.inc()
-              println("#########################################################")
               metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
                 response => {
                   timer.stop()
