@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import play.api.test.Helpers._
 
 import scala.concurrent.Future
 import org.mockito.Mockito._
-import org.mockito.Matchers
+import org.mockito.{ArgumentCaptor, Matchers}
 
 class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture {
 
@@ -105,19 +105,31 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
     val regId = "0123456789"
 
     "return a 200 and a metadata model is one is found" in new Setup {
+      val regIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
       AuthorisationMock.mockSuccessfulAuthorisation(regId, validAuthority)
-      MetadataServiceMocks.retrieveMetadataRecord(regId, Some(buildMetadataResponse()))
+      when(controller.metadataService.retrieveMetadataRecord(regIdCaptor.capture()))
+        .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
+
       status(result) shouldBe OK
+      regIdCaptor.getValue shouldBe regId
       await(jsonBodyOf(result)).as[JsValue] shouldBe metadataResponseJsObj
     }
 
     "return a 403 when the user is not logged in" in new Setup {
-      AuthorisationMock.mockNotLoggedIn
+
+      val regIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+      AuthorisationMock.mockNotAuthorised(regId, validAuthority)
+      when(controller.metadataService.retrieveMetadataRecord(regIdCaptor.capture()))
+        .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
       status(result) shouldBe FORBIDDEN
+
+      verify(controller.metadataService, times(0)).retrieveMetadataRecord(Matchers.any())
     }
 
     "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {

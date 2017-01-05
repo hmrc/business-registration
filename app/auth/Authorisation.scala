@@ -77,7 +77,7 @@ trait Authorisation[I] {
       case Some(context) => {
         resource match {
           case None => AuthResourceNotFound(context)
-          case Some((_, context.ids.internalId)) => Authorised (context)
+          case Some((_, context.ids.internalId))  => Authorised (context)
           case Some((_, _)) => NotAuthorised (context)
         }
       }
