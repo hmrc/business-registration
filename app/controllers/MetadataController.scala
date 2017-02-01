@@ -73,6 +73,7 @@ trait MetadataController extends BaseController with Authenticated with Authoris
           val timer = metricsService.searchMetadataTimer.time()
           metadataService.searchMetadataRecord(context.ids.internalId) map {
             case Some(response) => timer.stop()
+              println("===================== resp" + response)
                                    Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             case None => NotFound(ErrorResponse.MetadataNotFound)
           }
