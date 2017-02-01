@@ -19,6 +19,7 @@ package controllers
 import auth._
 import connectors.AuthConnector
 import models._
+import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
@@ -73,7 +74,6 @@ trait MetadataController extends BaseController with Authenticated with Authoris
           val timer = metricsService.searchMetadataTimer.time()
           metadataService.searchMetadataRecord(context.ids.internalId) map {
             case Some(response) => timer.stop()
-              println("===================== resp" + response)
                                    Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             case None => NotFound(ErrorResponse.MetadataNotFound)
           }
@@ -115,6 +115,15 @@ trait MetadataController extends BaseController with Authenticated with Authoris
               response => timer.stop()
                           Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
             }
+        }
+      }
+  }
+
+  def updateLastSignedIn(registrationId: String) = Action.async(parse.json) {
+    implicit request =>
+      authorisedFor(registrationId) { _ =>
+        withJsonBody[DateTime] { dT =>
+          metadataService.updateLastSignedIn(registrationId, dT) map { updatedDT => Ok(Json.toJson(updatedDT))}
         }
       }
   }
