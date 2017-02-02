@@ -18,6 +18,7 @@ package services
 
 import fixtures.{MetadataFixture, MongoFixture}
 import helpers.SCRSSpec
+import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.mockito.Matchers
 import repositories.{MetadataRepository, Repositories, SequenceRepository}
@@ -90,6 +91,26 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
 
       val result = service.updateMetaDataRecord("testIntID", buildMetadataResponse())
       await(result) shouldBe buildMetadataResponse()
+    }
+  }
+
+  "removeMetaDataRecord" should {
+    "return a Boolean" in new Setup {
+      when(mockMetadataRepository.removeMetadata(Matchers.eq("testIntID")))
+        .thenReturn(Future.successful(true))
+
+      val result = service.removeMetadata("testIntID")
+      await(result) shouldBe true
+    }
+  }
+  "update last signed in" should {
+    val currentTime = DateTime.now(DateTimeZone.UTC)
+    "return a date time response" in new Setup {
+      when(mockMetadataRepository.updateLastSignedIn(Matchers.eq("testIntID"), Matchers.eq(currentTime)))
+        .thenReturn(Future.successful(currentTime))
+
+      val result = service.updateLastSignedIn("testIntID", currentTime)
+      await(result) shouldBe currentTime
     }
   }
 }

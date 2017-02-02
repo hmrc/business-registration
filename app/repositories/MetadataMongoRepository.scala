@@ -18,6 +18,7 @@ package repositories
 
 import auth.AuthorisationResource
 import models.{Metadata, MetadataResponse}
+import org.joda.time.{DateTimeZone, DateTime}
 import play.api.Logger
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -36,7 +37,8 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
   def internalIDMetadataSelector(internalID: String): BSONDocument
   def regIDMetadataSelector(registrationID: String): BSONDocument
   def removeMetadata(registrationId: String): Future[Boolean]
-  }
+  def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime]
+}
 
 class MetadataMongoRepository(implicit mongo: () => DB)
   extends ReactiveRepository[Metadata, BSONObjectID](Collections.metadata, mongo, Metadata.formats, ReactiveMongoFormats.objectIdFormats)
@@ -54,6 +56,12 @@ class MetadataMongoRepository(implicit mongo: () => DB)
   override def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(
     "registrationID" -> BSONString(registrationID)
   )
+
+  override def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
+    val selector = regIDMetadataSelector(registrationId)
+    val update = BSONDocument("$set" -> BSONDocument("lastSignedIn" -> dateTime.getMillis))
+    collection.update(selector, update).map(_ => dateTime)
+  }
 
   override def createMetadata(metadata: Metadata): Future[Metadata] = {
     collection.insert(metadata).map { res =>

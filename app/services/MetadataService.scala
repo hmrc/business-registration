@@ -85,4 +85,9 @@ trait MetadataService {
   def removeMetadata(registrationId: String): Future[Boolean] = {
     metadataRepository.removeMetadata(registrationId)
   }
+
+
+  def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
+    metadataRepository.updateLastSignedIn(registrationId, dateTime)
+  }
 }

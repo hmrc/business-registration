@@ -16,6 +16,7 @@
 
 package models
 
+import org.joda.time.{DateTimeZone, DateTime}
 import play.api.libs.json.Json
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -26,18 +27,36 @@ case class Metadata(internalId: String,
                     language: String,
                     submissionResponseEmail: Option[String],
                     completionCapacity: Option[String],
-                    declareAccurateAndComplete: Boolean)
+                    declareAccurateAndComplete: Boolean,
+                    lastSignedIn: DateTime = Metadata.now)
 
 object Metadata extends MetadataValidator {
-  implicit val formats = (
-    (__ \ "internalId").format[String] and
-    (__ \ "registrationID").format[String] and
-    (__ \ "formCreationTimestamp").format[String] and
-    (__ \ "language").format[String](languageValidator) and
-    (__ \ "submissionResponseEmail").formatNullable[String] and
-    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator) and
-    (__ \ "declareAccurateAndComplete").format[Boolean]
-    )(Metadata.apply, unlift(Metadata.unapply))
+
+  def now = DateTime.now(DateTimeZone.UTC)
+
+  val writes: OWrites[Metadata] = (
+    (__ \ "internalId").write[String] and
+      (__ \ "registrationID").write[String] and
+      (__ \ "formCreationTimestamp").write[String] and
+      (__ \ "language").write[String](languageValidator) and
+      (__ \ "submissionResponseEmail").writeNullable[String] and
+      (__ \ "completionCapacity").writeNullable[String](completionCapacityValidator) and
+      (__ \ "declareAccurateAndComplete").write[Boolean] and
+      (__ \ "lastSignedIn").write[DateTime]
+    )(unlift(Metadata.unapply))
+
+  val reads: Reads[Metadata] = (
+    (__ \ "internalId").read[String] and
+      (__ \ "registrationID").read[String] and
+      (__ \ "formCreationTimestamp").read[String] and
+      (__ \ "language").read[String](languageValidator) and
+      (__ \ "submissionResponseEmail").readNullable[String] and
+      (__ \ "completionCapacity").readNullable[String](completionCapacityValidator) and
+      (__ \ "declareAccurateAndComplete").read[Boolean] and
+      (__ \ "lastSignedIn").read[DateTime].orElse(Reads.pure(Metadata.now))
+    )(Metadata.apply _)
+
+  implicit val formats = OFormat(reads, writes)
 }
 
 case class MetadataRequest(language: String)

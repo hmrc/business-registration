@@ -21,6 +21,8 @@ import fixtures.{AuthFixture, MetadataFixture}
 import helpers.SCRSSpec
 import mocks.MetricServiceMock
 import models.{ErrorResponse, Metadata, MetadataResponse}
+import org.joda.time.chrono.ISOChronology
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.FakeRequest
 import services.{MetadataService, MetricsService}
@@ -194,4 +196,105 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       status(result) shouldBe NOT_FOUND
     }
   }
+
+
+  "remove Metadata" should {
+
+    val regId = "0123456789"
+
+    "return a 200 if the regId is found and deleted" in new Setup {
+      val regIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+      AuthorisationMock.mockSuccessfulAuthorisation(regId, validAuthority)
+      when(controller.metadataService.removeMetadata(regIdCaptor.capture()))
+        .thenReturn(Future.successful(true))
+
+      val result = call(controller.removeMetadata(regId), FakeRequest())
+
+      status(result) shouldBe OK
+      regIdCaptor.getValue shouldBe regId
+    }
+
+    "return a 403 when the user is not logged in" in new Setup {
+
+      val regIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+      AuthorisationMock.mockNotAuthorised(regId, validAuthority)
+      when(controller.metadataService.removeMetadata(regIdCaptor.capture()))
+        .thenReturn(Future.successful(false))
+
+      val result = call(controller.removeMetadata(regId), FakeRequest())
+      status(result) shouldBe FORBIDDEN
+
+      verify(controller.metadataService, times(0)).removeMetadata(Matchers.any())
+    }
+
+    "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {
+      AuthorisationMock.mockNotAuthorised(regId, validAuthority)
+
+      val result = call(controller.removeMetadata(regId), FakeRequest())
+      status(result) shouldBe FORBIDDEN
+    }
+
+    "return a 404 when the user is logged in but the requested document doesn't exist" in new Setup {
+      AuthorisationMock.mockAuthResourceNotFound(validAuthority)
+
+      val result = call(controller.removeMetadata(regId), FakeRequest())
+      status(result) shouldBe NOT_FOUND
+    }
+
+    "return a 404 - not found logged in the requested document doesn't exist but got through auth" in new Setup {
+      AuthenticationMocks.getCurrentAuthority(Some(validAuthority))
+      when(mockMetadataRepository.getInternalId(Matchers.eq(regId))).
+        thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
+      MetadataServiceMocks.removeMetadataRecord(regId, false)
+
+      val result = call(controller.removeMetadata(regId), FakeRequest())
+      status(result) shouldBe NOT_FOUND
+     }
+  }
+
+  "update last signed in" should {
+
+    val regId = "0123456789"
+    val currentTime = DateTime.now(DateTimeZone.UTC)
+
+    val currentTimeCaptor = ArgumentCaptor.forClass(classOf[DateTime])
+
+    "return a 200 if Json body can be parsed and last timestamp has been updated" in new Setup {
+      AuthorisationMock.mockSuccessfulAuthorisation(regId, validAuthority)
+
+      when(mockMetadataService.updateLastSignedIn(Matchers.eq(regId), currentTimeCaptor.capture()))
+        .thenReturn(Future.successful(currentTime))
+
+      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
+
+      status(result) shouldBe OK
+
+      Json.toJson(currentTimeCaptor.getValue) shouldBe await(jsonBodyOf(result))
+    }
+
+    "return a 403 when the user is not logged in" in new Setup {
+      AuthorisationMock.mockNotLoggedIn
+
+      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
+      status(result) shouldBe FORBIDDEN
+    }
+
+    "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {
+      AuthorisationMock.mockNotAuthorised(regId, validAuthority)
+
+      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
+      status(result) shouldBe FORBIDDEN
+    }
+
+    "return a 404 when the user is logged in but the requested document doesn't exist" in new Setup {
+      AuthorisationMock.mockAuthResourceNotFound(validAuthority)
+
+      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+
+
 }
