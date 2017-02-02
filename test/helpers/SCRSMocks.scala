@@ -62,6 +62,10 @@ trait SCRSMocks {
       when(mockMetadataService.retrieveMetadataRecord(Matchers.eq(regId)))
         .thenReturn(Future.successful(result))
     }
+    def removeMetadataRecord(regId: String, result: Boolean): OngoingStubbing[Future[Boolean]] = {
+      when(mockMetadataService.removeMetadata(Matchers.eq(regId)))
+        .thenReturn(Future.successful(result))
+    }
   }
 
   object MetadataRepositoryMocks {
