@@ -105,6 +105,17 @@ trait MetadataController extends BaseController with Authenticated with Authoris
       }
   }
 
+  def removeMetadataHP(registrationID: String) = Action.async {
+    implicit request =>
+        val timer = metricsService.removeMetadataTimer.time()
+        metadataService.removeMetadata(registrationID) map {
+          case true => timer.stop()
+                       Ok
+          case false => NotFound
+        }
+
+  }
+
   def updateMetaData(registrationID : String) : Action[JsValue] = Action.async[JsValue](parse.json) {
     implicit request =>
       authorisedFor(registrationID) { _ =>

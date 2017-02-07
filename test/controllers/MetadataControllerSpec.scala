@@ -295,6 +295,22 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       status(result) shouldBe NOT_FOUND
     }
   }
+  "remove Metadata rejected" should {
+
+    val regId = "0123456789"
+
+    "return a 200 if the regId is found and deleted" in new Setup {
+      val regIdCaptor = ArgumentCaptor.forClass(classOf[String])
+
+      when(controller.metadataService.removeMetadata(regIdCaptor.capture()))
+        .thenReturn(Future.successful(true))
+
+      val result = call(controller.removeMetadataHP(regId), FakeRequest())
+
+      status(result) shouldBe OK
+      regIdCaptor.getValue shouldBe regId
+    }
 
 
+  }
 }
