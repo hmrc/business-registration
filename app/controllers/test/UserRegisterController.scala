@@ -16,12 +16,14 @@
 
 package controllers.test
 
+import javax.inject.Inject
+
 import services.UserRegisterService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import play.api.mvc.Action
 
-object UserRegisterController extends UserRegisterController {
-  val userRegisterService = UserRegisterService
+class UserRegisterControllerImp @Inject() (userRegisterServ: UserRegisterService) extends UserRegisterController {
+  val userRegisterService = userRegisterServ
 }
 
 trait UserRegisterController extends BaseController {
@@ -36,3 +38,4 @@ trait UserRegisterController extends BaseController {
     userRegisterService.dropUsers()
   }
 }
+

@@ -21,3 +21,5 @@ import scala.concurrent.Future
 trait AuthorisationResource[I] {
   def getInternalId(id:I) : Future[Option[(I,String)]]
 }
+
+

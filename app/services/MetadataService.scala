@@ -18,17 +18,18 @@ package services
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
+import javax.inject.Inject
 
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
-import repositories.{SequenceRepository, MetadataRepository, Repositories}
+import repositories.{MetadataRepository, Repositories, SequenceRepository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object MetadataService extends MetadataService {
-  override val metadataRepository = Repositories.metadataRepository
-  override val sequenceRepository = Repositories.sequenceRepository
+class MetadataServiceImp @Inject() (repositories: Repositories) extends MetadataService {
+  override val metadataRepository = repositories.metadataRepository
+  override val sequenceRepository = repositories.sequenceRepository
 }
 
 trait MetadataService {

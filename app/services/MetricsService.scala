@@ -16,31 +16,35 @@
 
 package services
 
+import javax.inject.{Inject, Singleton}
+
 import com.codahale.metrics.{Counter, Timer}
-import com.kenshoo.play.metrics.MetricsRegistry
+import com.kenshoo.play.metrics.Metrics
 
 
-object MetricsService extends MetricsService {
+@Singleton
+class MetricsServiceImp @Inject() (val metricsInstance: Metrics) extends MetricsService {
+  val metrics = metricsInstance
 
 
-  override val keystoreReadTimer = MetricsRegistry.defaultRegistry.timer("keystore-read-timer")
-  override val keystoreWriteTimer = MetricsRegistry.defaultRegistry.timer("keystore-write-timer")
+  override val keystoreReadTimer = metrics.defaultRegistry.timer("keystore-read-timer")
+  override val keystoreWriteTimer = metrics.defaultRegistry.timer("keystore-write-timer")
 
-  override val keystoreReadFailed = MetricsRegistry.defaultRegistry.counter("keystore-read-failed-counter")
-  override val keystoreWriteFailed = MetricsRegistry.defaultRegistry.counter("keystore-write-failed-counter")
+  override val keystoreReadFailed = metrics.defaultRegistry.counter("keystore-read-failed-counter")
+  override val keystoreWriteFailed = metrics.defaultRegistry.counter("keystore-write-failed-counter")
 
-  override val keystoreHitCounter = MetricsRegistry.defaultRegistry.counter("keystore-hit-counter")
-  override val keystoreMissCounter = MetricsRegistry.defaultRegistry.counter("keystore-miss-counter")
+  override val keystoreHitCounter = metrics.defaultRegistry.counter("keystore-hit-counter")
+  override val keystoreMissCounter = metrics.defaultRegistry.counter("keystore-miss-counter")
 
-  override val identityVerificationTimer = MetricsRegistry.defaultRegistry.timer("identity-verification-timer")
-  override val identityVerificationFailedCounter = MetricsRegistry.defaultRegistry.counter("identity-verification-failed-counter")
-  override val createMetadataTimer = MetricsRegistry.defaultRegistry.timer("create-metadata-in-br-timer")
-  override val searchMetadataTimer = MetricsRegistry.defaultRegistry.timer("search-metadata-in-br-timer")
-  override val retrieveMetadataTimer = MetricsRegistry.defaultRegistry.timer("retrieve-metadata-in-br-timer")
-  override val removeMetadataTimer = MetricsRegistry.defaultRegistry.timer("remove-metadata-in-br-timer")
-  override val updateMetadataTimer = MetricsRegistry.defaultRegistry.timer("update-metadata-in-br-timer")
+  override val identityVerificationTimer = metrics.defaultRegistry.timer("identity-verification-timer")
+  override val identityVerificationFailedCounter = metrics.defaultRegistry.counter("identity-verification-failed-counter")
+  override val createMetadataTimer = metrics.defaultRegistry.timer("create-metadata-in-br-timer")
+  override val searchMetadataTimer = metrics.defaultRegistry.timer("search-metadata-in-br-timer")
+  override val retrieveMetadataTimer = metrics.defaultRegistry.timer("retrieve-metadata-in-br-timer")
+  override val removeMetadataTimer = metrics.defaultRegistry.timer("remove-metadata-in-br-timer")
+  override val updateMetadataTimer = metrics.defaultRegistry.timer("update-metadata-in-br-timer")
 
-  override val createFootprintCounter = MetricsRegistry.defaultRegistry.counter("number-of-footprints-created-counter")
+  override val createFootprintCounter = metrics.defaultRegistry.counter("number-of-footprints-created-counter")
 
 }
 

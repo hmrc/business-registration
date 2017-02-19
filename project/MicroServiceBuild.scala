@@ -1,16 +1,9 @@
 import sbt.Keys._
 import sbt._
-import uk.gov.hmrc.SbtAutoBuildPlugin
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
-import uk.gov.hmrc.versioning.SbtGitVersioning
 
 object MicroServiceBuild extends Build with MicroService {
 
   val appName = "business-registration"
-
-  override lazy val plugins: Seq[Plugins] = Seq(
-    SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin
-  )
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 
@@ -21,17 +14,20 @@ object MicroServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.PlayImport._
   import play.core.PlayVersion
+  import play.sbt.PlayImport._
 
-  private val microserviceBootstrapVersion = "4.4.0"
+  private val microserviceBootstrapVersion = "5.8.0"
   private val playAuthVersion = "4.2.0"
-  private val playHealthVersion = "1.1.0"
-  private val playJsonLoggerVersion = "2.1.1"
+  private val playHealthVersion = "2.0.0"
+  private val logbackJsonLoggerVersion = "3.1.0"
   private val playUrlBindersVersion = "2.0.0"
   private val playConfigVersion = "3.0.0"
   private val domainVersion = "4.0.0"
-  private val hmrcTestVersion = "1.9.0"
+  private val hmrcTestVersion = "2.2.0"
+  private val scalaTestVersion_test = "3.0.1"
+  private val scalaTestVersion_it = "2.2.6"
+  private val scalaTestPlusVersion = "1.5.1"
   private val playReactivemongoVersion = "4.8.0"
   private val playSchedulingVersion = "3.0.0"
   private val mongoLockVersion = "3.4.0"
@@ -45,7 +41,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-health" % playHealthVersion,
     "uk.gov.hmrc" %% "play-url-binders" % playUrlBindersVersion,
     "uk.gov.hmrc" %% "play-config" % playConfigVersion,
-    "uk.gov.hmrc" %% "play-json-logger" % playJsonLoggerVersion,
+    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "play-scheduling" % playSchedulingVersion,
     "uk.gov.hmrc" %% "mongo-lock" % mongoLockVersion,
@@ -62,8 +58,8 @@ private object AppDependencies {
     def apply() = new TestDependencies {
       override lazy val test = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
-        "org.scalatest" %% "scalatest" % "2.2.6" % scope,
-        "org.scalatestplus" %% "play" % "1.2.0" % scope,
+        "org.scalatest" %% "scalatest" % scalaTestVersion_test % scope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope
@@ -78,7 +74,8 @@ private object AppDependencies {
 
       override lazy val test = Seq(
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
-        "org.scalatest" %% "scalatest" % "2.2.6" % scope,
+        "org.scalatest" %% "scalatest" % scalaTestVersion_it % scope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusVersion % scope,
         "org.pegdown" % "pegdown" % "1.5.0" % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "uk.gov.hmrc" %% "reactivemongo-test" % "1.6.0" % scope

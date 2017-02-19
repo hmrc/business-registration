@@ -16,15 +16,36 @@
 
 package repositories
 
+import javax.inject.Inject
+
 import play.modules.reactivemongo.ReactiveMongoPlugin
 
-object Repositories {
-  private implicit val connection = {
-    import play.api.Play.current
-    ReactiveMongoPlugin.mongoConnector.db
-  }
+class RepositoriesImp @Inject() (metadataMR: MetadataMongoRepository, userDetailsMR: UserDetailsMongoRepository, sequenceMR: SequenceMongoRepository)
+extends Repositories {
 
-  lazy val metadataRepository = new MetadataMongoRepository
-  lazy val userDetailsRepository = new UserDetailsMongoRepository
-  lazy val sequenceRepository = new SequenceMongoRepository
+  lazy val metadataRepository = metadataMR
+  lazy val userDetailsRepository = userDetailsMR
+  lazy val sequenceRepository = sequenceMR
 }
+
+trait Repositories {
+  val metadataRepository: MetadataMongoRepository
+  val userDetailsRepository: UserDetailsMongoRepository
+  val sequenceRepository: SequenceMongoRepository
+
+}
+
+//object Repositories {
+//  private implicit val connection = {
+//    import play.api.Play.current
+//    ReactiveMongoPlugin.mongoConnector.db
+//  }
+//
+//  lazy val metadataRepository = new MetadataMongoRepository
+//  lazy val userDetailsRepository = new UserDetailsMongoRepository
+//  lazy val sequenceRepository = new SequenceMongoRepository
+//}
+
+
+
+

@@ -32,18 +32,19 @@
 
 package services
 
-import models.{ErrorResponse, WhiteListDetailsSubmit, Response}
+import javax.inject.Inject
+
+import models.{ErrorResponse, Response, WhiteListDetailsSubmit}
 import play.api.libs.json.Json
 import repositories.{Repositories, UserDetailsRepository}
 import play.api.mvc.Result
 import play.api.mvc.Results.{Created, NotFound, Ok}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.concurrent.Future
 
-object UserRegisterService extends UserRegisterService {
-  val userDetailsRepository = Repositories.userDetailsRepository
+class UserRegisterServiceImp @Inject() (repositories: Repositories) extends UserRegisterService {
+  val userDetailsRepository = repositories.userDetailsRepository
 }
 
 trait UserRegisterService {

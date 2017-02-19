@@ -16,6 +16,8 @@
 
 package controllers
 
+import javax.inject.Inject
+
 import auth._
 import connectors.AuthConnector
 import models._
@@ -30,11 +32,12 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object MetadataController extends MetadataController {
-  val metadataService = MetadataService
-  val resourceConn = MetadataService.metadataRepository
-  val auth = AuthConnector
-  override val metricsService: MetricsService = MetricsService
+class MetadataControllerImp @Inject() (metadata: MetadataService, authConnector: AuthConnector, metrics: MetricsService)
+  extends MetadataController {
+  val metadataService = metadata
+  val resourceConn = metadataService.metadataRepository
+  val auth = authConnector
+  val metricsService: MetricsService = metrics
 }
 
 trait MetadataController extends BaseController with Authenticated with Authorisation[String] {
