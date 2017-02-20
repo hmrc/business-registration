@@ -25,7 +25,7 @@ import play.api.mvc.Results._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-sealed trait AuthorisationResult {}
+sealed trait AuthorisationResult
 case object NotLoggedInOrAuthorised extends AuthorisationResult
 final case class NotAuthorised(authContext: Authority) extends AuthorisationResult
 final case class Authorised(authContext: Authority) extends AuthorisationResult

@@ -36,12 +36,11 @@ import org.mockito.{ArgumentCaptor, Matchers}
 class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture {
 
   class Setup {
-    val controller = new MetadataController {
-      val metadataService = mockMetadataService
-      val resourceConn = mockMetadataRepository
-      val auth = mockAuthConnector
-      override val metricsService: MetricsService = MetricServiceMock
-    }
+    val controller = new MetadataController(
+      mockMetadataService,
+      mockAuthConnector,
+      MetricServiceMock
+    )
   }
 
   "MetadataController" should {

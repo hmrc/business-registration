@@ -16,7 +16,7 @@
 
 package controllers
 
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 
 import auth._
 import connectors.AuthConnector
@@ -32,23 +32,24 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataControllerImp @Inject() (metadata: MetadataService, authConnector: AuthConnector, metrics: MetricsService)
-  extends MetadataController {
-  val metadataService = metadata
+//class MetadataControllerImp @Inject() (metadata: MetadataService, authConnector: AuthConnector, metrics: MetricsService)
+//  extends MetadataController {
+//  val metadataService = metadata
+//  val resourceConn = metadataService.metadataRepository
+//  val auth = authConnector
+//  val metricsService: MetricsService = metrics
+//}
+
+@Singleton
+class MetadataController @Inject() (metadataService: MetadataService, authConnector: AuthConnector, metricsService: MetricsService)
+  extends BaseController with Authenticated with Authorisation[String] {
+
   val resourceConn = metadataService.metadataRepository
   val auth = authConnector
-  val metricsService: MetricsService = metrics
-}
-
-trait MetadataController extends BaseController with Authenticated with Authorisation[String] {
-
-  val metadataService: MetadataService
-  val metricsService: MetricsService
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
-    metricsService.createFootprintCounter.inc()
-
     implicit request =>
+      metricsService.createFootprintCounter.inc()
       authenticated {
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>

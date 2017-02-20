@@ -18,7 +18,7 @@ package services
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
@@ -27,15 +27,16 @@ import repositories.{MetadataRepository, Repositories, SequenceRepository}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MetadataServiceImp @Inject() (repositories: Repositories) extends MetadataService {
-  override val metadataRepository = repositories.metadataRepository
-  override val sequenceRepository = repositories.sequenceRepository
-}
+//class MetadataServiceImp @Inject() (repositories: Repositories) extends MetadataService {
+//  override val metadataRepository = repositories.metadataRepository
+//  override val sequenceRepository = repositories.sequenceRepository
+//}
 
-trait MetadataService {
+@Singleton
+class MetadataService @Inject() (repositories: Repositories) {
 
-  val metadataRepository: MetadataRepository
-  val sequenceRepository: SequenceRepository
+  val metadataRepository = repositories.metadataRepository
+  val sequenceRepository = repositories.sequenceRepository
 
   def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
