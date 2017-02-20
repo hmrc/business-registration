@@ -25,6 +25,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
+import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -41,10 +42,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 //}
 
 @Singleton
-class MetadataController @Inject() (metadataService: MetadataService, authConnector: AuthConnector, metricsService: MetricsService)
+class MetadataController @Inject() (metadataService: MetadataService, authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataMongoRepository)
   extends BaseController with Authenticated with Authorisation[String] {
 
-  val resourceConn = metadataService.metadataRepository
+  val resourceConn = metadataRepo
   val auth = authConnector
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {

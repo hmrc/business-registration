@@ -18,17 +18,19 @@ package controllers.test
 
 import javax.inject.Inject
 
+import com.google.inject.Singleton
 import services.UserRegisterService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import play.api.mvc.Action
 
-class UserRegisterControllerImp @Inject() (userRegisterServ: UserRegisterService) extends UserRegisterController {
-  val userRegisterService = userRegisterServ
-}
+//class UserRegisterControllerImp @Inject() (userRegisterServ: UserRegisterService) extends UserRegisterController {
+//  val userRegisterService = userRegisterServ
+//}
 
-trait UserRegisterController extends BaseController {
+@Singleton
+class UserRegisterController @Inject() (userRegisterService: UserRegisterService) extends BaseController {
 
-  val userRegisterService : UserRegisterService
+  //val userRegisterService : UserRegisterService
 
   def searchRegistrations(email : String)  = Action.async { implicit request =>
     userRegisterService.searchRegistrations(email)

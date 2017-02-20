@@ -18,10 +18,15 @@ package repositories
 
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.test.{FakeApplication, Helpers}
+import reactivemongo.json.collection.JSONCollection
 import uk.gov.hmrc.mongo.MongoSpecSupport
+import scala.concurrent.duration._
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.postfixOps
 
 class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ScalaFutures with Eventually
   with WithFakeApplication {
@@ -34,6 +39,17 @@ class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
 
   override def afterAll() = new Setup {
     await(repository.drop)
+  }
+
+  implicit final def app = new FakeApplication()
+  val timeout = 10 seconds
+
+  override def withFixture(test: Nothing) = {
+    Helpers.running(app) {
+      val collection = mongo().collection[JSONCollection]("collectionName")
+      Await.ready(collection.drop(), timeout)
+      super.withFixture(test)
+    }
   }
 
   val testSequence = "testSequence"

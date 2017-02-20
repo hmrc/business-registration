@@ -18,12 +18,10 @@ package helpers
 
 import connectors.{AuthConnector, Authority}
 import models.{Metadata, MetadataResponse}
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
 import org.mockito.stubbing.OngoingStubbing
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
-import play.api.libs.json.JsValue
-import play.api.mvc.Result
 import repositories.{SequenceRepository, MetadataMongoRepository}
 import services.MetadataService
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -42,82 +40,82 @@ trait SCRSMocks {
 
   object SequenceRepositoryMocks {
     def getNext(sequence: String, returns: Int) = {
-      when(mockSequenceRepository.getNext(Matchers.contains(sequence)))
+      when(mockSequenceRepository.getNext(contains(sequence)))
         .thenReturn(Future.successful(returns))
     }
   }
 
   object MetadataServiceMocks {
     def createMetadataRecord(result: MetadataResponse): OngoingStubbing[Future[MetadataResponse]] = {
-      when(mockMetadataService.createMetadataRecord(Matchers.any(), Matchers.any()))
+      when(mockMetadataService.createMetadataRecord(any(), any()))
         .thenReturn(Future.successful(result))
     }
 
     def searchMetadataRecord(internalId: String, result: Option[MetadataResponse]): OngoingStubbing[Future[Option[MetadataResponse]]] = {
-      when(mockMetadataService.searchMetadataRecord(Matchers.any()))
+      when(mockMetadataService.searchMetadataRecord(any()))
         .thenReturn(Future.successful(result))
     }
 
     def retrieveMetadataRecord(regId: String, result: Option[MetadataResponse]  ): OngoingStubbing[Future[Option[MetadataResponse]]] = {
-      when(mockMetadataService.retrieveMetadataRecord(Matchers.eq(regId)))
+      when(mockMetadataService.retrieveMetadataRecord(eqTo(regId)))
         .thenReturn(Future.successful(result))
     }
     def removeMetadataRecord(regId: String, result: Boolean): OngoingStubbing[Future[Boolean]] = {
-      when(mockMetadataService.removeMetadata(Matchers.eq(regId)))
+      when(mockMetadataService.removeMetadata(eqTo(regId)))
         .thenReturn(Future.successful(result))
     }
   }
 
   object MetadataRepositoryMocks {
     def createMetadata(metadata: Metadata): OngoingStubbing[Future[Metadata]] = {
-      when(mockMetadataRepository.createMetadata(Matchers.any[Metadata]()))
+      when(mockMetadataRepository.createMetadata(any[Metadata]()))
         .thenReturn(Future.successful(metadata))
     }
 
     def searchMetadata(internalID: String, metadata: Option[Metadata]): OngoingStubbing[Future[Option[Metadata]]] = {
-      when(mockMetadataRepository.searchMetadata(Matchers.any()))
+      when(mockMetadataRepository.searchMetadata(any()))
         .thenReturn(Future.successful(metadata))
     }
 
     def retrieveMetadata(regID: String, metadata: Option[Metadata]): OngoingStubbing[Future[Option[Metadata]]] = {
-      when(mockMetadataRepository.retrieveMetadata(Matchers.any()))
+      when(mockMetadataRepository.retrieveMetadata(any()))
         .thenReturn(Future.successful(metadata))
     }
   }
 
   object AuthenticationMocks {
     def getCurrentAuthority(authority: Option[Authority]): OngoingStubbing[Future[Option[Authority]]] = {
-      when(mockAuthConnector.getCurrentAuthority()(Matchers.any[HeaderCarrier]()))
+      when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
         .thenReturn(Future.successful(authority))
     }
   }
 
   object AuthorisationMock {
     def mockSuccessfulAuthorisation(registrationId: String, authority: Authority) = {
-      when(mockMetadataRepository.getInternalId(Matchers.eq(registrationId))).
+      when(mockMetadataRepository.getInternalId(eqTo(registrationId))).
         thenReturn(Future.successful(Some((registrationId, authority.ids.internalId))))
-      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+      when(mockAuthConnector.getCurrentAuthority()(any()))
         .thenReturn(Future.successful(Some(authority)))
     }
 
     def mockNotLoggedIn = {
-      when(mockAuthConnector.getCurrentAuthority()(Matchers.any[HeaderCarrier]()))
+      when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
         .thenReturn(Future.successful(None))
-      when(mockMetadataRepository.getInternalId(Matchers.any())).
+      when(mockMetadataRepository.getInternalId(any())).
         thenReturn(Future.successful(None))
     }
 
     def mockNotAuthorised(registrationId: String, authority: Authority) = {
-      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+      when(mockAuthConnector.getCurrentAuthority()(any()))
         .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getInternalId(Matchers.eq(registrationId))).
+      when(mockMetadataRepository.getInternalId(eqTo(registrationId))).
         thenReturn(Future.successful(Some((registrationId, authority.ids.internalId + "xxx"))))
     }
 
     def mockAuthResourceNotFound(authority: Authority) = {
-      when(mockAuthConnector.getCurrentAuthority()(Matchers.any()))
+      when(mockAuthConnector.getCurrentAuthority()(any()))
         .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getInternalId(Matchers.any())).
+      when(mockMetadataRepository.getInternalId(any())).
         thenReturn(Future.successful(None))
     }
   }

@@ -22,7 +22,7 @@ import javax.inject.{Singleton, Inject}
 
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
-import repositories.{MetadataRepository, Repositories, SequenceRepository}
+import repositories._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,10 +33,7 @@ import scala.concurrent.Future
 //}
 
 @Singleton
-class MetadataService @Inject() (repositories: Repositories) {
-
-  val metadataRepository = repositories.metadataRepository
-  val sequenceRepository = repositories.sequenceRepository
+class MetadataService @Inject() (metadataRepository: MetadataMongoRepository, sequenceRepository: SequenceMongoRepository) {
 
   def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>

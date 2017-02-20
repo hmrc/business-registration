@@ -17,7 +17,7 @@
 package helpers
 
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 import org.mockito.Mockito.reset
 
