@@ -25,7 +25,7 @@ import play.api.mvc.Results._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-sealed trait AuthorisationResult {}
+sealed trait AuthorisationResult
 case object NotLoggedInOrAuthorised extends AuthorisationResult
 final case class NotAuthorised(authContext: Authority) extends AuthorisationResult
 final case class Authorised(authContext: Authority) extends AuthorisationResult
@@ -33,14 +33,14 @@ final case class AuthResourceNotFound(authContext: Authority) extends Authorisat
 
 trait Authorisation[I] {
 
-  val auth: AuthConnector
+  val authConnector: AuthConnector
   val resourceConn : AuthorisationResource[I]
 
   def authorised(id:I)(f: => AuthorisationResult => Future[Result])(implicit hc: HeaderCarrier) = {
     Logger.debug(s"Current user id is ${hc.userId}") // always outputs NONE :-(
 
     for {
-      authority <- auth.getCurrentAuthority()
+      authority <- authConnector.getCurrentAuthority()
       resource <- resourceConn.getInternalId(id)
       result <- f(mapToAuthResult(authority, resource))
     } yield {
@@ -51,7 +51,7 @@ trait Authorisation[I] {
 
   def authorisedFor(registrationId: I)(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
     (for {
-        authority <- auth.getCurrentAuthority()
+        authority <- authConnector.getCurrentAuthority()
         resource <- resourceConn.getInternalId(registrationId)
       } yield {
         Logger.debug(s"Got authority = $authority")

@@ -16,8 +16,10 @@
 
 package controllers.test
 
-import org.mockito.Matchers
-import org.scalatest.mock.MockitoSugar
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
+import org.mockito.ArgumentMatchers.any
+import org.scalatest.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import repositories.MetadataMongoRepository
 import uk.gov.hmrc.play.test.UnitSpec
@@ -36,10 +38,13 @@ class BRMongoTestControllerSpec extends UnitSpec with MockitoSugar {
     }
   }
 
+  implicit val actorSystem = ActorSystem()
+  implicit val materializer: Materializer = ActorMaterializer()
+
   "dropMetadataCollection" should {
 
     "return a 200 with a success message" in new Setup {
-      when(mockMetadataRepository.drop(Matchers.any())).thenReturn(Future.successful(true))
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
 
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
@@ -47,7 +52,7 @@ class BRMongoTestControllerSpec extends UnitSpec with MockitoSugar {
     }
 
     "return a 200 with an error message if the collection could not be dropped" in new Setup {
-      when(mockMetadataRepository.drop(Matchers.any())).thenReturn(Future.successful(false))
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
 
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK

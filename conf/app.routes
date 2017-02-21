@@ -1,10 +1,10 @@
 # microservice specific routes
 
-GET        /business-tax-registration                                       controllers.MetadataController.searchMetadata
-GET        /business-tax-registration/:registrationID                       controllers.MetadataController.retrieveMetadata(registrationID)
-POST       /business-tax-registration                                       controllers.MetadataController.createMetadata
-POST       /business-tax-registration/update/:registrationID                controllers.MetadataController.updateMetaData(registrationID)
-PATCH        /business-tax-registration/last-signed-in/:registrationID      controllers.MetadataController.updateLastSignedIn(registrationID)
-GET        /business-tax-registration/remove/:registrationID                controllers.MetadataController.removeMetadata(registrationID)
+GET        /business-tax-registration                                       @controllers.MetadataController.searchMetadata
+GET        /business-tax-registration/:registrationID                       @controllers.MetadataController.retrieveMetadata(registrationID)
+POST       /business-tax-registration                                       @controllers.MetadataController.createMetadata
+POST       /business-tax-registration/update/:registrationID                @controllers.MetadataController.updateMetaData(registrationID)
+PATCH        /business-tax-registration/last-signed-in/:registrationID      @controllers.MetadataController.updateLastSignedIn(registrationID)
+GET        /business-tax-registration/remove/:registrationID                @controllers.MetadataController.removeMetadata(registrationID)
 
-POST       /beta-sign-up                                                    controllers.beta.UserRegisterController.createUserRecord
+POST       /beta-sign-up                                                    @controllers.beta.UserRegisterController.createUserRecord

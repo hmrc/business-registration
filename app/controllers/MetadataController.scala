@@ -16,13 +16,17 @@
 
 package controllers
 
+import javax.inject.{Singleton, Inject}
+
 import auth._
 import connectors.AuthConnector
 import models._
 import org.joda.time.DateTime
+import play.api.libs.crypto.CSRFTokenSigner
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
+import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
@@ -30,28 +34,28 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object MetadataController extends MetadataController {
-  val metadataService = MetadataService
-  val resourceConn = MetadataService.metadataRepository
-  val auth = AuthConnector
-  override val metricsService: MetricsService = MetricsService
-}
+//class MetadataControllerImp @Inject() (metadata: MetadataService, authConnector: AuthConnector, metrics: MetricsService)
+//  extends MetadataController {
+//  val metadataService = metadata
+//  val resourceConn = metadataService.metadataRepository
+//  val auth = authConnector
+//  val metricsService: MetricsService = metrics
+//}
 
-trait MetadataController extends BaseController with Authenticated with Authorisation[String] {
+@Singleton
+class MetadataController @Inject() (metadataService: MetadataService, val authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataMongoRepository)
+  extends BaseController with Authenticated with Authorisation[String] {
 
-  val metadataService: MetadataService
-  val metricsService: MetricsService
+  val resourceConn = metadataRepo
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
-    metricsService.createFootprintCounter.inc()
-
     implicit request =>
+      metricsService.createFootprintCounter.inc()
       authenticated {
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>
           val timer = metricsService.createMetadataTimer.time()
-          withJsonBody[MetadataRequest]
-            {
+          withJsonBody[MetadataRequest]{
             request => {
               metricsService.createFootprintCounter.inc()
               metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
@@ -60,7 +64,6 @@ trait MetadataController extends BaseController with Authenticated with Authoris
                   Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
                 }
               }
-
             }
           }
         }

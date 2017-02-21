@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package fixtures
+package config.filters
 
-import connectors.{Authority, UserIds}
+import javax.inject.Inject
 
-trait AuthFixture {
+import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
+import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
 
-  val validAuthority = Authority(
-    "test.uri", "test.userDetailsLink", UserIds("tiid","teid")
-  )
+class MicroserviceLoggingFilter @Inject()(controllerConf: ControllerConfiguration) extends LoggingFilter with MicroserviceFilterSupport {
+
+  override def controllerNeedsLogging(controllerName: String) =
+    controllerConf.paramsForController(controllerName).needsLogging
 }

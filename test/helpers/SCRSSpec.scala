@@ -16,17 +16,17 @@
 
 package helpers
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
-import org.mockito.Mockito.reset
 
-trait SCRSSpec extends UnitSpec with MockitoSugar with WithFakeApplication with SCRSMocks with BeforeAndAfterEach {
-
-  override def beforeEach() {
-    reset(mockMetadataService)
-    reset(mockMetadataRepository)
-    reset(mockAuthConnector)
-    reset(mockSequenceRepository)
-  }
+//todo: Scalatest 3.0.1 is not compatible with Scalatestplus-play 1.5.x. The version that it's built against is "org.scalatest" %% "scalatest" % "2.2.6".
+//todo: OneAppPerSuite will throw ClassCastExceptions when trying to stop the application after a suite of tests
+//todo: see https://github.com/playframework/scalatestplus-play/issues/55
+trait SCRSSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+  implicit val actorSystem: ActorSystem = fakeApplication.actorSystem
+  implicit val materializer: Materializer = fakeApplication.materializer
 }

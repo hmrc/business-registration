@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package fixtures
+package config.filters
 
-import connectors.{Authority, UserIds}
+import javax.inject.Inject
 
-trait AuthFixture {
+import play.api.http.DefaultHttpFilters
+import uk.gov.hmrc.play.filters.{NoCacheFilter, RecoveryFilter}
 
-  val validAuthority = Authority(
-    "test.uri", "test.userDetailsLink", UserIds("tiid","teid")
+class MicroserviceFilters @Inject()(auditFilter: MicroserviceAuditFilter,
+                                    loggingFilter: MicroserviceLoggingFilter,
+                                    authFilter: MicroserviceAuthFilter)
+  extends DefaultHttpFilters(
+    auditFilter,
+    loggingFilter,
+    authFilter,
+    NoCacheFilter,
+    RecoveryFilter
   )
-}
+
+
+

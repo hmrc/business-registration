@@ -16,19 +16,19 @@
 
 package controllers.beta
 
+import javax.inject.Inject
+
 import models.WhiteListDetailsSubmit
 import play.api.libs.json.JsValue
 import play.api.mvc.Action
 import services.UserRegisterService
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-object UserRegisterController extends UserRegisterController {
-  val userRegisterService = UserRegisterService
-}
+//class UserRegisterControllerImp @Inject() (userRegisterServ: UserRegisterService) extends UserRegisterController {
+//  val userRegisterService = userRegisterServ
+//}
 
-trait UserRegisterController extends BaseController {
-
-  val userRegisterService : UserRegisterService
+class UserRegisterController @Inject() (userRegisterService: UserRegisterService) extends BaseController {
 
   def createUserRecord : Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[WhiteListDetailsSubmit] {

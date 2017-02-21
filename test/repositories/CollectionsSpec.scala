@@ -16,9 +16,9 @@
 
 package repositories
 
-import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
+import uk.gov.hmrc.play.test.UnitSpec
 
-class CollectionsSpec extends UnitSpec with WithFakeApplication {
+class CollectionsSpec extends UnitSpec {
 
   "Collections" should {
     "contain the correct name for the metadata collection" in {

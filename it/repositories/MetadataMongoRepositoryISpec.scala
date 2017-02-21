@@ -19,15 +19,26 @@ package repositories
 import java.util.UUID
 
 import models.Metadata
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest._
+import org.scalatest.fixture.NoArg
+import scala.concurrent.duration._
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import play.api.inject.guice.GuiceApplicationBuilder
+import reactivemongo.api.DefaultDB
+import reactivemongo.json.collection.JSONCollection
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.mongo.MongoSpecSupport
+import play.api.test.Helpers
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.postfixOps
 
-class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ScalaFutures with Eventually
-  with WithFakeApplication {
+class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfter with ScalaFutures with Eventually {
+  //this: TestSuite =>
+
+  def setupRepo = new MetadataMongoRepository()
 
   class Setup {
     val repository = new MetadataMongoRepository()
@@ -35,8 +46,8 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
     await(repository.ensureIndexes)
   }
 
-  override def afterAll() = new Setup {
-    await(repository.drop)
+  after {
+    await(setupRepo.drop)
   }
 
   "MetadataRepository" should {

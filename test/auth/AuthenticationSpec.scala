@@ -17,30 +17,29 @@
 package auth
 
 import connectors.{AuthConnector, Authority, UserIds}
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
-import org.scalatest.{BeforeAndAfter, ShouldMatchers, WordSpecLike}
+import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results
-import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class AuthenticatedHelperSpec extends FakeApplication with WordSpecLike with ShouldMatchers with MockitoSugar with BeforeAndAfter {
+class AuthenticationSpec extends UnitSpec with MockitoSugar {
 
   implicit val hc = HeaderCarrier()
 
   val mockAuth = mock[AuthConnector]
 
   object Authenticated extends Authenticated {
-    val auth = mockAuth
+    val authConnector = mockAuth
   }
 
-  before {
-    reset(mockAuth)
-  }
+//  before {
+//    reset(mockAuth)
+//  }
 
   "The authentication helper" should {
 
@@ -48,7 +47,7 @@ class AuthenticatedHelperSpec extends FakeApplication with WordSpecLike with Sho
 
       val a = Authority("x", "z", UserIds("tiid","teid"))
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).
+      when(mockAuth.getCurrentAuthority()(any())).
         thenReturn(Future.successful(Some(a)))
 
       val result = Authenticated.authenticated { authResult => {
@@ -62,7 +61,7 @@ class AuthenticatedHelperSpec extends FakeApplication with WordSpecLike with Sho
 
     "indicate there's no logged in user where there isn't a valid bearer token" in {
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).
+      when(mockAuth.getCurrentAuthority()(any())).
         thenReturn(Future.successful(None))
 
       val result = Authenticated.authenticated { authResult => {
