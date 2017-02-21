@@ -22,6 +22,7 @@ import auth._
 import connectors.AuthConnector
 import models._
 import org.joda.time.DateTime
+import play.api.libs.crypto.CSRFTokenSigner
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import play.api.Logger
@@ -42,11 +43,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 //}
 
 @Singleton
-class MetadataController @Inject() (metadataService: MetadataService, authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataMongoRepository)
+class MetadataController @Inject() (metadataService: MetadataService, val authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataMongoRepository)
   extends BaseController with Authenticated with Authorisation[String] {
 
   val resourceConn = metadataRepo
-  val auth = authConnector
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -55,8 +55,7 @@ class MetadataController @Inject() (metadataService: MetadataService, authConnec
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>
           val timer = metricsService.createMetadataTimer.time()
-          withJsonBody[MetadataRequest]
-            {
+          withJsonBody[MetadataRequest]{
             request => {
               metricsService.createFootprintCounter.inc()
               metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
@@ -65,7 +64,6 @@ class MetadataController @Inject() (metadataService: MetadataService, authConnec
                   Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
                 }
               }
-
             }
           }
         }

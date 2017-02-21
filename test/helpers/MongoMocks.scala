@@ -32,7 +32,8 @@ import scala.collection.generic.CanBuildFrom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect._
 
-trait MongoMocks extends MockitoSugar {
+trait MongoMocks {
+  this: MockitoSugar =>
 
   implicit val mockMongoDb = mock[DefaultDB]
 

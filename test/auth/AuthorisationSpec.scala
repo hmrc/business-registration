@@ -35,7 +35,7 @@ class AuthorisationSpec extends UnitSpec with MockitoSugar {
   val mockResource = mock[AuthorisationResource[String]]
 
   object Authorisation extends Authorisation[String] {
-    val auth = mockAuth
+    val authConnector = mockAuth
     val resourceConn = mockResource
   }
 

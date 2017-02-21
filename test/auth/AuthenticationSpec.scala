@@ -34,7 +34,7 @@ class AuthenticationSpec extends UnitSpec with MockitoSugar {
   val mockAuth = mock[AuthConnector]
 
   object Authenticated extends Authenticated {
-    val auth = mockAuth
+    val authConnector = mockAuth
   }
 
 //  before {

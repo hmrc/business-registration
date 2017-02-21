@@ -18,7 +18,6 @@ package repositories
 
 import javax.inject.Inject
 
-import play.modules.reactivemongo.ReactiveMongoPlugin
 
 class RepositoriesImp @Inject() (metadataMR: MetadataMongoRepository, userDetailsMR: UserDetailsMongoRepository, sequenceMR: SequenceMongoRepository)
 extends Repositories {

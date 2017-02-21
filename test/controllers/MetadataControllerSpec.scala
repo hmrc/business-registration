@@ -16,14 +16,13 @@
 
 package controllers
 
-import akka.actor.ActorSystem
-import akka.stream.{Materializer, ActorMaterializer}
 import connectors.{Authority, AuthConnector}
 import fixtures.{AuthFixture, MetadataFixture}
-import helpers.AuthMocks
+import helpers.{SCRSSpec, AuthMocks}
 import mocks.MetricServiceMock
 import models.ErrorResponse
 import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -32,78 +31,68 @@ import services.MetadataService
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.ArgumentCaptor
-import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixture with MockitoSugar with AuthMocks {
+class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture with AuthMocks with BeforeAndAfterEach {
 
   val mockMetadataService = mock[MetadataService]
   val mockMetadataRepo = mock[MetadataMongoRepository]
   implicit val mockAuthConnector = mock[AuthConnector]
 
-  //todo add materializer to SCRSSpec as the underlying Action.run() call in play.api.test.Helpers.call() needs it
-  //todo find out if it can be found elsewhere instead of creating new one here
-  //todo speak to CJWalks about using .run() to force Future[Results] from Actions - where does he get implicit Materializer from?
-  implicit val actorSystem = ActorSystem()
-  implicit val materializer: Materializer = ActorMaterializer()
+  override protected def beforeEach() = {
+    reset(
+      mockAuthConnector,
+      mockMetadataRepo,
+      mockMetadataService
+    )
+  }
 
-//  override protected def beforeEach() = {
-//    reset(
-//      mockMetadataService,
-//      mockAuthConnector,
-//      mockMetadataRepo,
-//      MetricServiceMock
-//    )
-//  }
-
-  def setupController(authority: Option[Authority]): MetadataController = {
+  def setupController(authority: Option[Authority] = None): MetadataController = {
     mockGetCurrentAuthority(authority)
     new MetadataController(mockMetadataService, mockAuthConnector, MetricServiceMock, mockMetadataRepo)
   }
 
-  "calling createMetadata" when {
+  implicit val hc = HeaderCarrier()
 
-    "the service returns a newly created metadata entry" should {
-      val controller = setupController(Some(validAuthority))
+  "calling createMetadata" should {
+
+    "return a 201" in {
 
       when(mockMetadataService.createMetadataRecord(any(), any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
+
+      val controller = setupController(Some(validAuthority))
 
       val metadataRequest = buildMetadataRequest()
       val request = FakeRequest().withJsonBody(Json.toJson(metadataRequest))
       val result = call(controller.createMetadata, request)
 
-      "return a 201" in {
-        status(result) shouldBe CREATED
-      }
+      status(result) shouldBe CREATED
 
-      "return a response which contains a valid metadata response as json" in {
-        contentType(result) shouldBe Some("application/json")
-        await(jsonBodyOf(result)).as[JsObject] shouldBe metadataResponseJsObj
-      }
+      contentType(result) shouldBe Some("application/json")
+      await(jsonBodyOf(result)).as[JsObject] shouldBe metadataResponseJsObj
     }
 
-    "the user is not authenticated" should {
+    "return a 403 when the user is not authenticated" in {
+
       val controller = setupController(None)
       val request = FakeRequest().withJsonBody(validMetadataJson)
       val result = call(controller.createMetadata, request)
 
-      "return a 403" in {
-        status(result) shouldBe FORBIDDEN
-      }
+      status(result) shouldBe FORBIDDEN
     }
   }
 
   "searchMetadata" should {
 
     "return a 200 and a MetadataResponse as json if metadata is found" in {
-      val controller = setupController(Some(validAuthority))
 
       when(mockMetadataService.searchMetadataRecord(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
-      //MetadataServiceMocks.searchMetadataRecord(validAuthority.ids.internalId, Some(buildMetadataResponse()))
+
+      val controller = setupController(Some(validAuthority))
 
       val result = call(controller.searchMetadata, FakeRequest())
       status(result) shouldBe OK
@@ -120,7 +109,6 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
     "return a 404 - NotFound when the resource doesn't exist" in {
       val controller = setupController(Some(validAuthority))
 
-      //MetadataServiceMocks.searchMetadataRecord(validAuthority.ids.internalId, None)
       when(mockMetadataService.searchMetadataRecord(any()))
         .thenReturn(Future.successful(None))
 
@@ -135,12 +123,15 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
     val regId = "0123456789"
 
     "return a 200 and a metadata model is one is found" in {
-      val controller = setupController(Some(validAuthority))
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
       when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
+
+      mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
+
+      val controller = setupController(Some(validAuthority))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
 
@@ -150,12 +141,15 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
     }
 
     "return a 403 when the user is not logged in" in {
-      val controller = setupController(Some(validAuthority))
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
       when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
+
+      mockNotLoggedIn(mockMetadataRepo)
+
+      val controller = setupController(None)
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
       status(result) shouldBe FORBIDDEN
@@ -164,6 +158,8 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
     }
 
     "return a 403 when the user is logged in but not authorised to access the resource" in {
+      mockNotAuthorised(mockMetadataRepo, regId, validAuthority)
+
       val controller = setupController(Some(validAuthority))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
@@ -171,6 +167,8 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
     }
 
     "return a 404 when the user is logged in but the requested document doesn't exist" in {
+      mockAuthResourceNotFound(mockMetadataRepo, validAuthority)
+
       val controller = setupController(Some(validAuthority))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
@@ -182,7 +180,7 @@ class MetadataControllerSpec extends UnitSpec with MetadataFixture with AuthFixt
 
       when(mockMetadataRepo.getInternalId(eqTo(regId))).
         thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
-      //MetadataServiceMocks.retrieveMetadataRecord(regId, None)
+
       when(mockMetadataService.retrieveMetadataRecord(eqTo(regId)))
         .thenReturn(Future.successful(None))
 

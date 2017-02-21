@@ -20,7 +20,7 @@ import connectors.{Authority, UserIds}
 
 trait AuthFixture {
 
-  lazy val validAuthority = Authority(
+  val validAuthority = Authority(
     "test.uri", "test.userDetailsLink", UserIds("tiid","teid")
   )
 }

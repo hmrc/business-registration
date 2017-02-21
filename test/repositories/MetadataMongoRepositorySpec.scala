@@ -19,20 +19,20 @@ package repositories
 import java.util.UUID
 
 import fixtures.MetadataFixture
-import helpers.MongoMocks
+import helpers.{SCRSSpec, MongoMocks}
 import models.{Metadata, MetadataResponse}
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.BeforeAndAfter
-import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import reactivemongo.bson.{BSONDocument, BSONString}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.mongo.MongoSpecSupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataMongoRepositorySpec extends UnitSpec with MongoSpecSupport with MongoMocks with MockitoSugar with BeforeAndAfter with MetadataFixture {
+class MetadataMongoRepositorySpec extends SCRSSpec with MongoSpecSupport with MongoMocks with BeforeAndAfter with MetadataFixture {
 
   class MockedMetadataRepository extends MetadataMongoRepository {
     override lazy val collection = mockCollection()
