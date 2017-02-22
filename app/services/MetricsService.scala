@@ -63,6 +63,4 @@ trait MetricsService {
   val removeMetadataTimer: Timer
   val updateMetadataTimer: Timer
   val createFootprintCounter: Counter
-
-
 }

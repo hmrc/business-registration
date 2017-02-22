@@ -43,7 +43,7 @@ object UserIds {
 }
 
 @Singleton
-class AuthConnector @Inject()(val app: Application, http: HttpGet with HttpPost) extends ServicesConfig with RawResponseReads {
+class AuthConnector @Inject()(val app: Application, http: WSHttp) extends ServicesConfig with RawResponseReads {
 
   lazy val serviceUrl = baseUrl("auth")
 

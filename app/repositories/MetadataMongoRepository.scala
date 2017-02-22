@@ -16,6 +16,8 @@
 
 package repositories
 
+import javax.inject.Singleton
+
 import auth.AuthorisationResource
 import models.{Metadata, MetadataResponse}
 import org.joda.time.{DateTimeZone, DateTime}
@@ -40,6 +42,7 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime]
 }
 
+@Singleton
 class MetadataMongoRepository(implicit mongo: () => DB)
   extends ReactiveRepository[Metadata, BSONObjectID](Collections.metadata, mongo, Metadata.formats, ReactiveMongoFormats.objectIdFormats)
   with MetadataRepository

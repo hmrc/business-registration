@@ -7,9 +7,7 @@ object MicroServiceBuild extends Build with MicroService {
 
   override lazy val appDependencies: Seq[ModuleID] = AppDependencies()
 
-  override lazy val playSettings : Seq[Setting[_]] = Seq(
-    dependencyOverrides += "io.netty" % "netty" % "3.9.9.Final"
-  )
+  override lazy val playSettings : Seq[Setting[_]] = Seq.empty
 
 }
 
@@ -36,7 +34,6 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "mongo-lock" % "4.0.0",
     "uk.gov.hmrc" %% "crypto" % "4.2.0"
   )
-
 
   trait TestDependencies {
     lazy val scope: String = "test"
