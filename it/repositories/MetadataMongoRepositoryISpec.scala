@@ -18,23 +18,28 @@ package repositories
 
 import java.util.UUID
 
-import helpers.SCRSSpec
 import models.Metadata
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.{ScalaFutures, Eventually}
 import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
+import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
-class MetadataMongoRepositoryISpec extends SCRSSpec with MongoSpecSupport with BeforeAndAfterAll {
+class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with WithFakeApplication {
+
+  //implicit val app = new GuiceApplicationBuilder().build()
+  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {
     val repository = new MetadataRepositoryImpl()(fakeApplication)
-    await(repository.drop(defaultEC))
+    await(repository.drop)
     await(repository.ensureIndexes)
   }
 
   override def afterAll() = new Setup {
-    await(repository.drop(defaultEC))
+    await(repository.drop)
   }
 
   "MetadataRepository" should {

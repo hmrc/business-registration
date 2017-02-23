@@ -16,13 +16,17 @@
 
 package repositories
 
-import helpers.SCRSSpec
 import org.scalatest.BeforeAndAfterAll
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
+import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
-class SequenceMongoRepositoryISpec extends SCRSSpec with MongoSpecSupport with BeforeAndAfterAll {
+class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with WithFakeApplication {
+
+  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {
     val repository = new SequenceRepositoryImpl()(fakeApplication)

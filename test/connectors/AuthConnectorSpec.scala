@@ -35,7 +35,7 @@ class AuthConnectorSpec extends SCRSSpec {
 
   val mockHttp = mock[WSHttp]
 
-  override lazy val fakeApplication = buildApp(("key", "value"))
+  //override lazy val fakeApplication = buildApp(("key", "value"))
 
   val testAppConfig = new MicroserviceAppConfigImpl(fakeApplication)
 
