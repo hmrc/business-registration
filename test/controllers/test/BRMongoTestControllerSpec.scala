@@ -16,39 +16,40 @@
 
 package controllers.test
 
-import org.mockito.Matchers
-import org.scalatest.mock.MockitoSugar
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
+import helpers.SCRSSpec
+import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
-import repositories.MetadataMongoRepository
-import uk.gov.hmrc.play.test.UnitSpec
+import repositories.MetadataRepository
 import org.mockito.Mockito._
 import play.api.test.Helpers._
 
 import scala.concurrent.Future
 
-class BRMongoTestControllerSpec extends UnitSpec with MockitoSugar {
+class BRMongoTestControllerSpec extends SCRSSpec {
 
-  val mockMetadataRepository = mock[MetadataMongoRepository]
+  val mockMetadataRepository = mock[MetadataRepository]
 
-  class Setup {
-    val controller = new BRMongoTestController {
-      val metadataRepository = mockMetadataRepository
-    }
+  def setupController = {
+    new BRMongoTestController(mockMetadataRepository)
   }
 
   "dropMetadataCollection" should {
 
-    "return a 200 with a success message" in new Setup {
-      when(mockMetadataRepository.drop(Matchers.any())).thenReturn(Future.successful(true))
+    "return a 200 with a success message" in {
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
 
+      val controller = setupController
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
       jsonBodyOf(result).toString() shouldBe """{"message":"Metadata collection dropped successfully"}"""
     }
 
-    "return a 200 with an error message if the collection could not be dropped" in new Setup {
-      when(mockMetadataRepository.drop(Matchers.any())).thenReturn(Future.successful(false))
+    "return a 200 with an error message if the collection could not be dropped" in {
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
 
+      val controller = setupController
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
       jsonBodyOf(result).toString() shouldBe """{"message":"An error occurred. Metadata collection could not be dropped"}"""

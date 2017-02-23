@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package auth
+package repositories
 
-import scala.concurrent.Future
-
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+object CollectionsNames {
+  final val METADATA: String = "registration-information"
+  final val USER_DATA: String = "scrs-beta-users"
+  final val SEQUENCE: String = "sequence"
 }
-
-

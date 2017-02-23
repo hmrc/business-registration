@@ -16,20 +16,18 @@
 
 package auth
 
-import connectors.{AuthConnector, Authority, UserIds}
-import org.mockito.Matchers
+import connectors.AuthConnector
+import helpers.SCRSSpec
+import models.{Authority, UserIds}
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
-import org.scalatest.{BeforeAndAfter, ShouldMatchers, WordSpecLike}
-import play.api.libs.json.Json
 import play.api.mvc.Results
-import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with ShouldMatchers with MockitoSugar with BeforeAndAfter {
+class AuthorisationSpec extends SCRSSpec {
 
   implicit val hc = HeaderCarrier()
 
@@ -37,21 +35,21 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
   val mockResource = mock[AuthorisationResource[String]]
 
   object Authorisation extends Authorisation[String] {
-    val auth = mockAuth
+    val authConnector = mockAuth
     val resourceConn = mockResource
   }
 
-  before {
-    reset(mockAuth)
-    reset(mockResource)
-  }
+//  before {
+//    reset(mockAuth)
+//    reset(mockResource)
+//  }
 
   "The authorisation helper" should {
 
     "indicate there's no logged in user where there isn't a valid bearer token" in {
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(None))
-      when(mockResource.getInternalId(Matchers.any())).thenReturn(Future.successful(None))
+      when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(None))
+      when(mockResource.getInternalId(any())).thenReturn(Future.successful(None))
 
       val result = Authorisation.authorised("xxx") { authResult => {
           authResult shouldBe NotLoggedInOrAuthorised
@@ -68,8 +66,8 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
       val userIDs = UserIds("foo", "bar")
       val a = Authority("x", "z", userIDs)
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(Matchers.eq(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+      when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
+      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
 
       val result = Authorisation.authorised(regId){ authResult => {
           authResult shouldBe Authorised(a)
@@ -85,8 +83,8 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
       val userIDs = UserIds("foo", "bar")
       val a = Authority("x", "z", userIDs)
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(Matchers.eq(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId+"xxx"))))
+      when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
+      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId + "xxx"))))
 
       val result = Authorisation.authorised(regId){ authResult => {
         authResult shouldBe NotAuthorised(a)
@@ -101,8 +99,8 @@ class AuthorisationHelperSpec extends FakeApplication with WordSpecLike with Sho
 
       val a = Authority("x", "z", UserIds("tiid","teid"))
 
-      when(mockAuth.getCurrentAuthority()(Matchers.any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(Matchers.any())).thenReturn(Future.successful(None))
+      when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
+      when(mockResource.getInternalId(any())).thenReturn(Future.successful(None))
 
       val result = Authorisation.authorised("xxx"){ authResult => {
           authResult shouldBe AuthResourceNotFound(a)

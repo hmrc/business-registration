@@ -16,9 +16,10 @@
 
 package auth
 
+import models.Authority
 import play.api.mvc.Result
 import play.api.Logger
-import connectors.{AuthConnector, Authority}
+import connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -28,15 +29,15 @@ sealed trait AuthenticationResult {}
 case object NotLoggedIn extends AuthenticationResult
 final case class LoggedIn(authContext: Authority) extends AuthenticationResult
 
-trait   Authenticated {
+trait Authenticated {
 
-  val auth: AuthConnector
+  val authConnector: AuthConnector
 
   def authenticated(f: => AuthenticationResult => Future[Result])(implicit hc: HeaderCarrier) = {
     Logger.debug(s"Current user id is ${hc.userId}") // always outputs NONE :-(
 
     for {
-      authority <- auth.getCurrentAuthority()
+      authority <- authConnector.getCurrentAuthority()
       result <- f(mapToAuthResult(authority))
     } yield {
       Logger.debug(s"Got authority = $authority")

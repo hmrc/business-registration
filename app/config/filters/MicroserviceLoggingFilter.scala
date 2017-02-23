@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package auth
+package config.filters
 
-import scala.concurrent.Future
+import javax.inject.Inject
 
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
+import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
+
+class MicroserviceLoggingFilter @Inject()(controllerConf: ControllerConfiguration) extends LoggingFilter with MicroserviceFilterSupport {
+
+  override def controllerNeedsLogging(controllerName: String) =
+    controllerConf.paramsForController(controllerName).needsLogging
 }
-
-

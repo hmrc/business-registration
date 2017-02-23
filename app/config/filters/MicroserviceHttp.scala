@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-package repositories
+package config.filters
 
-object Collections {
-  final val metadata: String = "registration-information"
-  final val userdata: String = "scrs-beta-users"
-  final val sequence: String = "sequence"
+import javax.inject.{Inject, Singleton}
+
+import play.api.Application
+import uk.gov.hmrc.play.audit.http.HttpAuditing
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.config.AppName
+import uk.gov.hmrc.play.http.hooks.HttpHook
+import uk.gov.hmrc.play.http.ws.WSHttp
+
+@Singleton
+class MicroserviceHttp @Inject()(val auditConnector: AuditConnector, val app: Application) extends WSHttp with AppName with HttpAuditing {
+    override val hooks: Seq[HttpHook] = Seq(AuditingHook)
 }

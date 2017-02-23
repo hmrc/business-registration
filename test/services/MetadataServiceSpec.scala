@@ -17,35 +17,36 @@
 package services
 
 import fixtures.{MetadataFixture, MongoFixture}
-import helpers.SCRSSpec
+import models.Metadata
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
-import org.mockito.Matchers
-import repositories.{MetadataRepository, Repositories, SequenceRepository}
+import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
+import org.scalatest.mockito.MockitoSugar
+import repositories._
+import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixture{
+class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixture with MongoFixture {
 
   implicit val mongo = mongoDB
 
-  class Setup {
-    val service = new MetadataService {
-      override val metadataRepository: MetadataRepository = mockMetadataRepository
-      override val sequenceRepository: SequenceRepository = mockSequenceRepository
-    }
+  val mockMetadataRepository = mock[MetadataRepository]
+  val mockSequenceRepository = mock[SequenceRepository]
+
+  def setupService: MetadataService = {
+    new MetadataService(mockMetadataRepository, mockSequenceRepository)
   }
 
-  "MetdataService" should {
-    "use the correct MetadataRepository" in {
-      MetadataService.metadataRepository shouldBe Repositories.metadataRepository
-    }
-  }
+  "calling createMetadataRecord" should {
 
-  "createMetadataRecord" should {
-    "create a new metadata document" in new Setup {
-      MetadataRepositoryMocks.createMetadata(buildMetadata())
-      SequenceRepositoryMocks.getNext("registrationID", 1)
+    val service = setupService
+
+    "create a new metadata document" in {
+      when(mockMetadataRepository.createMetadata(any[Metadata]()))
+        .thenReturn(Future.successful(buildMetadata()))
+      when(mockSequenceRepository.getNext(contains("registrationID")))
+        .thenReturn(Future.successful(1))
 
       val result = service.createMetadataRecord("intId", "en")
       await(result) shouldBe buildMetadataResponse()
@@ -53,40 +54,51 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
   }
 
   "retrieveMetadataRecord" should {
-    "return MetadataResponse when a metadata document is retrieved" in new Setup {
-      MetadataRepositoryMocks.retrieveMetadata("testRegID", Some(buildMetadata()))
+
+    val service = setupService
+
+    "return MetadataResponse when a metadata document is retrieved" in {
+      when(mockMetadataRepository.retrieveMetadata(any()))
+        .thenReturn(Future.successful(Some(buildMetadata())))
 
       val result = service.retrieveMetadataRecord("testRegID")
       await(result) shouldBe Some(buildMetadataResponse())
     }
 
-    "return None if no document is retrieved" in new Setup {
-      MetadataRepositoryMocks.retrieveMetadata("testRegID", None)
+    "return None if no document is retrieved" in {
+      when(mockMetadataRepository.retrieveMetadata(any()))
+        .thenReturn(Future.successful(None))
 
       val result = service.retrieveMetadataRecord("testRegID")
       await(result) shouldBe None
     }
   }
   "searchMetadataRecord" should {
-    "return MetadataResponse when a metadata document is retrieved" in new Setup {
-      MetadataRepositoryMocks.searchMetadata("testIntID", Some(buildMetadata()))
 
+    val service = setupService
+
+    "return MetadataResponse when a metadata document is retrieved" in {
+      when(mockMetadataRepository.searchMetadata(any()))
+        .thenReturn(Future.successful(Some(buildMetadata())))
       val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe Some(buildMetadataResponse())
     }
 
-    "return None if no document is retrieved" in new Setup {
-      MetadataRepositoryMocks.searchMetadata("testIntID", None)
+    "return None if no document is retrieved" in {
+      when(mockMetadataRepository.searchMetadata(any()))
+        .thenReturn(Future.successful(None))
 
       val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe None
     }
-
   }
 
   "updateMetaDataRecord" should {
-    "return a meta data response" in new Setup {
-      when(mockMetadataRepository.updateMetaData(Matchers.eq("testIntID"), Matchers.eq(buildMetadataResponse())))
+
+    val service = setupService
+
+    "return a meta data response" in {
+      when(mockMetadataRepository.updateMetaData(eqTo("testIntID"), eqTo(buildMetadataResponse())))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
       val result = service.updateMetaDataRecord("testIntID", buildMetadataResponse())
@@ -95,8 +107,11 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
   }
 
   "removeMetaDataRecord" should {
-    "return a Boolean" in new Setup {
-      when(mockMetadataRepository.removeMetadata(Matchers.eq("testIntID")))
+
+    val service = setupService
+
+    "return a Boolean" in {
+      when(mockMetadataRepository.removeMetadata(eqTo("testIntID")))
         .thenReturn(Future.successful(true))
 
       val result = service.removeMetadata("testIntID")
@@ -104,9 +119,10 @@ class MetadataServiceSpec extends SCRSSpec with MetadataFixture with MongoFixtur
     }
   }
   "update last signed in" should {
+    val service = setupService
     val currentTime = DateTime.now(DateTimeZone.UTC)
-    "return a date time response" in new Setup {
-      when(mockMetadataRepository.updateLastSignedIn(Matchers.eq("testIntID"), Matchers.eq(currentTime)))
+    "return a date time response" in {
+      when(mockMetadataRepository.updateLastSignedIn(eqTo("testIntID"), eqTo(currentTime)))
         .thenReturn(Future.successful(currentTime))
 
       val result = service.updateLastSignedIn("testIntID", currentTime)

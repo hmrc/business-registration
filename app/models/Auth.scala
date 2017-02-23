@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package auth
+package models
 
-import scala.concurrent.Future
+import play.api.libs.json.Json
 
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+case class Authority(uri: String,
+                     userDetailsLink: String,
+                     ids: UserIds)
+
+case class UserIds(internalId : String,
+                   externalId : String)
+
+object UserIds {
+  implicit val format = Json.format[UserIds]
 }
-
-

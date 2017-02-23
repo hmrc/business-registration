@@ -16,37 +16,27 @@
 
 package connectors
 
-import config.WSHttp
+import javax.inject.{Inject, Singleton}
+
+import com.google.inject.ImplementedBy
+import config.MicroserviceAppConfig
+import models.{UserIds, Authority}
 import play.api.http.Status._
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
-import play.api.Logger
-import play.api.libs.json.Json
+import play.api.{Application, Logger}
+import uk.gov.hmrc.play.http.ws.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class Authority(
-                      uri: String,
-                      userDetailsLink: String,
-                      ids: UserIds
-                    )
+@Singleton
+class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) extends AuthConnector with RawResponseReads {
 
-case class UserIds(internalId : String,
-                   externalId : String)
+  lazy val serviceUrl = config.authUrl
 
-object UserIds {
-  implicit val format = Json.format[UserIds]
-}
-
-trait AuthConnector extends ServicesConfig with RawResponseReads {
-
-  def serviceUrl: String
-
-  def authorityUri: String
-
-  def http: HttpGet with HttpPost
+  def authorityUri = "auth/authority"
 
   def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]] = {
     val getUrl = s"""$serviceUrl/$authorityUri"""
@@ -72,11 +62,9 @@ trait AuthConnector extends ServicesConfig with RawResponseReads {
         }
     }
   }
-
 }
 
-object AuthConnector extends AuthConnector {
-  lazy val serviceUrl = baseUrl("auth")
-  val authorityUri = "auth/authority"
-  val http: HttpGet with HttpPost = WSHttp
+@ImplementedBy(classOf[AuthConnectorImpl])
+trait AuthConnector {
+  def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]]
 }

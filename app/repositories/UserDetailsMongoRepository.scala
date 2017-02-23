@@ -16,16 +16,22 @@
 
 package repositories
 
+import javax.inject.{Inject, Singleton}
+
+import com.google.inject.ImplementedBy
 import models.{Response, WhiteListDetailsSubmit}
-import play.api.Logger
+import play.api.Application
+import play.api.libs.json.Format
 import reactivemongo.api.DB
 import reactivemongo.bson.{BSONDocument, BSONObjectID, BSONString}
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import repositories.CollectionsNames._
+import InjectDB.injectDB
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@ImplementedBy(classOf[UserDetailsRepositoryImpl])
 trait UserDetailsRepository extends Repository[WhiteListDetailsSubmit, BSONObjectID]{
   def createRegistration(details : WhiteListDetailsSubmit) : Future[WhiteListDetailsSubmit]
   def searchRegistration(email : String) : Future[Option[WhiteListDetailsSubmit]]
@@ -33,25 +39,18 @@ trait UserDetailsRepository extends Repository[WhiteListDetailsSubmit, BSONObjec
   def removeBetaUsers() : Future[Option[Response]]
 }
 
-class UserDetailsMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](Collections.userdata, mongo, WhiteListDetailsSubmit.format, ReactiveMongoFormats.objectIdFormats)
-    with UserDetailsRepository {
+abstract class UserDetailsRepositoryBase(mongo: () => DB)(implicit formats: Format[WhiteListDetailsSubmit], manifest: Manifest[WhiteListDetailsSubmit])
+  extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](USER_DATA, mongo, formats)
+    with UserDetailsRepository
 
-  override def createRegistration(details: WhiteListDetailsSubmit) : Future[WhiteListDetailsSubmit] = {
-    collection.insert(details).map { res =>
-      details
-    }
-  }
+@Singleton
+class UserDetailsRepositoryImpl @Inject()(implicit app: Application) extends UserDetailsRepositoryBase(injectDB(app)) {
 
-  override def emailSelector(email: String) : BSONDocument = BSONDocument("email" -> BSONString(email))
+  override def createRegistration(details: WhiteListDetailsSubmit) = collection.insert(details).map(_ => details)
 
-  override def searchRegistration(email: String) : Future[Option[WhiteListDetailsSubmit]] = {
-    collection.find(emailSelector(email)).one[WhiteListDetailsSubmit]
-  }
+  override def emailSelector(email: String) = BSONDocument("email" -> BSONString(email))
 
-  override def removeBetaUsers(): Future[Option[Response]] = {
-    collection.drop().map {
-      resp => Some(Response("Dropped"))
-    }
-  }
+  override def searchRegistration(email: String) = collection.find(emailSelector(email)).one[WhiteListDetailsSubmit]
+
+  override def removeBetaUsers() = collection.drop().map(_ => Some(Response("Dropped")))
 }

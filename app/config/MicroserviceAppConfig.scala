@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-package auth
+package config
 
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
 
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+import com.google.inject.ImplementedBy
+import play.api.Application
+import uk.gov.hmrc.play.config.ServicesConfig
+
+@Singleton
+class MicroserviceAppConfigImpl @Inject()(val app: Application) extends MicroserviceAppConfig with ServicesConfig {
+  lazy val authUrl: String = baseUrl("auth")
 }
 
-
+@ImplementedBy(classOf[MicroserviceAppConfigImpl])
+trait MicroserviceAppConfig {
+  val authUrl: String
+}

@@ -18,29 +18,28 @@ package connectors
 
 import java.util.UUID
 
+import config.MicroserviceAppConfigImpl
+import helpers.SCRSSpec
 import org.mockito.Mockito._
-import org.mockito.Matchers
-import org.scalatest.{BeforeAndAfter, ShouldMatchers, WordSpecLike}
-import org.scalatest.mock.MockitoSugar
-import play.api.libs.json.{JsValue, Json}
-import play.api.test.FakeApplication
-import play.api.test.Helpers._
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import play.api.libs.json.Json
+import uk.gov.hmrc.play.http.ws.WSHttp
 import uk.gov.hmrc.play.http.{HeaderCarrier, _}
 import uk.gov.hmrc.play.http.logging.SessionId
+import play.api.test.Helpers.{OK, BAD_REQUEST}
+import models.{UserIds, Authority}
 
 import scala.concurrent.Future
 
-class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMatchers with MockitoSugar with BeforeAndAfter {
+class AuthConnectorSpec extends SCRSSpec {
 
-  implicit val hc = HeaderCarrier()
+  val mockHttp = mock[WSHttp]
 
-  val mockHttp = mock[HttpGet with HttpPost]
+  //override lazy val fakeApplication = buildApp(("key", "value"))
 
-  object TestAuthConnector extends AuthConnector {
-    lazy val serviceUrl = "localhost"
-    val authorityUri = "auth/authority"
-    override val http: HttpGet with HttpPost = mockHttp
-  }
+  val testAppConfig = new MicroserviceAppConfigImpl(fakeApplication)
+
+  val testAuthConnector = new AuthConnectorImpl(testAppConfig, mockHttp)
 
   def authResponseJson(uri: String, userDetailsLink: String, idsLink: String) = Json.parse(
     s"""{
@@ -55,10 +54,6 @@ class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMat
            "externalId":"$externalId"
         }""")
 
-  before {
-    reset(mockHttp)
-  }
-
   "The auth connector" should {
     val uri = "x/y/foo"
     val userDetailsLink = "bar"
@@ -68,26 +63,24 @@ class AuthConnectorSpec extends FakeApplication with WordSpecLike with ShouldMat
       val userIDs: UserIds = UserIds("tiid", "teid")
       val expected = Authority(uri, userDetailsLink, userIDs)
 
-      when(mockHttp.GET[HttpResponse](Matchers.eq("localhost/auth/authority"))(Matchers.any(), Matchers.any())).
-        thenReturn(Future.successful(HttpResponse(200, Some(authResponseJson(uri, userDetailsLink, idsLink)))))
+      when(mockHttp.GET[HttpResponse](any())(any(), any()))
+        .thenReturn(Future.successful(HttpResponse(OK, Some(authResponseJson(uri, userDetailsLink, idsLink)))),
+                                      HttpResponse(OK, Some(idsResponseJson(userIDs.internalId, userIDs.externalId))))
 
-      when(mockHttp.GET[HttpResponse](Matchers.eq(s"localhost${idsLink}"))(Matchers.any(), Matchers.any())).
-        thenReturn(Future.successful(HttpResponse(200, Some(idsResponseJson(userIDs.internalId, userIDs.externalId)))))
 
-      implicit val hc = new HeaderCarrier(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
-      val result = TestAuthConnector.getCurrentAuthority()
+      implicit val hc = defaultHC.copy(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
+      val result = testAuthConnector.getCurrentAuthority()(hc)
       val authority = await(result)
 
       authority shouldBe Some(expected)
     }
 
     "return None when an authority isn't found" in {
+      when(mockHttp.GET[HttpResponse](any())(any(), any())).
+        thenReturn(Future.successful(HttpResponse(BAD_REQUEST, None)))
 
-      when(mockHttp.GET[HttpResponse](Matchers.eq("localhost/auth/authority"))(Matchers.any(), Matchers.any())).
-        thenReturn(Future.successful(HttpResponse(404, None)))
-
-      implicit val hc = new HeaderCarrier(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
-      val result = TestAuthConnector.getCurrentAuthority()
+      implicit val hc = defaultHC.copy(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
+      val result = testAuthConnector.getCurrentAuthority()(hc)
       val authority = await(result)
 
       authority shouldBe None

@@ -16,42 +16,34 @@
 
 package controllers
 
+import javax.inject.{Singleton, Inject}
+
 import auth._
 import connectors.AuthConnector
 import models._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
-import play.api.Logger
+import repositories.MetadataRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
-object MetadataController extends MetadataController {
-  val metadataService = MetadataService
-  val resourceConn = MetadataService.metadataRepository
-  val auth = AuthConnector
-  override val metricsService: MetricsService = MetricsService
-}
+@Singleton
+class MetadataController @Inject()(metadataService: MetadataService, val authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataRepository)
+                                  (implicit ec: ExecutionContext) extends BaseController with Authenticated with Authorisation[String] {
 
-trait MetadataController extends BaseController with Authenticated with Authorisation[String] {
-
-  val metadataService: MetadataService
-  val metricsService: MetricsService
+  val resourceConn = metadataRepo
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
-    metricsService.createFootprintCounter.inc()
-
     implicit request =>
+      metricsService.createFootprintCounter.inc()
       authenticated {
         case NotLoggedIn => Future.successful(Forbidden)
         case LoggedIn(context) =>
           val timer = metricsService.createMetadataTimer.time()
-          withJsonBody[MetadataRequest]
-            {
+          withJsonBody[MetadataRequest]{
             request => {
               metricsService.createFootprintCounter.inc()
               metadataService.createMetadataRecord(context.ids.internalId, request.language) map {
@@ -60,7 +52,6 @@ trait MetadataController extends BaseController with Authenticated with Authoris
                   Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
                 }
               }
-
             }
           }
         }

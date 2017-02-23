@@ -1,5 +1,5 @@
-GET        /drop-collection                                 controllers.test.BRMongoTestController.dropMetadataCollection
+GET        /drop-collection                                 @controllers.test.BRMongoTestController.dropMetadataCollection
 
-GET        /get-beta-user/:email                            controllers.test.UserRegisterController.searchRegistrations(email)
-GET        /clear-beta-users                                controllers.test.UserRegisterController.clearRecords
+GET        /get-beta-user/:email                            @controllers.test.UserRegisterController.searchRegistrations(email)
+GET        /clear-beta-users                                @controllers.test.UserRegisterController.clearRecords
 

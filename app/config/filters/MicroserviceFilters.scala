@@ -14,12 +14,23 @@
  * limitations under the License.
  */
 
-package auth
+package config.filters
 
-import scala.concurrent.Future
+import javax.inject.Inject
 
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
-}
+import play.api.http.DefaultHttpFilters
+import uk.gov.hmrc.play.filters.{NoCacheFilter, RecoveryFilter}
+
+class MicroserviceFilters @Inject()(auditFilter: MicroserviceAuditFilter,
+                                    loggingFilter: MicroserviceLoggingFilter,
+                                    authFilter: MicroserviceAuthFilter)
+  extends DefaultHttpFilters(
+    auditFilter,
+    loggingFilter,
+    authFilter,
+    NoCacheFilter,
+    RecoveryFilter
+  )
+
 
 

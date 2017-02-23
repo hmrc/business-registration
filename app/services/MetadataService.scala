@@ -18,23 +18,22 @@ package services
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
+import javax.inject.{Singleton, Inject}
 
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
-import repositories.{SequenceRepository, MetadataRepository, Repositories}
+import repositories._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-object MetadataService extends MetadataService {
-  override val metadataRepository = Repositories.metadataRepository
-  override val sequenceRepository = Repositories.sequenceRepository
-}
+//class MetadataServiceImp @Inject() (repositories: Repositories) extends MetadataService {
+//  override val metadataRepository = repositories.metadataRepository
+//  override val sequenceRepository = repositories.sequenceRepository
+//}
 
-trait MetadataService {
-
-  val metadataRepository: MetadataRepository
-  val sequenceRepository: SequenceRepository
+@Singleton
+class MetadataService @Inject() (metadataRepository: MetadataRepository, sequenceRepository: SequenceRepository) {
 
   def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
@@ -85,7 +84,6 @@ trait MetadataService {
   def removeMetadata(registrationId: String): Future[Boolean] = {
     metadataRepository.removeMetadata(registrationId)
   }
-
 
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
     metadataRepository.updateLastSignedIn(registrationId, dateTime)

@@ -16,11 +16,11 @@
 
 package fixtures
 
-import connectors.{Authority, UserIds}
+import models.{UserIds, Authority}
 
 trait AuthFixture {
 
-  lazy val validAuthority = Authority(
+  val validAuthority = Authority(
     "test.uri", "test.userDetailsLink", UserIds("tiid","teid")
   )
 }

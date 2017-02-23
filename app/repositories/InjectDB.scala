@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package auth
+package repositories
 
-import scala.concurrent.Future
+import play.api.Application
+import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.DB
 
-trait AuthorisationResource[I] {
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+object InjectDB {
+  def injectDB(app: Application): () => DB = app.injector.instanceOf[ReactiveMongoComponent].mongoConnector.db
 }
-
-
