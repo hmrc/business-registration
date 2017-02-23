@@ -18,34 +18,23 @@ package connectors
 
 import javax.inject.{Inject, Singleton}
 
+import com.google.inject.ImplementedBy
+import config.MicroserviceAppConfig
+import models.{UserIds, Authority}
 import play.api.http.Status._
 import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
 import play.api.{Application, Logger}
-import play.api.libs.json.Json
 import uk.gov.hmrc.play.http.ws.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-case class Authority(
-                      uri: String,
-                      userDetailsLink: String,
-                      ids: UserIds
-                    )
-
-case class UserIds(internalId : String,
-                   externalId : String)
-
-object UserIds {
-  implicit val format = Json.format[UserIds]
-}
-
 @Singleton
-class AuthConnector @Inject()(val app: Application, http: WSHttp) extends ServicesConfig with RawResponseReads {
+class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) extends AuthConnector with RawResponseReads {
 
-  lazy val serviceUrl = baseUrl("auth")
+  lazy val serviceUrl = config.authUrl
 
   def authorityUri = "auth/authority"
 
@@ -73,5 +62,9 @@ class AuthConnector @Inject()(val app: Application, http: WSHttp) extends Servic
         }
     }
   }
+}
 
+@ImplementedBy(classOf[AuthConnectorImpl])
+trait AuthConnector {
+  def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]]
 }

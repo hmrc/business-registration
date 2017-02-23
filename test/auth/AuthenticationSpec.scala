@@ -16,18 +16,18 @@
 
 package auth
 
-import connectors.{AuthConnector, Authority, UserIds}
+import connectors.AuthConnector
+import helpers.SCRSSpec
+import models.{UserIds, Authority}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 
-class AuthenticationSpec extends UnitSpec with MockitoSugar {
+class AuthenticationSpec extends SCRSSpec {
 
   implicit val hc = HeaderCarrier()
 

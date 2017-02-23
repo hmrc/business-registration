@@ -16,7 +16,7 @@
 
 package controllers.beta
 
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 
 import models.WhiteListDetailsSubmit
 import play.api.libs.json.JsValue

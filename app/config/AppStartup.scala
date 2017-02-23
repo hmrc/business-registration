@@ -20,15 +20,11 @@ import javax.inject.Inject
 
 import play.api.{Application, Logger}
 
-/**
-  * Created by jackie on 15/02/17.
-  */
 trait AppStartup {
 
   protected def app: Application
   protected def graphiteConfig: GraphiteConfig
   protected def appName: String
-
 }
 
 class DefaultAppStartup @Inject()(val app: Application) extends AppStartup {
@@ -39,5 +35,4 @@ class DefaultAppStartup @Inject()(val app: Application) extends AppStartup {
 
   Logger.info(s"Starting microservice : $appName : in mode : ${app.mode}")
   if(graphiteConfig.enabled) graphiteConfig.startGraphite()
-
 }

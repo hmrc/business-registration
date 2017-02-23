@@ -16,23 +16,32 @@
 
 package repositories
 
-import models.{Sequence, Metadata}
-import play.api.libs.json.JsValue
+import javax.inject.{Inject, Singleton}
+
+import com.google.inject.ImplementedBy
+import models.Metadata
+import play.api.Application
+import play.api.libs.json.{Format, JsValue}
 import reactivemongo.api.DB
 import reactivemongo.bson._
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import repositories.CollectionsNames.SEQUENCE
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
+import InjectDB.injectDB
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@ImplementedBy(classOf[SequenceRepositoryImpl])
 trait SequenceRepository extends Repository[Metadata, BSONObjectID]{
   def getNext(sequence: String): Future[Int]
 }
 
-class SequenceMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[Metadata, BSONObjectID](Collections.sequence, mongo, Metadata.formats, ReactiveMongoFormats.objectIdFormats)
-  with SequenceRepository {
+abstract class SequenceRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
+  extends ReactiveRepository[Metadata, BSONObjectID](SEQUENCE, mongo, formats)
+    with SequenceRepository
+
+@Singleton
+class SequenceRepositoryImpl @Inject()(implicit app: Application) extends SequenceRepositoryBase(injectDB(app)) {
 
   def getNext(sequence: String): Future[Int] = {
     val selector = BSONDocument("_id" -> sequence)
@@ -40,10 +49,10 @@ class SequenceMongoRepository(implicit mongo: () => DB)
 
     collection.findAndUpdate(selector, modifier, fetchNewObject = true, upsert = true)
       .map {
-      _.result[JsValue] match {
-        case None => -1
-        case Some(x) => (x \ "seq").as[Int]
+        _.result[JsValue] match {
+          case None => -1
+          case Some(x) => (x \ "seq").as[Int]
+        }
       }
-    }
   }
 }

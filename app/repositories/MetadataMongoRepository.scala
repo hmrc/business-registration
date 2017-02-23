@@ -16,47 +16,50 @@
 
 package repositories
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 
 import auth.AuthorisationResource
+import com.google.inject.ImplementedBy
 import models.{Metadata, MetadataResponse}
-import org.joda.time.{DateTimeZone, DateTime}
-import play.api.Logger
+import org.joda.time.DateTime
+import play.api.{Application, Logger}
+import play.api.libs.json.Format
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
+import CollectionsNames.METADATA
+import InjectDB.injectDB
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait MetadataRepository extends Repository[Metadata, BSONObjectID]{
+@ImplementedBy(classOf[MetadataRepositoryImpl])
+trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource[String]{
   def createMetadata(metadata: Metadata): Future[Metadata]
   def searchMetadata(internalID: String): Future[Option[Metadata]]
   def retrieveMetadata(regI: String): Future[Option[Metadata]]
   def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
-  def internalIDMetadataSelector(internalID: String): BSONDocument
-  def regIDMetadataSelector(registrationID: String): BSONDocument
   def removeMetadata(registrationId: String): Future[Boolean]
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime]
 }
 
+abstract class MetadataRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
+  extends ReactiveRepository[Metadata, BSONObjectID](METADATA, mongo, formats)
+    with MetadataRepository
+
 @Singleton
-class MetadataMongoRepository(implicit mongo: () => DB)
-  extends ReactiveRepository[Metadata, BSONObjectID](Collections.metadata, mongo, Metadata.formats, ReactiveMongoFormats.objectIdFormats)
-  with MetadataRepository
-  with AuthorisationResource[String] {
+class MetadataRepositoryImpl @Inject()(implicit app: Application) extends MetadataRepositoryBase(injectDB(app)) {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = Future.sequence(
     Seq(collection.indexesManager.ensure(Index(Seq("internalId" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),
-        collection.indexesManager.ensure(Index(Seq("registrationID" -> IndexType.Ascending), name = Some("regIDIndex"), unique = true))))
+      collection.indexesManager.ensure(Index(Seq("registrationID" -> IndexType.Ascending), name = Some("regIDIndex"), unique = true))))
 
-  override def internalIDMetadataSelector(internalID: String): BSONDocument = BSONDocument(
+  private def internalIDMetadataSelector(internalID: String): BSONDocument = BSONDocument(
     "internalId" -> BSONString(internalID)
   )
 
-  override def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(
+  private def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(
     "registrationID" -> BSONString(registrationID)
   )
 
@@ -77,19 +80,19 @@ class MetadataMongoRepository(implicit mongo: () => DB)
     collection.find(selector).one[Metadata]
   }
 
-  override def updateMetaData(regID: String, newMetaData : MetadataResponse): Future[MetadataResponse] = {
+  override def updateMetaData(regID: String, newMetaData: MetadataResponse): Future[MetadataResponse] = {
     val selector = regIDMetadataSelector(regID)
     collection.update(selector, BSONDocument("$set" -> BSONDocument("completionCapacity" -> newMetaData.completionCapacity))) map { res =>
-      if(res.hasErrors) {
+      if (res.hasErrors) {
         Logger.error(s"Failed to update metadata. Error: ${res.errmsg.getOrElse("")} for registration ud ${newMetaData.registrationID}")
       }
       newMetaData
     }
   }
 
-  def getInternalId(id: String) : Future[Option[(String,String)]] = {
-  // TODO : this can be made more efficient by performing an index scan rather than document lookup
-  retrieveMetadata(id) map {
+  def getInternalId(id: String): Future[Option[(String, String)]] = {
+    // TODO : this can be made more efficient by performing an index scan rather than document lookup
+    retrieveMetadata(id) map {
       case None => None
       case Some(m) => Some((m.registrationID, m.internalId))
     }

@@ -25,11 +25,12 @@ import uk.gov.hmrc.play.http.ws.WSHttp
 class DIModule extends AbstractModule {
 
   protected def configure() = {
-    //Http
+    bind(classOf[AppStartup])
+      .to(classOf[DefaultAppStartup])
+      .asEagerSingleton()
+
     bind(classOf[WSHttp]).to(classOf[MicroserviceHttp])
-    //services
     bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
-    //connectors
     bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
   }
 }

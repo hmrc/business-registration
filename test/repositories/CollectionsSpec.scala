@@ -22,13 +22,13 @@ class CollectionsSpec extends UnitSpec {
 
   "Collections" should {
     "contain the correct name for the metadata collection" in {
-      Collections.metadata shouldBe "registration-information"
+      CollectionsNames.METADATA shouldBe "registration-information"
     }
     "contain the correct name for the userdata collection" in {
-      Collections.userdata shouldBe "scrs-beta-users"
+      CollectionsNames.USER_DATA shouldBe "scrs-beta-users"
     }
     "contain the correct name for the sequence collection" in {
-      Collections.sequence shouldBe "sequence"
+      CollectionsNames.SEQUENCE shouldBe "sequence"
     }
   }
 }

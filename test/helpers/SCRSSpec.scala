@@ -21,12 +21,27 @@ import akka.stream.Materializer
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.{Configuration, Application}
+import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
+
+import scala.concurrent.ExecutionContext
 
 //todo: Scalatest 3.0.1 is not compatible with Scalatestplus-play 1.5.x. The version that it's built against is "org.scalatest" %% "scalatest" % "2.2.6".
 //todo: OneAppPerSuite will throw ClassCastExceptions when trying to stop the application after a suite of tests
 //todo: see https://github.com/playframework/scalatestplus-play/issues/55
 trait SCRSSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+
+  //override lazy val fakeApplication = new GuiceApplicationBuilder().build()
+
   implicit val actorSystem: ActorSystem = fakeApplication.actorSystem
   implicit val materializer: Materializer = fakeApplication.materializer
+
+  implicit val defaultHC: HeaderCarrier = HeaderCarrier()
+  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
+
+  def buildApp(config: (String, Any)*): Application = {
+    new GuiceApplicationBuilder().configure(config: _*).build()
+  }
 }

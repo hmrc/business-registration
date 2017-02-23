@@ -16,17 +16,17 @@
 
 package controllers
 
-import connectors.{Authority, AuthConnector}
+import connectors.AuthConnector
 import fixtures.{AuthFixture, MetadataFixture}
 import helpers.{SCRSSpec, AuthMocks}
 import mocks.MetricServiceMock
-import models.ErrorResponse
+import models.{Authority, ErrorResponse}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import repositories.MetadataMongoRepository
+import repositories.MetadataRepository
 import services.MetadataService
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
@@ -38,7 +38,7 @@ import scala.concurrent.Future
 class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture with AuthMocks with BeforeAndAfterEach {
 
   val mockMetadataService = mock[MetadataService]
-  val mockMetadataRepo = mock[MetadataMongoRepository]
+  val mockMetadataRepo = mock[MetadataRepository]
   implicit val mockAuthConnector = mock[AuthConnector]
 
   override protected def beforeEach() = {
@@ -53,8 +53,6 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
     mockGetCurrentAuthority(authority)
     new MetadataController(mockMetadataService, mockAuthConnector, MetricServiceMock, mockMetadataRepo)
   }
-
-  implicit val hc = HeaderCarrier()
 
   "calling createMetadata" should {
 

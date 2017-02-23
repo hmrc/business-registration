@@ -34,11 +34,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetadataMongoRepositorySpec extends SCRSSpec with MongoSpecSupport with MongoMocks with BeforeAndAfter with MetadataFixture {
 
-  class MockedMetadataRepository extends MetadataMongoRepository {
+  val repository = new MetadataRepositoryImpl()(fakeApplication){
     override lazy val collection = mockCollection()
   }
-
-  val repository = new MockedMetadataRepository()
 
   before {
     reset(repository.collection)

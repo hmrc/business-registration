@@ -16,13 +16,14 @@
 
 package helpers
 
-import connectors.{AuthConnector, Authority}
+import connectors.AuthConnector
+import models.Authority
 import models.{Metadata, MetadataResponse}
 import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
-import repositories.{SequenceRepository, MetadataMongoRepository}
+import repositories.{MetadataRepository, SequenceRepository}
 import services.MetadataService
 import uk.gov.hmrc.play.http.HeaderCarrier
 
@@ -32,7 +33,7 @@ trait SCRSMocks {
   this: MockitoSugar =>
 
   lazy val mockMetadataService = mock[MetadataService]
-  lazy val mockMetadataRepository = mock[MetadataMongoRepository]
+  lazy val mockMetadataRepository = mock[MetadataRepository]
   lazy val mockAuthConnector = mock[AuthConnector]
   lazy val mockSequenceRepository = mock[SequenceRepository]
 

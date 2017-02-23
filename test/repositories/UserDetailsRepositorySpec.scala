@@ -16,7 +16,7 @@
 
 package repositories
 
-import helpers.MongoMocks
+import helpers.{SCRSSpec, MongoMocks}
 import models.{Metadata, Response, WhiteListDetailsSubmit}
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
@@ -30,13 +30,11 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class UserDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with MongoMocks with MockitoSugar with BeforeAndAfter {
+class UserDetailsRepositorySpec extends SCRSSpec with MongoSpecSupport with MongoMocks with BeforeAndAfter {
 
-  class MockedUserDetailsRepository extends UserDetailsMongoRepository {
+  val repository = new UserDetailsRepositoryImpl()(fakeApplication){
     override lazy val collection = mockCollection()
   }
-
-  val repository = new MockedUserDetailsRepository
 
   before {
     reset(repository.collection)

@@ -33,7 +33,7 @@ import scala.concurrent.Future
 //}
 
 @Singleton
-class MetadataService @Inject() (metadataRepository: MetadataMongoRepository, sequenceRepository: SequenceMongoRepository) {
+class MetadataService @Inject() (metadataRepository: MetadataRepository, sequenceRepository: SequenceRepository) {
 
   def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
@@ -84,7 +84,6 @@ class MetadataService @Inject() (metadataRepository: MetadataMongoRepository, se
   def removeMetadata(registrationId: String): Future[Boolean] = {
     metadataRepository.removeMetadata(registrationId)
   }
-
 
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
     metadataRepository.updateLastSignedIn(registrationId, dateTime)

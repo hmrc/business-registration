@@ -31,8 +31,8 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
 
   implicit val mongo = mongoDB
 
-  val mockMetadataRepository = mock[MetadataMongoRepository]
-  val mockSequenceRepository = mock[SequenceMongoRepository]
+  val mockMetadataRepository = mock[MetadataRepository]
+  val mockSequenceRepository = mock[SequenceRepository]
 
   def setupService: MetadataService = {
     new MetadataService(mockMetadataRepository, mockSequenceRepository)
@@ -43,10 +43,8 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "create a new metadata document" in {
-      //MetadataRepositoryMocks.createMetadata(buildMetadata())
       when(mockMetadataRepository.createMetadata(any[Metadata]()))
         .thenReturn(Future.successful(buildMetadata()))
-      //SequenceRepositoryMocks.getNext("registrationID", 1)
       when(mockSequenceRepository.getNext(contains("registrationID")))
         .thenReturn(Future.successful(1))
 
@@ -60,7 +58,6 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return MetadataResponse when a metadata document is retrieved" in {
-      //MetadataRepositoryMocks.retrieveMetadata("testRegID", Some(buildMetadata()))
       when(mockMetadataRepository.retrieveMetadata(any()))
         .thenReturn(Future.successful(Some(buildMetadata())))
 
@@ -81,7 +78,6 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return MetadataResponse when a metadata document is retrieved" in {
-      //MetadataRepositoryMocks.searchMetadata("testIntID", Some(buildMetadata()))
       when(mockMetadataRepository.searchMetadata(any()))
         .thenReturn(Future.successful(Some(buildMetadata())))
       val result = service.searchMetadataRecord("testIntID")
@@ -95,7 +91,6 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe None
     }
-
   }
 
   "updateMetaDataRecord" should {

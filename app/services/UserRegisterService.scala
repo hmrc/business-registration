@@ -20,7 +20,7 @@ import javax.inject.{Singleton, Inject}
 
 import models.{ErrorResponse, Response, WhiteListDetailsSubmit}
 import play.api.libs.json.Json
-import repositories.{Repositories, UserDetailsRepository}
+import repositories.UserDetailsRepository
 import play.api.mvc.Result
 import play.api.mvc.Results.{Created, NotFound, Ok}
 
@@ -32,23 +32,21 @@ import scala.concurrent.Future
 //}
 
 @Singleton
-class UserRegisterService @Inject() (repositories: Repositories){
-
-  val userDetailsRepository = repositories.userDetailsRepository
+class UserRegisterService @Inject() (repository: UserDetailsRepository){
 
   def createRegistration(details : WhiteListDetailsSubmit) : Future[Result] = {
-    userDetailsRepository.createRegistration(details).map(res => Created(Json.toJson(res)))
+    repository.createRegistration(details).map(res => Created(Json.toJson(res)))
   }
 
   def searchRegistrations(email : String) : Future[Result] = {
-    userDetailsRepository.searchRegistration(email).map {
+    repository.searchRegistration(email).map {
       case Some(data) => Ok(Json.toJson[WhiteListDetailsSubmit](data))
       case _ => NotFound(ErrorResponse.UserNotFound)
     }
   }
 
   def dropUsers() : Future[Result] = {
-    userDetailsRepository.removeBetaUsers().map {
+    repository.removeBetaUsers().map {
       resp => Ok(Json.toJson[Response](resp.get))
     }
   }

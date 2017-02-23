@@ -16,9 +16,10 @@
 
 package helpers
 
-import connectors.{AuthConnector, Authority}
+import connectors.AuthConnector
+import models.Authority
 import org.scalatest.mockito.MockitoSugar
-import repositories.MetadataMongoRepository
+import repositories.MetadataRepository
 import uk.gov.hmrc.play.http.HeaderCarrier
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
@@ -35,28 +36,28 @@ trait AuthMocks {
       .thenReturn(Future.successful(authority))
   }
 
-  def mockSuccessfulAuthorisation(mockMetadataRepo: MetadataMongoRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
+  def mockSuccessfulAuthorisation(mockMetadataRepo: MetadataRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
     when(mockMetadataRepo.getInternalId(eqTo(registrationId)))
       .thenReturn(Future.successful(Some((registrationId, authority.ids.internalId))))
     when(mockAuthConnector.getCurrentAuthority()(any()))
       .thenReturn(Future.successful(Some(authority)))
   }
 
-  def mockNotLoggedIn(mockMetadataRepo: MetadataMongoRepository)(implicit mockAuthConnector: AuthConnector) = {
+  def mockNotLoggedIn(mockMetadataRepo: MetadataRepository)(implicit mockAuthConnector: AuthConnector) = {
     when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
       .thenReturn(Future.successful(None))
     when(mockMetadataRepo.getInternalId(any()))
       .thenReturn(Future.successful(None))
   }
 
-  def mockNotAuthorised(mockMetadataRepo: MetadataMongoRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
+  def mockNotAuthorised(mockMetadataRepo: MetadataRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
     when(mockAuthConnector.getCurrentAuthority()(any()))
       .thenReturn(Future.successful(Some(authority)))
     when(mockMetadataRepo.getInternalId(eqTo(registrationId)))
       .thenReturn(Future.successful(Some((registrationId, authority.ids.internalId + "xxx"))))
   }
 
-  def mockAuthResourceNotFound(mockMetadataRepo: MetadataMongoRepository, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
+  def mockAuthResourceNotFound(mockMetadataRepo: MetadataRepository, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
     when(mockAuthConnector.getCurrentAuthority()(any()))
       .thenReturn(Future.successful(Some(authority)))
     when(mockMetadataRepo.getInternalId(any()))
