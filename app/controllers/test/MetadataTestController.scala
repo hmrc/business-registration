@@ -16,27 +16,31 @@
 
 package controllers.test
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
 import repositories._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-//class BRMongoTestControllerImp @Inject() (repositories: Repositories) extends BRMongoTestController {
-//  val metadataRepository = repositories.metadataRepository
-//}
-
 @Singleton
-class BRMongoTestController @Inject()(repository: MetadataRepository) extends BaseController {
+class MetadataTestController @Inject()(repository: MetadataRepository) extends BaseController {
 
   def dropMetadataCollection = Action.async {
     implicit request =>
       repository.drop map {
         case true => Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
         case false => Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
+      }
+  }
+
+  def updateCompletionCapacity(regId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      withJsonBody[JsValue] { cc =>
+        val capacity = (cc \ "completionCapacity").as[String]
+        repository.updateCompletionCapacity(regId, capacity) map(_ => Ok(cc))
       }
   }
 }
