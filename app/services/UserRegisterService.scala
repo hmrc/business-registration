@@ -16,11 +16,11 @@
 
 package services
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
 import models.{ErrorResponse, Response, WhiteListDetailsSubmit}
 import play.api.libs.json.Json
-import repositories.UserDetailsRepository
+import repositories.{UserDetailsMongo, UserDetailsRepository}
 import play.api.mvc.Result
 import play.api.mvc.Results.{Created, NotFound, Ok}
 
@@ -32,7 +32,9 @@ import scala.concurrent.Future
 //}
 
 @Singleton
-class UserRegisterService @Inject() (repository: UserDetailsRepository){
+class UserRegisterService @Inject() (userDetails: UserDetailsMongo){
+
+  val repository = userDetails.repository
 
   def createRegistration(details : WhiteListDetailsSubmit) : Future[Result] = {
     repository.createRegistration(details).map(res => Created(Json.toJson(res)))

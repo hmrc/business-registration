@@ -33,8 +33,8 @@ import scala.concurrent.Future
 //}
 
 @Singleton
-class MetadataService @Inject() (metadataRepository: MetadataRepository, sequenceRepository: SequenceRepository) {
-
+class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: SequenceRepository) {
+  val metadataRepository = mongo.repository
   def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
       val newMetadata = Metadata(

@@ -16,7 +16,7 @@
 
 package controllers
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
 import auth._
 import connectors.AuthConnector
@@ -24,17 +24,17 @@ import models._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
-import repositories.MetadataRepository
+import repositories.{MetadataMongo, MetadataRepository}
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MetadataController @Inject()(metadataService: MetadataService, val authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataRepository)
+class MetadataController @Inject()(metadataService: MetadataService, val authConnector: AuthConnector, metricsService: MetricsService, metadataRepo: MetadataMongo)
                                   (implicit ec: ExecutionContext) extends BaseController with Authenticated with Authorisation[String] {
 
-  val resourceConn = metadataRepo
+  val resourceConn = metadataRepo.repository
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>

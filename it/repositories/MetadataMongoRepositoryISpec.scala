@@ -20,9 +20,10 @@ import java.util.UUID
 
 import models.Metadata
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.{ScalaFutures, Eventually}
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
@@ -33,7 +34,8 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {
-    val repository = new MetadataRepositoryImpl()(fakeApplication)
+    val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
+    val repository = new MetadataMongo(mongoComp).repository
     await(repository.drop)
     await(repository.ensureIndexes)
   }

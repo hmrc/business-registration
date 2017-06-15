@@ -30,11 +30,16 @@ import reactivemongo.bson._
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
 import CollectionsNames.METADATA
 import InjectDB.injectDB
+import play.modules.reactivemongo.ReactiveMongoComponent
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@ImplementedBy(classOf[MetadataRepositoryImpl])
+@Singleton
+class MetadataMongo @Inject()(mongo: ReactiveMongoComponent) {
+  val repository = new MetadataRepositoryMongo(mongo.mongoConnector.db)
+}
+
 trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource[String]{
   def createMetadata(metadata: Metadata): Future[Metadata]
   def searchMetadata(internalID: String): Future[Option[Metadata]]
@@ -45,12 +50,8 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID] with Authori
   def updateCompletionCapacity(registrationId: String, completionCapacity: String): Future[String]
 }
 
-abstract class MetadataRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
-  extends ReactiveRepository[Metadata, BSONObjectID](METADATA, mongo, formats)
-    with MetadataRepository
-
-@Singleton
-class MetadataRepositoryImpl @Inject()(implicit app: Application) extends MetadataRepositoryBase(injectDB(app)) {
+class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metadata, BSONObjectID](METADATA, mongo, Metadata.formats)
+  with MetadataRepository{
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = Future.sequence(
     Seq(collection.indexesManager.ensure(Index(Seq("internalId" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),

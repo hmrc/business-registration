@@ -30,12 +30,11 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class UserDetailsRepositorySpec extends SCRSSpec with MongoSpecSupport with MongoMocks with BeforeAndAfter {
+class UserDetailsRepositorySpec extends UnitSpec with MockitoSugar with MongoSpecSupport with MongoMocks with BeforeAndAfter {
 
-  val repository = new UserDetailsRepositoryImpl()(fakeApplication){
-    override lazy val collection = mockCollection()
+  val repository = new UserDetailsRepositoryMongo(() => mockMongoDb){
+    override lazy val collection = mockCollection(Some("test"))
   }
-
   before {
     reset(repository.collection)
   }

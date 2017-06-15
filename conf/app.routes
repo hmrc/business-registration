@@ -8,3 +8,12 @@ PATCH      /business-tax-registration/last-signed-in/:registrationID        @con
 GET        /business-tax-registration/remove/:registrationID                @controllers.MetadataController.removeMetadata(registrationID)
 
 POST       /beta-sign-up                                                    @controllers.beta.UserRegisterController.createUserRecord
+
+
+
+# Prepop Routes
+GET      /:registrationID/contact-details                            @controllers.prePop.ContactDetailsController.getContactDetails(registrationID)
+POST     /:registrationID/contact-details                            @controllers.prePop.ContactDetailsController.insertUpdateContactDetails(registrationID)
+
+GET      /:registrationID/addresses                                         @controllers.prePop.AddressController.fetchAddresses(registrationID)
+POST     /:registrationID/addresses                                         @controllers.prePop.AddressController.updateAddress(registrationID)

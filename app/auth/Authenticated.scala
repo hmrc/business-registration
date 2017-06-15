@@ -18,6 +18,7 @@ package auth
 
 import models.Authority
 import play.api.mvc.Result
+import play.api.mvc.Results.Forbidden
 import play.api.Logger
 import connectors.AuthConnector
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -32,6 +33,19 @@ final case class LoggedIn(authContext: Authority) extends AuthenticationResult
 trait Authenticated {
 
   val authConnector: AuthConnector
+
+  def authenticatedFor(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+    (for {
+      authority <- authConnector.getCurrentAuthority()
+      result = mapToAuthResult(authority)
+    } yield {
+      Logger.debug(s"Got authority = $authority")
+      result
+    }) flatMap {
+      case NotLoggedIn => Future.successful(Forbidden)
+      case LoggedIn(authContext) => f(authContext)
+    }
+  }
 
   def authenticated(f: => AuthenticationResult => Future[Result])(implicit hc: HeaderCarrier) = {
     Logger.debug(s"Current user id is ${hc.userId}") // always outputs NONE :-(
