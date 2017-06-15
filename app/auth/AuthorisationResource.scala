@@ -19,7 +19,15 @@ package auth
 import scala.concurrent.Future
 
 trait AuthorisationResource[I] {
+
+  /**
+    * @param id - The registration id of the logged in user
+    * @return I - The registration id of the logged in user
+    *         String - The internal ID of the logged in user
+    */
   def getInternalId(id:I) : Future[Option[(I,String)]]
+
+  def getInternalIds(registrationId: String): Future[Seq[String]] = Future.successful(Seq.empty)
 }
 
 

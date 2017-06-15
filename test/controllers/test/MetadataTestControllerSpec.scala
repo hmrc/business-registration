@@ -21,7 +21,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import helpers.SCRSSpec
 import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
-import repositories.MetadataRepository
+import repositories.{MetadataMongo, MetadataRepository, MetadataRepositoryMongo}
 import org.mockito.Mockito._
 import play.api.libs.json.Json
 import play.api.test.Helpers._
@@ -30,25 +30,31 @@ import scala.concurrent.Future
 
 class MetadataTestControllerSpec extends SCRSSpec {
 
-  val mockMetadataRepository = mock[MetadataRepository]
+  val mockMetadataRepository = mock[MetadataMongo]
+  val mockrepo = mock[MetadataRepositoryMongo]
+
 
   def setupController = {
-    new MetadataTestController(mockMetadataRepository)
+    new MetadataTestController(mockMetadataRepository){
+      override val repo = mockrepo
+    }
   }
 
   "dropMetadataCollection" should {
 
     "return a 200 with a success message" in {
-      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
+
 
       val controller = setupController
+
+      when(mockrepo.drop(any())).thenReturn(Future.successful(true))
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
       jsonBodyOf(result).toString() shouldBe """{"message":"Metadata collection dropped successfully"}"""
     }
 
     "return a 200 with an error message if the collection could not be dropped" in {
-      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
+      when(mockrepo.drop(any())).thenReturn(Future.successful(false))
 
       val controller = setupController
       val result = await(controller.dropMetadataCollection(FakeRequest()))
@@ -59,7 +65,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
   "updateCC" should {
     "return a 200" in {
-      when(mockMetadataRepository.updateCompletionCapacity(any(), any()))
+      when(mockrepo.updateCompletionCapacity(any(), any()))
         .thenReturn(Future.successful("director"))
 
       val result = setupController.updateCompletionCapacity("1234")(FakeRequest().withJsonBody(Json.parse("""{"completionCapacity" : "director"}""")))

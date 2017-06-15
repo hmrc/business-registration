@@ -31,11 +31,14 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
 
   implicit val mongo = mongoDB
 
-  val mockMetadataRepository = mock[MetadataRepository]
+  val mockMetadataRepository = mock[MetadataRepositoryMongo]
+  val mockMetadataMongo = mock[MetadataMongo]
   val mockSequenceRepository = mock[SequenceRepository]
 
   def setupService: MetadataService = {
-    new MetadataService(mockMetadataRepository, mockSequenceRepository)
+    new MetadataService(mockMetadataMongo, mockSequenceRepository){
+      override val metadataRepository = mockMetadataRepository
+    }
   }
 
   "calling createMetadataRecord" should {

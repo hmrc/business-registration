@@ -26,12 +26,17 @@ import reactivemongo.api.DB
 import reactivemongo.bson.{BSONDocument, BSONObjectID, BSONString}
 import repositories.CollectionsNames._
 import InjectDB.injectDB
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@ImplementedBy(classOf[UserDetailsRepositoryImpl])
+@Singleton
+class UserDetailsMongo @Inject()(mongo: ReactiveMongoComponent) {
+  val repository = new UserDetailsRepositoryMongo(mongo.mongoConnector.db)
+}
+
 trait UserDetailsRepository extends Repository[WhiteListDetailsSubmit, BSONObjectID]{
   def createRegistration(details : WhiteListDetailsSubmit) : Future[WhiteListDetailsSubmit]
   def searchRegistration(email : String) : Future[Option[WhiteListDetailsSubmit]]
@@ -39,12 +44,9 @@ trait UserDetailsRepository extends Repository[WhiteListDetailsSubmit, BSONObjec
   def removeBetaUsers() : Future[Option[Response]]
 }
 
-abstract class UserDetailsRepositoryBase(mongo: () => DB)(implicit formats: Format[WhiteListDetailsSubmit], manifest: Manifest[WhiteListDetailsSubmit])
-  extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](USER_DATA, mongo, formats)
-    with UserDetailsRepository
 
-@Singleton
-class UserDetailsRepositoryImpl @Inject()(implicit app: Application) extends UserDetailsRepositoryBase(injectDB(app)) {
+class UserDetailsRepositoryMongo (mongo: () => DB) extends ReactiveRepository[WhiteListDetailsSubmit, BSONObjectID](METADATA, mongo, WhiteListDetailsSubmit.format)
+  with UserDetailsRepository{
 
   override def createRegistration(details: WhiteListDetailsSubmit) = collection.insert(details).map(_ => details)
 

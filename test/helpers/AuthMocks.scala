@@ -16,8 +16,10 @@
 
 package helpers
 
+import auth.AuthorisationResource
 import connectors.AuthConnector
-import models.Authority
+import fixtures.AuthFixture
+import models.{Authority, UserIds}
 import org.scalatest.mockito.MockitoSugar
 import repositories.MetadataRepository
 import uk.gov.hmrc.play.http.HeaderCarrier
@@ -28,12 +30,19 @@ import scala.annotation.implicitNotFound
 import scala.concurrent.Future
 
 @implicitNotFound("Could not find an implicit AuthConnector in scope")
-trait AuthMocks {
+trait AuthMocks extends AuthFixture {
   self: MockitoSugar =>
 
-  def mockGetCurrentAuthority(authority: Option[Authority])(implicit mockAuthConnector: AuthConnector) = {
+  def mockGetCurrentAuthority(authority: Option[Authority] = Some(Authority("x", "z", UserIds("tiid","teid"))))(implicit mockAuthConnector: AuthConnector) = {
     when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
       .thenReturn(Future.successful(authority))
+  }
+
+  def mockSuccessfulAuthorisation(resource: AuthorisationResource[String], regId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
+    when(resource.getInternalId(eqTo(regId)))
+      .thenReturn(Future.successful(Some((regId, authority.ids.internalId))))
+    when(mockAuthConnector.getCurrentAuthority()(any()))
+      .thenReturn(Future.successful(Some(authority)))
   }
 
   def mockSuccessfulAuthorisation(mockMetadataRepo: MetadataRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {

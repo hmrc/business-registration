@@ -18,7 +18,9 @@ package config
 
 import com.google.inject.AbstractModule
 import config.filters.{MicroserviceAuditConnector, MicroserviceHttp}
-import services.{MetricsServiceImp, MetricsService}
+import controllers.prePop.{AddressController, AddressControllerImpl, ContactDetailsController, ContactDetailsControllerImpl}
+import services.prepop.{AddressService, AddressServiceImpl}
+import services.{MetricsService, MetricsServiceImp}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.http.ws.WSHttp
 
@@ -29,8 +31,16 @@ class DIModule extends AbstractModule {
       .to(classOf[DefaultAppStartup])
       .asEagerSingleton()
 
+    //config
     bind(classOf[WSHttp]).to(classOf[MicroserviceHttp])
-    bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
     bind(classOf[AuditConnector]).to(classOf[MicroserviceAuditConnector])
+
+    //controllers
+    bind(classOf[AddressController]).to(classOf[AddressControllerImpl])
+    bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl])
+
+    //services
+    bind(classOf[AddressService]).to(classOf[AddressServiceImpl])
+    bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
   }
 }
