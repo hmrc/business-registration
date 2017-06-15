@@ -1,6 +1,6 @@
-GET        /drop-collection                                 @controllers.test.BRMongoTestController.dropMetadataCollection
+GET        /drop-collection                                 @controllers.test.MetadataTestController.dropMetadataCollection
 
 GET        /get-beta-user/:email                            @controllers.test.UserRegisterController.searchRegistrations(email)
 GET        /clear-beta-users                                @controllers.test.UserRegisterController.clearRecords
 
-POST       /update-cc/:regId                                 @controllers.test.BRMongoTestController.updateCC(regId)
+POST       /update-cc/:regId                                @controllers.test.MetadataTestController.updateCompletionCapacity(regId)

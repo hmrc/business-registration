@@ -25,12 +25,8 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-//class BRMongoTestControllerImp @Inject() (repositories: Repositories) extends BRMongoTestController {
-//  val metadataRepository = repositories.metadataRepository
-//}
-
 @Singleton
-class BRMongoTestController @Inject()(repository: MetadataRepository) extends BaseController {
+class MetadataTestController @Inject()(repository: MetadataRepository) extends BaseController {
 
   def dropMetadataCollection = Action.async {
     implicit request =>
@@ -40,10 +36,10 @@ class BRMongoTestController @Inject()(repository: MetadataRepository) extends Ba
       }
   }
 
-  def updateCC(regId: String): Action[JsValue] = Action.async(parse.json) {
+  def updateCompletionCapacity(regId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[JsValue] { cc =>
-        val capacity = (cc \ "cc").as[String]
+        val capacity = (cc \ "completionCapacity").as[String]
         repository.updateCompletionCapacity(regId, capacity) map(_ => Ok(cc))
       }
   }

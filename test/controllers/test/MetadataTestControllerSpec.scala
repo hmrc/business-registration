@@ -28,12 +28,12 @@ import play.api.test.Helpers._
 
 import scala.concurrent.Future
 
-class BRMongoTestControllerSpec extends SCRSSpec {
+class MetadataTestControllerSpec extends SCRSSpec {
 
   val mockMetadataRepository = mock[MetadataRepository]
 
   def setupController = {
-    new BRMongoTestController(mockMetadataRepository)
+    new MetadataTestController(mockMetadataRepository)
   }
 
   "dropMetadataCollection" should {
@@ -62,7 +62,7 @@ class BRMongoTestControllerSpec extends SCRSSpec {
       when(mockMetadataRepository.updateCompletionCapacity(any(), any()))
         .thenReturn(Future.successful("director"))
 
-      val result = setupController.updateCC("1234")(FakeRequest().withJsonBody(Json.parse("""{"cc" : "director"}""")))
+      val result = setupController.updateCompletionCapacity("1234")(FakeRequest().withJsonBody(Json.parse("""{"completionCapacity" : "director"}""")))
       status(result.run())
     }
   }
