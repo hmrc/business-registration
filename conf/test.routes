@@ -3,3 +3,4 @@ GET        /drop-collection                                 @controllers.test.BR
 GET        /get-beta-user/:email                            @controllers.test.UserRegisterController.searchRegistrations(email)
 GET        /clear-beta-users                                @controllers.test.UserRegisterController.clearRecords
 
+POST       /update-cc/:regId                                 @controllers.test.BRMongoTestController.updateCC(regId)

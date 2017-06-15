@@ -23,6 +23,7 @@ import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
 import repositories.MetadataRepository
 import org.mockito.Mockito._
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 
 import scala.concurrent.Future
@@ -53,6 +54,16 @@ class BRMongoTestControllerSpec extends SCRSSpec {
       val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
       jsonBodyOf(result).toString() shouldBe """{"message":"An error occurred. Metadata collection could not be dropped"}"""
+    }
+  }
+
+  "updateCC" should {
+    "return a 200" in {
+      when(mockMetadataRepository.updateCompletionCapacity(any(), any()))
+        .thenReturn(Future.successful("director"))
+
+      val result = setupController.updateCC("1234")(FakeRequest().withJsonBody(Json.parse("""{"cc" : "director"}""")))
+      status(result.run())
     }
   }
 }

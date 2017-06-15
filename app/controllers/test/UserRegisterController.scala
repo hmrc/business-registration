@@ -39,5 +39,6 @@ class UserRegisterController @Inject() (userRegisterService: UserRegisterService
   def clearRecords() = Action.async { implicit request =>
     userRegisterService.dropUsers()
   }
+
 }
 

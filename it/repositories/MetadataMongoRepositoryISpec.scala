@@ -103,4 +103,21 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       auth shouldBe None
     }
   }
+
+  "updateCompletionCapacity" should {
+    "successfully update the completion capacity in a document" in new Setup {
+      val randomIntId = UUID.randomUUID().toString
+      val randomRegid = UUID.randomUUID().toString
+
+      val metadata = Metadata(randomIntId, randomRegid, "", "ENG", None, None, false)
+
+      val metdataResponse = await(repository.createMetadata(metadata))
+
+      val updatedCapacity = await(repository.updateCompletionCapacity(randomRegid, "director"))
+      updatedCapacity shouldBe "director"
+
+      val fetchedMetaData = await(repository.retrieveMetadata(randomRegid))
+      fetchedMetaData.get.completionCapacity shouldBe Some("director")
+    }
+  }
 }

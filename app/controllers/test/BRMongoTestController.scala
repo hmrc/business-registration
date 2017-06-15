@@ -16,9 +16,9 @@
 
 package controllers.test
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
 import repositories._
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -37,6 +37,14 @@ class BRMongoTestController @Inject()(repository: MetadataRepository) extends Ba
       repository.drop map {
         case true => Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
         case false => Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
+      }
+  }
+
+  def updateCC(regId: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request =>
+      withJsonBody[JsValue] { cc =>
+        val capacity = (cc \ "cc").as[String]
+        repository.updateCompletionCapacity(regId, capacity) map(_ => Ok(cc))
       }
   }
 }
