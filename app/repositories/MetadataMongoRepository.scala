@@ -42,6 +42,7 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID] with Authori
   def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
   def removeMetadata(registrationId: String): Future[Boolean]
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime]
+  def updateCompletionCapacity(registrationId: String, completionCapacity: String): Future[String]
 }
 
 abstract class MetadataRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
@@ -62,6 +63,12 @@ class MetadataRepositoryImpl @Inject()(implicit app: Application) extends Metada
   private def regIDMetadataSelector(registrationID: String): BSONDocument = BSONDocument(
     "registrationID" -> BSONString(registrationID)
   )
+
+  override def updateCompletionCapacity(registrationId: String, completionCapacity: String): Future[String] = {
+    val selector = regIDMetadataSelector(registrationId)
+    val update = BSONDocument("$set" -> BSONDocument("completionCapacity" -> completionCapacity))
+    collection.update(selector, update) map(_ => completionCapacity)
+  }
 
   override def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
     val selector = regIDMetadataSelector(registrationId)
