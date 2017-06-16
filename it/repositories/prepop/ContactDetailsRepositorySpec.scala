@@ -122,11 +122,11 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
   //private
   "getContactDetailsWithJustRegID" should {
     "get contactDetailsRecord successfully" in new Setup {
-      await(repository.upsertContactDetails("reg1", "int2", ContactDetails("foo",None,"sName",Some("email"), Some("num1"), Some("num2"))))
+      await(repository.upsertContactDetails("reg1", "int2", ContactDetails("foo",Some("middlenamee"),"sName",Some("email"), Some("num1"), Some("num2"))))
      val res = await(repository.getContactDetailsWithJustRegID("reg1"))
       val newRes = res.get - ("lastUpdated")
 
-      newRes shouldBe Json.parse("""{"_id":"reg1","InternalID":"int2","ContactDetails":{"FirstName":"foo","Surname":"sName","Email":"email","TelephoneNumber":"num1","MobileNumber":"num2"}}""")
+      newRes shouldBe Json.parse("""{"_id":"reg1","InternalID":"int2","ContactDetails":{"firstName":"foo","middleName":"middlenamee","surname":"sName","email":"email","telephoneNumber":"num1","mobileNumber":"num2"}}""")
     }
     "return None because nothing exists" in new Setup {
       val res = await(repository.getContactDetailsWithJustRegID("reg1"))

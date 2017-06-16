@@ -8,12 +8,12 @@ Prepop
 
 <b>Contact details example json:</b>
 {
-  "FirstName": "name1",
-  "MiddleName": "m", //Optional
-  "Surname": "sName",
-  "Email": "email1", //Optional
-  "TelephoneNumber": "1", //Optional
-  "MobileNumber": "2" //Optional
+  "firstName": "name1",
+  "middleName": "m", //Optional
+  "surname": "sName",
+  "email": "email1", //Optional
+  "telephoneNumber": "1", //Optional
+  "mobileNumber": "2" //Optional
 }
 
 ### License
