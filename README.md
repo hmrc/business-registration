@@ -16,6 +16,19 @@ Prepop
   "mobileNumber": "2" //Optional
 }
 
+<b>Addresses GET and POST URL:</b>
+/business-registration/:RegID/addresses
+
+<b> Addresses example json: </b>
+{
+   "addressLine1": "add1",
+    "addressLine2": "add2", //Optional
+    "addressLine3": "add3", //Optional 
+    "addressLine4": "add4", //Optional
+    "postcode": "posty1", //Optional if country supplied
+    "country": "country1" //Optional if postcode supplied
+}
+
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html")
