@@ -24,9 +24,9 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import scala.util.control.NoStackTrace
 
 
-case class ContactDetails(firstName:String,
+case class ContactDetails(firstName:Option[String],
                          middleName:Option[String],
-                         surname:String,
+                         surname:Option[String],
                          email: Option[String],
                          telephoneNumber: Option[String],
                          mobileNumber: Option[String]) {
@@ -54,9 +54,9 @@ object ContactDetails {
     override def writes(cd: ContactDetails): JsObject = {
 
       val newCD = ContactDetails(
-        cd.firstName,
+        if(cd.firstName.isDefined)cd.firstName else originalContactDetails.flatMap(s => s.firstName),
         if(cd.middleName.isDefined)cd.middleName else originalContactDetails.flatMap(s => s.middleName),
-        cd.surname,
+        if(cd.surname.isDefined)cd.surname else originalContactDetails.flatMap(s => s.surname),
         if(cd.email.isDefined)cd.email else originalContactDetails.flatMap(s => s.email),
         if(cd.telephoneNumber.isDefined)cd.telephoneNumber else originalContactDetails.flatMap(s => s.telephoneNumber),
         if(cd.mobileNumber.isDefined)cd.mobileNumber else originalContactDetails.flatMap(s => s.mobileNumber)
