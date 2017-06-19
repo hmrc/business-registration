@@ -17,7 +17,7 @@ Prepop
 | 403           | Forbidden     |
 | 404           | Not found     |
 
-####Example of usage
+#Example of usage
 ```
 GET /business-registration/12345/contact-details
 
@@ -66,7 +66,7 @@ A ```200``` success response:
 ```
 
 
-####Example of usage
+#Example of usage
 ```
 POST /business-registration/12345/contact-details
 
@@ -100,7 +100,7 @@ A ```200``` success response: **No Response body**
 | 403           | Forbidden     |
 | 404           | Not found     |
 
-####Example of usage
+#Example of usage
 ```
 GET /business-registration/12345/addresses
 
@@ -148,7 +148,7 @@ A ```200``` success response:
 | 200           | OK            |
 | 403           | Forbidden     |
 
-####Example of usage
+#Example of usage
 ```
 POST /business-registration/12345/addresses
 
