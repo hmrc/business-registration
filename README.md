@@ -88,7 +88,7 @@ A ```200``` success response: **No Response body**
 
 #
 
-> ####Important
+> **Important**
 > When inserting / updating addresses we only validate that an addressLine1 AND (postcode OR country) exist to check equality between addresses,
 > therefore, any other address related data (e.g. address audit refs) your service requires can be freely inserted / updated / retrieved
 
