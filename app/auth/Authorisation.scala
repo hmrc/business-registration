@@ -38,14 +38,11 @@ trait Authorisation[I] {
   val resourceConn : AuthorisationResource[I]
 
   def authorised(id:I)(f: => AuthorisationResult => Future[Result])(implicit hc: HeaderCarrier) = {
-    Logger.debug(s"Current user id is ${hc.userId}") // always outputs NONE :-(
-
     for {
       authority <- authConnector.getCurrentAuthority()
       resource <- resourceConn.getInternalId(id)
       result <- f(mapToAuthResult(authority, resource))
     } yield {
-      Logger.debug(s"Got authority = $authority")
       result
     }
   }
@@ -55,7 +52,6 @@ trait Authorisation[I] {
         authority <- authConnector.getCurrentAuthority()
         resource <- resourceConn.getInternalId(registrationId)
       } yield {
-        Logger.debug(s"Got authority = $authority")
         mapToAuthResult(authority, resource)
       }
     ) flatMap {

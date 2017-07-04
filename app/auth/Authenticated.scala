@@ -39,7 +39,6 @@ trait Authenticated {
       authority <- authConnector.getCurrentAuthority()
       result = mapToAuthResult(authority)
     } yield {
-      Logger.debug(s"Got authority = $authority")
       result
     }) flatMap {
       case NotLoggedIn => Future.successful(Forbidden)
@@ -48,13 +47,10 @@ trait Authenticated {
   }
 
   def authenticated(f: => AuthenticationResult => Future[Result])(implicit hc: HeaderCarrier) = {
-    Logger.debug(s"Current user id is ${hc.userId}") // always outputs NONE :-(
-
     for {
       authority <- authConnector.getCurrentAuthority()
       result <- f(mapToAuthResult(authority))
     } yield {
-      Logger.debug(s"Got authority = $authority")
       result
     }
   }

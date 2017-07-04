@@ -40,10 +40,8 @@ class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) e
 
   def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]] = {
     val getUrl = s"""$serviceUrl/$authorityUri"""
-    Logger.debug(s"[AuthConnector][getCurrentAuthority] - GET $getUrl")
     http.GET[HttpResponse](getUrl) flatMap {
       response =>
-        Logger.debug(s"[AuthConnector][getCurrentAuthority] - RESPONSE status: ${response.status}, body: ${response.body}")
         response.status match {
           case OK => {
             val uri = (response.json \ "uri").as[String]
@@ -52,8 +50,6 @@ class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) e
 
             http.GET[HttpResponse](s"$serviceUrl$idsLink") map {
               response =>
-                Logger.info(s"[AuthConnector] - [getCurrentAuthority] API call : $serviceUrl/$idsLink")
-                Logger.info(s"[AuthConnector] - [getCurrentAuthority] response from ids call : ${response.json}")
                 val ids = response.json.as[UserIds]
                 Some(Authority(uri, userDetails, ids))
             }
