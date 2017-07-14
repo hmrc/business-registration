@@ -105,6 +105,37 @@ class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
         await(service.addressExists(regId, suppliedAddressJson)) shouldBe true
       }
 
+      "the returned address array contains the same supplied address but contains different cases" in new Setup {
+        val suppliedAddressJson = Json.parse(
+          s"""{
+             |  "addressLine1" : "testAddressLine1",
+             |  "addressLine2" : "testAddressLine2",
+             |  "addressLine3" : "testAddressLine3",
+             |  "addressLine4" : "testAddressLine4",
+             |  "postcode" : "testPostcode",
+             |  "country" : "testCountry"
+             |}
+             |""".stripMargin)
+
+        val returnedAddressJson = Json.parse(
+          s"""{
+             |"addresses" : [
+             |  {
+             |    "addressLine1" : "TESTADDRESSLINE1",
+             |    "addressLine2" : "testAddressLine2",
+             |    "addressLine3" : "testAddressLine3",
+             |    "addressLine4" : "testAddressLine4",
+             |    "postcode" : "TESTPOSTCODE",
+             |    "country" : "TESTCOUNTRY"
+             |  }
+             |]}
+             |""".stripMargin)
+
+        mockFetchAddresses(Some(returnedAddressJson))
+
+        await(service.addressExists(regId, suppliedAddressJson)) shouldBe true
+      }
+
       "the returned address array contains the supplied address when multiple addresses are returned" in new Setup {
         val suppliedAddressJson = buildAddressJson(regId, withOid = false)
         val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId), FetchOptions(regId, different = true)))
