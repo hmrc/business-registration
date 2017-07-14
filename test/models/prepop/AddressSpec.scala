@@ -38,6 +38,12 @@ class AddressSpec extends UnitSpec {
         address.sameAs(otherAddress) shouldBe true
       }
 
+      "address line 1 and postcode are the same but have different cases" in {
+        val otherAddress = Address(addressLine1.toUpperCase, Some(postcode.toUpperCase), None)
+
+        address.sameAs(otherAddress) shouldBe true
+      }
+
       "address line 1 and country are the same but postcode is not set in either address" in {
         val otherAddress = Address(addressLine1, None, Some(country))
 

@@ -23,7 +23,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{IndexType, Index}
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.bson._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import javax.inject.{Inject, Singleton}
 import scala.collection.Seq
@@ -47,6 +47,10 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
   domainFormat = Address.format) with AddressRepository with TTLIndexing[JsObject,BSONObjectID] {
 
   private[repositories] def now = DateTime.now(DateTimeZone.UTC)
+
+  private[repositories] implicit class impBsonHelpers(value: String) {
+    def caseInsensitive: BSONRegex = BSONRegex("^" + value + "$", "i")
+  }
 
   override def indexes = {
     Seq(
@@ -86,10 +90,10 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
 
   override def updateAddress(regId: String, address: JsObject): Future[Boolean] = {
     val a = address.as[Address](Address.addressReads)
-    val selector = BSONDocument("registration_id" -> regId) ++
-      BSONDocument("addressLine1" -> a.addressLine1) ++
-      a.postcode.fold(BSONDocument())(pc => BSONDocument("postcode" -> pc)) ++
-      a.country.fold(BSONDocument())(c => BSONDocument("country" -> c))
+    val selector = BSONDocument("registration_id" -> regId.caseInsensitive) ++
+      BSONDocument("addressLine1" -> a.addressLine1.caseInsensitive) ++
+      a.postcode.fold(BSONDocument())(pc => BSONDocument("postcode" -> pc.caseInsensitive)) ++
+      a.country.fold(BSONDocument())(c => BSONDocument("country" -> c.caseInsensitive))
 
     val updatedTTL = Json.obj("lastUpdated" -> now)
 
@@ -97,7 +101,7 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
       existingAddressOpt.fold(Future.successful(false)) { existingAddress =>
         val updatedAddress = address deepMerge updatedTTL
         collection.update(selector, updatedAddress)(implicitly[OWrites[BSONDocument]], Address.mongoWrites, global)
-          .map(_.writeErrors.isEmpty)
+          .map{err => err.writeErrors.isEmpty}
       }
     }
   }

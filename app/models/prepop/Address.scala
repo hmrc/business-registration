@@ -69,10 +69,10 @@ case class Address(addressLine1: String,
   def isValid: Boolean = postcode.isDefined || country.isDefined
 
   def sameAs(that: Address): Boolean = {
-    this.addressLine1 == that.addressLine1 && {
+    this.addressLine1.toLowerCase == that.addressLine1.toLowerCase && {
       (this.postcode, that.postcode, this.country, that.country) match {
-        case (Some(p1), Some(p2), _, _) if p1 == p2 => true
-        case (None, None, Some(c1), Some(c2)) if c1 == c2 => true
+        case (Some(p1), Some(p2), _, _) if p1.toLowerCase == p2.toLowerCase => true
+        case (None, None, Some(c1), Some(c2)) if c1.toLowerCase == c2.toLowerCase => true
         case _ => false
       }
     }

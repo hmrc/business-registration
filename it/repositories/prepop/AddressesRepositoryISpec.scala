@@ -17,9 +17,11 @@
 package repositories.prepop
 
 import helpers.{MongoSpec, PimpMyRepo}
+import models.prepop.Address
 import org.joda.time.{DateTimeZone, DateTime}
 import org.scalactic.Fail
-import play.api.libs.json.{Json, JsObject}
+import play.api.Logger
+import play.api.libs.json.{Reads, Json, JsObject}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -226,6 +228,8 @@ class AddressesRepositoryISpec extends MongoSpec with PimpMyRepo[JsObject] {
     implicit class addressImp(o: JsObject) {
       def withoutTTL: JsObject = o - "lastUpdated"
       def withoutObjectID: JsObject = o - "_id"
+      def getAddressesAsList: Seq[JsObject] = (o \ "addresses").as[Seq[JsObject]](Reads.seq(Address.reads))
+      def getTTL: DateTime = (o \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
     }
 
     "update the lastUpdated ttl value when the supplied address exactly matches an existing address for the regId" in new Setup {
@@ -268,6 +272,53 @@ class AddressesRepositoryISpec extends MongoSpec with PimpMyRepo[JsObject] {
       val updatedAddress = await(repo.findById(oid)).get
 
       updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddressWithNewAddressLine2.withoutTTL
+    }
+
+    "update an existing addresses fields if the supplied address is equal but the cases are different" in new Setup {
+      val dateTimeNow = now
+
+      val existingAddress = Json.parse(
+        s"""{
+            |  "_id" : {"$$oid" : "$generateOID"},
+            |  "registration_id" : "$regId",
+            |  "addressLine1" : "testAddressLine1",
+            |  "addressLine2" : "testAddressLine2",
+            |  "addressLine3" : "testAddressLine3",
+            |  "addressLine4" : "testAddressLine4",
+            |  "postcode" : "testPostcode",
+            |  "country" : "testCountry",
+            |  "lastUpdated" : $dateTimeNow
+            |}
+            |""".stripMargin).as[JsObject]
+
+      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+
+      val suppliedAddress = Json.parse(
+        s"""{
+            |  "registration_id" : "$regId",
+            |  "addressLine1" : "TESTADDRESSLINE1",
+            |  "addressLine2" : "testAddressLine2",
+            |  "addressLine3" : "testAddressLine3",
+            |  "addressLine4" : "testAddressLine4",
+            |  "postcode" : "TESTPOSTCODE",
+            |  "country" : "TESTCOUNTRY"
+            |}
+            |""".stripMargin).as[JsObject]
+
+      repo.awaitInsert(existingAddress)
+      repo.awaitCount shouldBe 1
+
+      val result = await(repo.updateAddress(regId, suppliedAddress))
+
+      result shouldBe true
+
+      repo.awaitCount shouldBe 1
+
+      val updatedAddress = await(repo.findById(oid)).get
+
+      existingAddress.getTTL isBefore updatedAddress.getTTL shouldBe true
+
+      updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddress.withoutTTL
     }
   }
 }
