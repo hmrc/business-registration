@@ -18,10 +18,11 @@ package services
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
-import models.{Metadata, MetadataResponse}
+import models.{Links, Metadata, MetadataResponse}
 import org.joda.time.DateTime
+import play.api.libs.json.{JsObject, Json}
 import repositories._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -87,5 +88,9 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
 
   def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
     metadataRepository.updateLastSignedIn(registrationId, dateTime)
+  }
+
+  def buildSelfLink(registrationId: String): JsObject = {
+    Json.obj("links" -> Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url)))
   }
 }
