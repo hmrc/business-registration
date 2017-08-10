@@ -12,8 +12,8 @@ POST       /beta-sign-up                                                    @con
 
 
 # Prepop Routes
-GET      /:registrationID/contact-details                            @controllers.prePop.ContactDetailsController.getContactDetails(registrationID)
-POST     /:registrationID/contact-details                            @controllers.prePop.ContactDetailsController.insertUpdateContactDetails(registrationID)
+GET      /:registrationID/contact-details                                   @controllers.prePop.ContactDetailsController.getContactDetails(registrationID)
+POST     /:registrationID/contact-details                                   @controllers.prePop.ContactDetailsController.insertUpdateContactDetails(registrationID)
 
 GET      /:registrationID/addresses                                         @controllers.prePop.AddressController.fetchAddresses(registrationID)
 POST     /:registrationID/addresses                                         @controllers.prePop.AddressController.updateAddress(registrationID)
