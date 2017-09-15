@@ -45,7 +45,7 @@ trait AddressController extends BaseController with Authorisation[String] with A
 
   def fetchAddresses(registrationId: String) = Action.async {
     implicit request =>
-      authorisedFor(registrationId) { _ =>
+      authorisedFor(registrationId,methodName = "fetchAddresses") { _ =>
         service.fetchAddresses(registrationId) map {
           case Some(addresses) => Ok(addresses)
           case None => NotFound

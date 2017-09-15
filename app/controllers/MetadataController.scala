@@ -74,7 +74,7 @@ class MetadataController @Inject()(metadataService: MetadataService, val authCon
 
   def retrieveMetadata(registrationID: String) = Action.async {
     implicit request =>
-      authorisedFor(registrationID) { _ =>
+      authorisedFor(registrationID,"retrieveMetadata") { _ =>
         val timer = metricsService.retrieveMetadataTimer.time()
         metadataService.retrieveMetadataRecord(registrationID) map {
           case Some(response) => timer.stop()
@@ -97,7 +97,7 @@ class MetadataController @Inject()(metadataService: MetadataService, val authCon
 
   def updateMetaData(registrationID : String) : Action[JsValue] = Action.async[JsValue](parse.json) {
     implicit request =>
-      authorisedFor(registrationID) { _ =>
+      authorisedFor(registrationID,"updateMetaData") { _ =>
         withJsonBody[MetadataResponse] {
           metaData =>
             val timer = metricsService.updateMetadataTimer.time()
@@ -111,7 +111,7 @@ class MetadataController @Inject()(metadataService: MetadataService, val authCon
 
   def updateLastSignedIn(registrationId: String) = Action.async(parse.json) {
     implicit request =>
-      authorisedFor(registrationId) { _ =>
+      authorisedFor(registrationId,"updateLastSignedIn") { _ =>
         withJsonBody[DateTime] { dT =>
           metadataService.updateLastSignedIn(registrationId, dT) map { updatedDT => Ok(Json.toJson(updatedDT))}
         }
