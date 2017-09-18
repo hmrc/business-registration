@@ -47,7 +47,7 @@ trait Authorisation[I] {
     }
   }
 
-  def authorisedFor(registrationId: I)(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+  def authorisedFor(registrationId: I,methodName:String)(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
     (for {
         authority <- authConnector.getCurrentAuthority()
         resource <- resourceConn.getInternalId(registrationId)
@@ -57,18 +57,18 @@ trait Authorisation[I] {
     ) flatMap {
     case Authorised(a) => f(a)
     case NotLoggedInOrAuthorised =>
-      Logger.info(s"[Authorisation] [authorisedFor] User not logged in")
+      Logger.info(s"[Authorisation] [${methodName}] User not logged in")
       Future.successful(Forbidden)
     case NotAuthorised(_) =>
-      Logger.info(s"[Authorisation] [authorisedFor] User logged in but not authorised for resource $registrationId")
+      Logger.info(s"[Authorisation] [${methodName}] User logged in but not authorised for resource $registrationId")
       Future.successful(Forbidden)
     case AuthResourceNotFound(_) =>
-      Logger.info(s"[Authorisation] [authorisedFor] Could not match an Auth resource to registration id $registrationId")
+      Logger.info(s"[Authorisation] [${methodName}] Could not match an Auth resource to registration id $registrationId")
       Future.successful(NotFound)
     }
   }
 
-  private def mapToAuthResult(authContext: Option[Authority], resource: Option[(I,String)] ) : AuthorisationResult = {
+  private[auth] def mapToAuthResult(authContext: Option[Authority], resource: Option[(I,String)] ) : AuthorisationResult = {
     authContext match {
       case None => NotLoggedInOrAuthorised
       case Some(context) => {

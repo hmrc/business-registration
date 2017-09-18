@@ -39,11 +39,6 @@ class AuthorisationSpec extends SCRSSpec {
     val resourceConn = mockResource
   }
 
-//  before {
-//    reset(mockAuth)
-//    reset(mockResource)
-//  }
-
   "The authorisation helper" should {
 
     "indicate there's no logged in user where there isn't a valid bearer token" in {
@@ -109,6 +104,54 @@ class AuthorisationSpec extends SCRSSpec {
       }
       val response = await(result)
       response.header.status shouldBe OK
+    }
+  }
+  "authorisedFor"should {
+    "correctly return a result of 200 when getCurrentAuth returns Some and getInternalId returns Some and both ids match" in {
+
+      val regId = "xxx"
+      val userIDs = UserIds("foo", "bar")
+      val authority = Authority("uri","userdeetsLink",UserIds("foo","bar"))
+      when(mockAuth.getCurrentAuthority()(any[HeaderCarrier]())).thenReturn(Future.successful(Some(authority)))
+      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+
+      val result = Authorisation.authorisedFor(regId,"myMethodName")(authority => Future.successful(Results.Ok))
+      val response = await(result)
+      response.header.status shouldBe 200
+    }
+
+  "correctly return a result of 403 when getCurrentAuth returns Some and getInternalId returns Some and ids dont match" in {
+
+    val regId = "xxx"
+    val userIDs = UserIds("foo", "bar")
+    val authority = Authority("uri","userdeetsLink",UserIds("foo1","bar1"))
+    when(mockAuth.getCurrentAuthority()(any[HeaderCarrier]())).thenReturn(Future.successful(Some(authority)))
+    when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+
+    val result = Authorisation.authorisedFor(regId,"myMethodName")(authority => Future.failed(new Exception))
+    val response = await(result)
+    response.header.status shouldBe 403
+    }
+  }
+  "mapToAuthResult" should {
+    "return Authorised when context int id and resource int id match" in {
+      val authority = Some(Authority("uri","userdeetsLink",UserIds("foo1","bar1")))
+      val resource = Some(("foo", "foo1"))
+      Authorisation.mapToAuthResult(authority,resource) shouldBe Authorised(authority.get)
+    }
+    "return NotLoggedInOrAuthorised when context is not passed in" in {
+
+      val resource = Some(("foo", "foo1"))
+      Authorisation.mapToAuthResult(None,resource) shouldBe NotLoggedInOrAuthorised
+    }
+    "return AuthResourceNotFound when context is passed in, but resource is not passed in" in {
+      val authority = Some(Authority("uri","userdeetsLink",UserIds("foo1","bar1")))
+      Authorisation.mapToAuthResult(authority,None) shouldBe AuthResourceNotFound(authority.get)
+    }
+    "return NotAuthorised when int ids dont match" in {
+      val authority = Some(Authority("uri","userdeetsLink",UserIds("foo1","bar1")))
+      val resource = Some(("foo", "foo2"))
+      Authorisation.mapToAuthResult(authority,resource) shouldBe NotAuthorised(authority.get)
     }
   }
 }
