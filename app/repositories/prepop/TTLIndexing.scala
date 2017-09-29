@@ -27,7 +27,10 @@ import scala.concurrent.Future
 
 
 trait TTLIndexing[A, ID] {
-  self: ReactiveRepository[A, ID] => // TODO - May not need
+  self: ReactiveRepository[A, ID] =>
+
+  val collectionName: String = self.collection.name
+
   lazy val indexs : Seq[Index] = Seq.empty
   def expireAfterSeconds : Long = ttl.toLong
   private lazy val LastUpdatedIndex = "lastUpdatedIndex"
@@ -66,6 +69,9 @@ trait TTLIndexing[A, ID] {
         name = Some(LastUpdatedIndex),
         options = BSONDocument(EXPIRE_AFTER_SECONDS -> BSONLong(expireAfterSeconds))
       )
-    )))
+    ).map{ ensured =>
+      Logger.info(s"[TTLIndex] Ensuring ttl index on field : lastUpdated in collection : $collectionName is set to $expireAfterSeconds")
+      ensured
+    }))
   }
 }

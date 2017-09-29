@@ -19,28 +19,47 @@ package repositories.prepop
 import models.prepop.{ContactDetails, PermissionDenied}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.Index
-import reactivemongo.bson.BSONLong
+import reactivemongo.api.indexes.{Index, IndexType}
+import reactivemongo.bson.{BSONDocument, BSONLong}
 import reactivemongo.json.collection.JSONCollection
-import uk.gov.hmrc.mongo.MongoSpecSupport
+import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with WithFakeApplication {
+class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll
+  with ScalaFutures with Eventually with WithFakeApplication {
+
+  val timeToExpire: Int = 12345
+
+  val additionalConfig = Map("Test.microservice.services.prePop.ttl" -> s"$timeToExpire")
+
+  override lazy val fakeApplication: Application = new GuiceApplicationBuilder()
+    .bindings(bindModules:_*)
+    .configure(additionalConfig)
+    .build()
+
+  implicit val app: Application = fakeApplication
 
   val ContactDetailsdata = ContactDetails(Some("name"),Some("name"),Some("sName"), Some("email"), Some("num"), Some(""))
   val contactDetailsUpdated = ContactDetails(Some("name2"),Some("name"),Some("sName"), Some("email"), Some("num"), Some("foo"))
+
   class Setup {
     val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
     val repository = new ContactDetailsMongo(mongoComp).repository
     await(repository.drop)
     await(repository.ensureIndexes)
 
+    def indexCount: Int = await(repository.collection.indexesManager.list).size
   }
+
+//  def getTTLFromConfig(implicit app: Application): String =
+//    app.configuration.getString("Test.microservice.services.prePop.ttl").get
 
 "upsertContactDetails" should {
   "successfully insert a contactDetails into the repository" in new Setup {
@@ -144,4 +163,85 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
     }
 
+  "ttl index" should {
+
+    def getTTLIndex(repo: ReactiveRepository[_, _]): Index = {
+      await(repo.collection.indexesManager.list).filter(_.eventualName == "lastUpdatedIndex").head
+    }
+
+    "be applied with the correct expiration if one doesn't already exist" in new Setup {
+
+      await(repository.collection.indexesManager.dropAll())
+
+      indexCount shouldBe 1 // default _id index
+
+      await(repository.ensureIndexes)
+
+      indexCount shouldBe 3
+
+      val indexes: List[Index] = repository.collection.indexesManager.list
+
+      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
+      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+    }
+
+    "overwrite the current ttl index with a new one from config" in new Setup {
+
+      await(repository.collection.indexesManager.dropAll())
+
+      indexCount shouldBe 1 // default _id index
+
+      await(repository.ensureIndexes)
+
+      indexCount shouldBe 3
+
+      await(repository.collection.indexesManager.drop("lastUpdatedIndex"))
+
+      indexCount shouldBe 2 // dropped ttl index
+
+      val setupTTl: Int = 1
+
+      val setupTTLIndex = Index(
+        key = Seq("lastUpdated" -> IndexType.Ascending),
+        name = Some("lastUpdatedIndex"),
+        options = BSONDocument("expireAfterSeconds" -> BSONLong(setupTTl))
+      )
+
+      await(repository.collection.indexesManager.create(setupTTLIndex))
+
+      indexCount shouldBe 3 // created new ttl index
+
+      val indexes: List[Index] = repository.collection.indexesManager.list
+
+      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
+      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(setupTTl))
+
+      await(repository.ensureIndexes)
+
+      indexCount shouldBe 3
+
+      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
+      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+    }
+
+    "do nothing when ensuring the ttl index but one already exists and has the same expiration time" in new Setup {
+      await(repository.collection.indexesManager.dropAll())
+
+      indexCount shouldBe 1 // default _id index
+
+      await(repository.ensureIndexes)
+
+      indexCount shouldBe 3
+
+      val indexes: List[Index] = repository.collection.indexesManager.list
+
+      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
+      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+
+      await(repository.ensureIndexes)
+
+      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
+      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+    }
+  }
 }
