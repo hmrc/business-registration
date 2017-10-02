@@ -21,7 +21,8 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONLong}
 import reactivemongo.core.commands.DeleteIndex
 import uk.gov.hmrc.mongo.ReactiveRepository
-import repositories.CollectionsNames.ttl
+import repositories.CollectionsNames.getConfString
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -29,49 +30,57 @@ import scala.concurrent.Future
 trait TTLIndexing[A, ID] {
   self: ReactiveRepository[A, ID] =>
 
-  val collectionName: String = self.collection.name
+  lazy val ttl: Long = getConfString("prePop.ttl", throw new Exception("Can't find key prePop.ttl")).toLong
 
-  lazy val indexs : Seq[Index] = Seq.empty
-  def expireAfterSeconds : Long = ttl.toLong
-  private lazy val LastUpdatedIndex = "lastUpdatedIndex"
-  private lazy val EXPIRE_AFTER_SECONDS = "expireAfterSeconds"
+  private val collectionName: String = self.collection.name
 
+  private val LAST_UPDATED_INDEX = "lastUpdatedIndex"
+  private val EXPIRE_AFTER_SECONDS = "expireAfterSeconds"
 
   def ensureTTLIndexes(implicit ec: scala.concurrent.ExecutionContext): Future[Seq[Boolean]] = {
 
-    import reactivemongo.bson.DefaultBSONHandlers._
-
     collection.indexesManager.list().flatMap {
       indexes => {
-        val indexToUpdate = indexes.find(index =>
-          index.eventualName == LastUpdatedIndex
-            && index.options.getAs[BSONLong](EXPIRE_AFTER_SECONDS).getOrElse(BSONLong(expireAfterSeconds)).as[Long] != expireAfterSeconds
-        )
 
-        if (indexToUpdate.isDefined) {
-          for {
-            deleted <- collection.db.command(DeleteIndex(collection.name, indexToUpdate.get.eventualName))
-            updated <- ensureLastUpdated
-          } yield updated
-        }
-        else {
-          ensureLastUpdated
+        val ttlIndex: Option[Index] = indexes.find(_.eventualName == LAST_UPDATED_INDEX)
+
+        ttlIndex match {
+          case Some(index) if hasSameTTL(index) =>
+            Logger.info(s"[TTLIndex] document expiration value for collection : $collectionName has not been changed")
+            doNothing
+          case Some(index) =>
+            Logger.info(s"[TTLIndex] document expiration value for collection : $collectionName has been changed. Updating ttl index to : $ttl")
+            deleteIndex(index) flatMap(_ => ensureLastUpdated)
+          case _ =>
+            Logger.info(s"[TTLIndex] TTL Index for collection : $collectionName does not exist. Creating TTL index")
+            ensureLastUpdated
         }
       }
-    }
+    } recoverWith errorHandler
+  }
 
+  private val doNothing = Future(Seq(true))
+
+  private def hasSameTTL(index: Index): Boolean = index.options.getAs[BSONLong](EXPIRE_AFTER_SECONDS).exists(_.as[Long] == ttl)
+
+  private def deleteIndex(index: Index) = collection.db.command(DeleteIndex(collection.name, index.eventualName))
+
+  private def errorHandler: PartialFunction[Throwable, Future[Seq[Boolean]]] = {
+    case ex =>
+      Logger.error(s"[TTLIndex] Exception thrown in TTLIndexing", ex)
+      throw ex
   }
 
   private def ensureLastUpdated: Future[Seq[Boolean]] = {
     Future.sequence(Seq(collection.indexesManager.ensure(
       Index(
         key = Seq("lastUpdated" -> IndexType.Ascending),
-        name = Some(LastUpdatedIndex),
-        options = BSONDocument(EXPIRE_AFTER_SECONDS -> BSONLong(expireAfterSeconds))
+        name = Some(LAST_UPDATED_INDEX),
+        options = BSONDocument(EXPIRE_AFTER_SECONDS -> BSONLong(ttl))
       )
-    ).map{ ensured =>
-      Logger.info(s"[TTLIndex] Ensuring ttl index on field : lastUpdated in collection : $collectionName is set to $expireAfterSeconds")
+    ))).map { ensured =>
+      Logger.info(s"[TTLIndex] Ensuring ttl index on field : $LAST_UPDATED_INDEX in collection : $collectionName is set to $ttl")
       ensured
-    }))
+    }
   }
 }

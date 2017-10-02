@@ -35,7 +35,7 @@ import scala.concurrent.Future
 class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll
   with ScalaFutures with Eventually with WithFakeApplication {
 
-  val timeToExpire: Int = 12345
+  val timeToExpire: Int = 999
 
   val additionalConfig = Map("Test.microservice.services.prePop.ttl" -> s"$timeToExpire")
 

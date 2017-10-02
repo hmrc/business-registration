@@ -23,5 +23,4 @@ object CollectionsNames extends ServicesConfig {
   final val USER_DATA: String = "scrs-beta-users"
   final val SEQUENCE: String = "sequence"
   final val CONTACTDETAILS: String = "prepop-contact-details"
-  final lazy val ttl:String = getConfString("prePop.ttl",throw new Exception("Can't find ttl index"))
 }

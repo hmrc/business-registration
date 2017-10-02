@@ -30,10 +30,10 @@ import uk.gov.hmrc.mongo.ReactiveRepository
 import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
+
 @Singleton
 class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent) {
   val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db)
-
 }
 
 trait ContactDetailsRepository{
@@ -49,22 +49,24 @@ class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[Contac
   override def indexes: Seq[Index] =
     Seq(
       Index(
-         key = Seq("InternalID" -> IndexType.Ascending),
-         name = Some("uniqueIntID"),unique = true
+        key = Seq("InternalID" -> IndexType.Ascending),
+        name = Some("uniqueIntID"),
+        unique = true
       )
     )
-  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
 
-    super.ensureIndexes flatMap { l =>
-      ensureTTLIndexes map {
-        ttl => l ++ ttl
-      }
+  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
+    for{
+      ttlIndexes <- ensureTTLIndexes
+      indexes    <- super.ensureIndexes
+    } yield {
+      indexes ++ ttlIndexes
     }
   }
 
   def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails): Future[Option[ContactDetails]] = {
     val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
-getContactDetailsUnVerifiedUser(registrationID, intID) .flatMap{ res =>
+    getContactDetailsUnVerifiedUser(registrationID, intID) .flatMap{ res =>
         val js = ContactDetails.mongoWrites(registrationID, internalID = intID,originalContactDetails = res).writes(contactDetails)
         collection.findAndUpdate(selector, js, upsert = true, fetchNewObject = true) map {
           s => s.result[ContactDetails](ContactDetails.mongoReads)
