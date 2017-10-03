@@ -16,17 +16,17 @@
 
 package helpers
 
-import org.scalactic.Fail
-import play.api.libs.json.{Json, JsObject, JsValue}
+import play.api.libs.json.{JsObject, JsValue, Json}
+import reactivemongo.api.commands.WriteResult
+import reactivemongo.api.indexes.Index
 import repositories.prepop.TTLIndexing
-import uk.gov.hmrc.mongo.{ReactiveRepository, MongoSpecSupport}
+import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext
 import scala.util.Random
-import scala.util.control.NoStackTrace
 
-trait MongoSpec extends UnitSpec with MongoSpecSupport with WithFakeApplication {
+trait MongoSpec extends UnitSpec with MongoSpecSupport with WithFakeApplication with RichReactiveRepository {
   implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   def generateOID: String = {
@@ -35,25 +35,27 @@ trait MongoSpec extends UnitSpec with MongoSpecSupport with WithFakeApplication 
   }
 }
 
-trait PimpMyRepo[T] {
+trait RichReactiveRepository {
   self: UnitSpec =>
 
   import scala.language.implicitConversions
 
-  class MongoHelpers(repo: ReactiveRepository[T, _] with TTLIndexing[T, _]) {
-    def awaitCount(implicit ex: ExecutionContext): Int = await(repo.count)
-    def awaitInsert(e: T)(implicit ex: ExecutionContext) = await(repo.insert(e))
-    def awaitDrop(implicit ex: ExecutionContext) = await(repo.drop)
-    def awaitEnsureIndexes(implicit ex: ExecutionContext) = await(repo.ensureIndexes)
-  }
+  implicit class MongoTTLOps[T](repo: ReactiveRepository[T, _] with TTLIndexing[T, _])(implicit ec: ExecutionContext) {
+    def awaitCount: Int = repo.count
+    def awaitInsert(e: T): WriteResult = repo.insert(e)
+    def awaitDrop: Boolean = repo.drop
+    def awaitEnsureIndexes: Seq[Boolean] = repo.ensureIndexes
 
-  implicit def impMongoHelpers(repo: ReactiveRepository[T, _] with TTLIndexing[T, _]): MongoHelpers = new MongoHelpers(repo)
+    def createIndex(index: Index): WriteResult = repo.collection.indexesManager.create(index)
+    def listIndexes: List[Index] = repo.collection.indexesManager.list()
+    def dropIndexes: Int = repo.collection.indexesManager.dropAll()
+    def findIndex(indexName: String): Option[Index] = listIndexes.find(_.eventualName == indexName)
+  }
 
   class JsObjectHelpers(o: JsObject) {
     def pretty: String = Json.prettyPrint(o)
   }
 
   implicit def impJsObjectHelpers(o: JsObject): JsObjectHelpers = new JsObjectHelpers(o)
-
   implicit def toJsObject(v: JsValue): JsObject = v.as[JsObject]
 }

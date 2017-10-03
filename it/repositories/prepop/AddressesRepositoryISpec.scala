@@ -16,7 +16,7 @@
 
 package repositories.prepop
 
-import helpers.{MongoSpec, PimpMyRepo}
+import helpers.{MongoSpec, RichReactiveRepository}
 import models.prepop.Address
 import org.joda.time.{DateTimeZone, DateTime}
 import org.scalactic.Fail
@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 import scala.util.Random
 
-class AddressesRepositoryISpec extends MongoSpec with PimpMyRepo[JsObject] {
+class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
 
   class Setup {
     val repo = new AddressMongoRepository(mongo)
