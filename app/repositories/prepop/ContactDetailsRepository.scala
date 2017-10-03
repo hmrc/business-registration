@@ -46,15 +46,6 @@ trait ContactDetailsRepository{
 class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[ContactDetails, BSONObjectID](collectionName = CONTACTDETAILS, mongo, ContactDetails.formats)
   with ContactDetailsRepository with TTLIndexing[ContactDetails, BSONObjectID] {
 
-  override def indexes: Seq[Index] =
-    Seq(
-      Index(
-        key = Seq("InternalID" -> IndexType.Ascending),
-        name = Some("uniqueIntID"),
-        unique = true
-      )
-    )
-
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
     for{
       ttlIndexes <- ensureTTLIndexes

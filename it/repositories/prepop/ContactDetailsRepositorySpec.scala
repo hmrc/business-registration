@@ -50,59 +50,61 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
   val contactDetailsUpdated = ContactDetails(Some("name2"),Some("name"),Some("sName"), Some("email"), Some("num"), Some("foo"))
 
   class Setup {
-    val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository = new ContactDetailsMongo(mongoComp).repository
+    private val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
+    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo(mongoComp).repository
     await(repository.drop)
     await(repository.ensureIndexes)
 
     def indexCount: Int = await(repository.collection.indexesManager.list).size
   }
 
-//  def getTTLFromConfig(implicit app: Application): String =
-//    app.configuration.getString("Test.microservice.services.prePop.ttl").get
 
-"upsertContactDetails" should {
-  "successfully insert a contactDetails into the repository" in new Setup {
+  "upsertContactDetails" should {
 
-    await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata)) shouldBe Some(ContactDetailsdata)
+    "successfully insert a contactDetails into the repository" in new Setup {
+
+      await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata)) shouldBe Some(ContactDetailsdata)
+    }
+
+    "fail to insert a contactDetails into the repository where intID is different to the records intid" in new Setup {
+
+      await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
+      await(repository.count) shouldBe 1
+      val res =  intercept[PermissionDenied] {await(repository.upsertContactDetails("regID", "intID1", ContactDetailsdata))}
+      await(repository.count) shouldBe 1
+    }
+
+    "update contact details successfully" in new Setup {
+
+      await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
+      await(repository.count) shouldBe 1
+      val res =  await(repository.upsertContactDetails("regID", "intID",contactDetailsUpdated ))
+      res shouldBe Some(contactDetailsUpdated)
+    }
+
+    "update contact details succesfully not replacing valid data with blanks" in new Setup {
+      await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
+      await(repository.count) shouldBe 1
+      val res =  await(repository.upsertContactDetails("regID", "intID", ContactDetails(Some("name1"),None,Some("name2"),None,None,None)))
+      res shouldBe Some(ContactDetails(Some("name1"),Some("name"),Some("name2"),Some("email"),Some("num"),Some("")))
+    }
+
+    "update Contact details should replace blank data with valid data" in new Setup {
+      await(repository.upsertContactDetails("regID", "intID", ContactDetails(Some("name1"),None,Some("sName"),None,None,None)))
+      val res = await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
+      res shouldBe Some(ContactDetailsdata)
+    }
+
+
+    "should Successfully insert minimal required contact details" in new Setup {
+      val res = await(repository.upsertContactDetails("regID", "intID", ContactDetails(None,None,None,None,None,None)))
+      await(repository.count) shouldBe 1
+      res shouldBe(Some(ContactDetails(None,None,None,None,None,None)))
+    }
   }
-  "fail to insert a contactDetails into the repository where intID is different to the records intid" in new Setup {
 
-    await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
-    await(repository.count) shouldBe 1
-    val res =  intercept[PermissionDenied] {await(repository.upsertContactDetails("regID", "intID1", ContactDetailsdata))}
-    await(repository.count) shouldBe 1
-  }
-  "update contact details successfully" in new Setup {
-
-    await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
-    await(repository.count) shouldBe 1
-    val res =  await(repository.upsertContactDetails("regID", "intID",contactDetailsUpdated ))
-    res shouldBe Some(contactDetailsUpdated)
-  }
-  "update contact details succesfully not replacing valid data with blanks" in new Setup {
-    await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
-    await(repository.count) shouldBe 1
-    val res =  await(repository.upsertContactDetails("regID", "intID", ContactDetails(Some("name1"),None,Some("name2"),None,None,None)))
-    res shouldBe Some(ContactDetails(Some("name1"),Some("name"),Some("name2"),Some("email"),Some("num"),Some("")))
-
-  }
-
-  "update Contact details should replace blank data with valid data" in new Setup {
-    await(repository.upsertContactDetails("regID", "intID", ContactDetails(Some("name1"),None,Some("sName"),None,None,None)))
-    val res = await(repository.upsertContactDetails("regID", "intID", ContactDetailsdata))
-    res shouldBe Some(ContactDetailsdata)
-  }
-
-
-  "should Successfully insert minimal required contact details" in new Setup {
-    val res = await(repository.upsertContactDetails("regID", "intID", ContactDetails(None,None,None,None,None,None)))
-    await(repository.count) shouldBe 1
-    res shouldBe(Some(ContactDetails(None,None,None,None,None,None)))
-
-  }
-}
   "getContactDetailsUnVerifiedUser" should {
+
     "return permission denied when the internal id does not match the one stored in mongo" in new Setup {
       await(repository.upsertContactDetails("reg1","int2",ContactDetails(Some("foo"),None,Some("sName"),Some("email"),Some("num1"),Some("num2"))))
       val c = await(repository.count)
@@ -124,25 +126,30 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
       res shouldBe None
     }
   }
+
   "getContactDetails" should {
+
     "return None when no record exists" in new Setup {
       await(repository.getContactDetails("foo","bar")) shouldBe None
     }
+
     "return record if user has correct internal id and record exists" in new Setup {
       await(repository.upsertContactDetails("foo","bar",ContactDetailsdata))
       await(repository.getContactDetails("foo","bar")) shouldBe Some(ContactDetailsdata)
     }
+
     "return permission denied if user has incorrect internal id " in new Setup {
       await(repository.upsertContactDetails("foo","bar",ContactDetails(Some("foo"),None,Some(""),Some("email"),Some("num1"),Some("num2"))))
      val res = intercept[PermissionDenied] { await(repository.getContactDetails("foo","bar2"))}
       res shouldBe PermissionDenied("foo","bar2")
     }
   }
-  //private
+
   "getContactDetailsWithJustRegID" should {
+
     "get contactDetailsRecord successfully" in new Setup {
       await(repository.upsertContactDetails("reg1", "int2", ContactDetails(Some("foo"),Some("middlenamee"),Some("sName"),Some("email"), Some("num1"), Some("num2"))))
-     val res = await(repository.getContactDetailsWithJustRegID("reg1"))
+      val res = await(repository.getContactDetailsWithJustRegID("reg1"))
       val newRes = res.get - ("lastUpdated")
 
       newRes shouldBe Json.parse("""{"_id":"reg1","InternalID":"int2","ContactDetails":{"firstName":"foo","middleName":"middlenamee","surname":"sName","email":"email","telephoneNumber":"num1","mobileNumber":"num2"}}""")
@@ -151,17 +158,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
       val res = await(repository.getContactDetailsWithJustRegID("reg1"))
       res shouldBe None
     }
-
   }
-    "InternalID index" should {
-      def index(col: JSONCollection): Future[Index] = col.indexesManager.list().map {
-        _.filter(_.name.get == "uniqueIntID").head
-      }
-    "exist" in new Setup {
-      index(repository.collection).futureValue.map(s => s.name).get shouldBe "uniqueIntID"
-    }
-
-    }
 
   "ttl index" should {
 
@@ -177,7 +174,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 3
+      indexCount shouldBe 2
 
       val indexes: List[Index] = repository.collection.indexesManager.list
 
@@ -193,11 +190,11 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 3
+      indexCount shouldBe 2
 
       await(repository.collection.indexesManager.drop("lastUpdatedIndex"))
 
-      indexCount shouldBe 2 // dropped ttl index
+      indexCount shouldBe 1 // dropped ttl index
 
       val setupTTl: Int = 1
 
@@ -209,7 +206,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
       await(repository.collection.indexesManager.create(setupTTLIndex))
 
-      indexCount shouldBe 3 // created new ttl index
+      indexCount shouldBe 2 // created new ttl index
 
       val indexes: List[Index] = repository.collection.indexesManager.list
 
@@ -218,7 +215,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 3
+      indexCount shouldBe 2
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
       getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
@@ -231,7 +228,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 3
+      indexCount shouldBe 2
 
       val indexes: List[Index] = repository.collection.indexesManager.list
 
