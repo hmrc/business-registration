@@ -73,7 +73,9 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
   override def onStart(app : play.api.Application) : scala.Unit = {
     super.onStart(app)
 
-    RepositoryIndexEnsurer(app).ensureIndexes()
+    val repoIndexEnsurer = RepositoryIndexEnsurer(app)
+    repoIndexEnsurer.ensureIndexes()
+    repoIndexEnsurer.deleteIndexes("uniqueIntID")
   }
 }
 
@@ -82,6 +84,15 @@ case class RepositoryIndexEnsurer(app: Application) {
 
   def ensureIndexes(): Unit = {
     ensureIndexes(app.injector.instanceOf[ContactDetailsMongo].repository)
+  }
+
+  def deleteIndexes(index: String) : Unit = {
+    val repo = app.injector.instanceOf[ContactDetailsMongo].repository
+    repo.collection.indexesManager.list().map { l =>
+      l.filter(i => i.eventualName == index) map {
+        i => repo.collection.indexesManager.drop(i.eventualName)
+      }
+    }
   }
 
   private def ensureIndexes(repo: ReactiveRepository[_, _]): Unit = {
