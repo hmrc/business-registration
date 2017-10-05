@@ -19,11 +19,30 @@ package repositories
 import config.RepositoryIndexEnsurer
 import helpers.MongoSpec
 import reactivemongo.api.indexes.{Index, IndexType}
-import repositories.prepop.ContactDetailsMongo
+import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepoMongo}
+
+import scala.concurrent.Future
+
 
 class RepositoryIndexEnsurerISpec extends MongoSpec {
-  RepositoryIndexEnsurer(fakeApplication)
-  val repo = fakeApplication.injector.instanceOf[ContactDetailsMongo].repository
-  repo.collection.indexesManager.create(Index(Seq(("temp", IndexType.Descending)),"uniqueIntID"))
 
+  class Setup {
+    val indexEnsurer = RepositoryIndexEnsurer(fakeApplication)
+    val repo : ContactDetailsRepoMongo = fakeApplication.injector.instanceOf[ContactDetailsMongo].repository
+    await(repo.ensureIndexes)
+    repo.dropIndexes
+  }
+
+  "RepositoryIndexEnsurer" should {
+    val index = Index(Seq(("temp", IndexType.Descending)), Some("uniqueIntID"))
+
+    "be able to remove an index from the database collection" in new Setup {
+      repo.listIndexes.size shouldBe 1
+      await(repo.collection.indexesManager.create(index))
+      repo.listIndexes.size shouldBe 2
+      await(indexEnsurer.deleteIndexes("uniqueIntID"))
+      repo.listIndexes.size shouldBe 1
+      await(repo.collection.indexesManager.list()).exists(i => i.eventualName == index.eventualName) shouldBe false
+    }
+  }
 }

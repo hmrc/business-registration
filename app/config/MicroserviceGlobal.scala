@@ -82,11 +82,11 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
 case class RepositoryIndexEnsurer(app: Application) {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def ensureIndexes(): Unit = {
+  def ensureIndexes(): Future[Unit] = {
     ensureIndexes(app.injector.instanceOf[ContactDetailsMongo].repository)
   }
 
-  def deleteIndexes(index: String) : Unit = {
+  def deleteIndexes(index: String) : Future[Unit] = {
     val repo = app.injector.instanceOf[ContactDetailsMongo].repository
     repo.collection.indexesManager.list().map { l =>
       l.filter(i => i.eventualName == index) map {
@@ -95,7 +95,7 @@ case class RepositoryIndexEnsurer(app: Application) {
     }
   }
 
-  private def ensureIndexes(repo: ReactiveRepository[_, _]): Unit = {
+  private def ensureIndexes(repo: ReactiveRepository[_, _]): Future[Unit] = {
     for{
       _ <- repo.ensureIndexes
       _ <- fetchLatestIndexes(repo)
