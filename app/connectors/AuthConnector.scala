@@ -18,28 +18,31 @@ package connectors
 
 import javax.inject.{Inject, Singleton}
 
-import com.google.inject.ImplementedBy
 import config.MicroserviceAppConfig
-import models.{UserIds, Authority}
+import models.{Authority, UserIds}
 import play.api.http.Status._
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
-import play.api.{Application, Logger}
 import uk.gov.hmrc.play.http.ws.WSHttp
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) extends AuthConnector with RawResponseReads {
+class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig,
+                                  val http: WSHttp) extends AuthConnector {
+  val authUrl: String = config.authUrl
+}
 
-  lazy val serviceUrl = config.authUrl
+trait AuthConnector extends RawResponseReads {
 
-  def authorityUri = "auth/authority"
+  val authUrl: String
+  val http: HttpGet
+
+  val authorityUri = "auth/authority"
 
   def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]] = {
-    val getUrl = s"""$serviceUrl/$authorityUri"""
+    val getUrl = s"$authUrl/$authorityUri"
     http.GET[HttpResponse](getUrl) flatMap {
       response =>
         response.status match {
@@ -48,7 +51,7 @@ class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) e
             val userDetails = (response.json \ "userDetailsLink").as[String]
             val idsLink = (response.json \ "ids").as[String]
 
-            http.GET[HttpResponse](s"$serviceUrl$idsLink") map {
+            http.GET[HttpResponse](s"$authUrl$idsLink") map {
               response =>
                 val ids = response.json.as[UserIds]
                 Some(Authority(uri, userDetails, ids))
@@ -58,9 +61,4 @@ class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig, http: WSHttp) e
         }
     }
   }
-}
-
-@ImplementedBy(classOf[AuthConnectorImpl])
-trait AuthConnector {
-  def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]]
 }

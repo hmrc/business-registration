@@ -26,11 +26,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class MetadataTestController @Inject()(metaDataRepo: MetadataMongo) extends BaseController with BRMongoTestControllerT{
-  val repo = metaDataRepo.repository
+class MetadataTestControllerImpl @Inject()(metaDataRepo: MetadataMongo) extends MetadataTestController {
+  val repo: MetadataRepositoryMongo = metaDataRepo.repository
 }
 
-trait BRMongoTestControllerT extends BaseController {
+trait MetadataTestController extends BaseController {
   val repo: MetadataRepository
 
   def dropMetadataCollection = Action.async {

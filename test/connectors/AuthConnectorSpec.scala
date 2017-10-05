@@ -18,48 +18,51 @@ package connectors
 
 import java.util.UUID
 
-import config.MicroserviceAppConfigImpl
 import helpers.SCRSSpec
 import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import play.api.libs.json.Json
+import org.mockito.ArgumentMatchers.any
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.play.http.ws.WSHttp
-import uk.gov.hmrc.play.http.{HeaderCarrier, _}
 import uk.gov.hmrc.play.http.logging.SessionId
-import play.api.test.Helpers.{OK, BAD_REQUEST}
-import models.{UserIds, Authority}
+import play.api.test.Helpers.{BAD_REQUEST, OK}
+import models.{Authority, UserIds}
+import uk.gov.hmrc.play.http.{HttpGet, HttpResponse}
 
 import scala.concurrent.Future
 
 class AuthConnectorSpec extends SCRSSpec {
 
-  val mockHttp = mock[WSHttp]
+  val mockHttp: WSHttp = mock[WSHttp]
+  val testAuthUrl = "testUrl"
 
-  //override lazy val fakeApplication = buildApp(("key", "value"))
+  trait Setup {
+    val connector: AuthConnector = new AuthConnector {
+      val authUrl: String = testAuthUrl
+      val http: HttpGet = mockHttp
+    }
+  }
 
-  val testAppConfig = new MicroserviceAppConfigImpl(fakeApplication)
-
-  val testAuthConnector = new AuthConnectorImpl(testAppConfig, mockHttp)
-
-  def authResponseJson(uri: String, userDetailsLink: String, idsLink: String) = Json.parse(
+  def authResponseJson(uri: String, userDetailsLink: String, idsLink: String): JsValue = Json.parse(
     s"""{
            "uri":"$uri",
            "userDetailsLink":"$userDetailsLink",
            "ids":"$idsLink"
         }""")
 
-  def idsResponseJson(internalId: String, externalId: String) = Json.parse(
+  def idsResponseJson(internalId: String, externalId: String): JsValue = Json.parse(
     s"""{
            "internalId":"$internalId",
            "externalId":"$externalId"
         }""")
 
   "The auth connector" should {
+
     val uri = "x/y/foo"
     val userDetailsLink = "bar"
     val idsLink = "/auth/ids"
 
-    "return auth info when an authority is found" in {
+    "return auth info when an authority is found" in new Setup {
+
       val userIDs: UserIds = UserIds("tiid", "teid")
       val expected = Authority(uri, userDetailsLink, userIDs)
 
@@ -69,18 +72,19 @@ class AuthConnectorSpec extends SCRSSpec {
 
 
       implicit val hc = defaultHC.copy(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
-      val result = testAuthConnector.getCurrentAuthority()(hc)
+      val result = connector.getCurrentAuthority()(hc)
       val authority = await(result)
 
       authority shouldBe Some(expected)
     }
 
-    "return None when an authority isn't found" in {
+    "return None when an authority isn't found" in new Setup {
+
       when(mockHttp.GET[HttpResponse](any())(any(), any())).
         thenReturn(Future.successful(HttpResponse(BAD_REQUEST, None)))
 
       implicit val hc = defaultHC.copy(sessionId = Some(SessionId(s"session-${UUID.randomUUID}")))
-      val result = testAuthConnector.getCurrentAuthority()(hc)
+      val result = connector.getCurrentAuthority()(hc)
       val authority = await(result)
 
       authority shouldBe None

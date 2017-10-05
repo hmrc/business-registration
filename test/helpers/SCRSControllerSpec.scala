@@ -16,14 +16,24 @@
 
 package helpers
 
+import java.util.concurrent.TimeUnit.SECONDS
+
+import akka.util.Timeout
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.play.http.HeaderCarrier
+import play.api.libs.json.JsValue
+import play.api.mvc.{AnyContentAsJson, Request, Result}
+import play.api.test.Helpers
 import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.language.implicitConversions
 
-trait SCRSSpec extends UnitSpec with MockitoSugar {
+trait SCRSControllerSpec extends UnitSpec with MockitoSugar {
 
-  implicit val defaultHC: HeaderCarrier = HeaderCarrier()
-  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
+  private val FIVE = 5L
+  private implicit val timeout: Timeout = Timeout(FIVE, SECONDS)
+
+  def bodyAsJson(res: Future[Result]): JsValue = Helpers.contentAsJson(res)
+
+  implicit def anyContentAsJsonToJsValue(r: Request[AnyContentAsJson]): Request[JsValue] = r.map(_.json)
 }

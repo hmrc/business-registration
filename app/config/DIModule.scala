@@ -18,8 +18,11 @@ package config
 
 import com.google.inject.AbstractModule
 import config.filters.{MicroserviceAuditConnector, MicroserviceHttp}
+import connectors.{AuthConnector, AuthConnectorImpl}
+import controllers.{MetadataController, MetadataControllerImpl}
 import controllers.admin.{AdminController, AdminControllerImpl}
 import controllers.prePop.{AddressController, AddressControllerImpl, ContactDetailsController, ContactDetailsControllerImpl}
+import controllers.test.{MetadataTestController, MetadataTestControllerImpl}
 import services.prepop.{AddressService, AddressServiceImpl}
 import services.{MetricsService, MetricsServiceImp}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
@@ -27,7 +30,7 @@ import uk.gov.hmrc.play.http.ws.WSHttp
 
 class DIModule extends AbstractModule {
 
-  protected def configure() = {
+  protected def configure(): Unit = {
 
     //config
     bind(classOf[WSHttp]).to(classOf[MicroserviceHttp])
@@ -37,9 +40,15 @@ class DIModule extends AbstractModule {
     bind(classOf[AddressController]).to(classOf[AddressControllerImpl])
     bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl])
     bind(classOf[AdminController]).to(classOf[AdminControllerImpl])
+    bind(classOf[MetadataController]).to(classOf[MetadataControllerImpl])
+    bind(classOf[MetadataTestController]).to(classOf[MetadataTestControllerImpl])
 
     //services
     bind(classOf[AddressService]).to(classOf[AddressServiceImpl])
     bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
+
+    //connectors
+    bind(classOf[AuthConnector]).to(classOf[AuthConnectorImpl])
+
   }
 }

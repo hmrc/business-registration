@@ -61,7 +61,9 @@ trait MetadataFixture {
     )
   }
 
-  def buildSelfLinkJsObj(regId: String = REG_ID) = Json.obj("links" ->Links(Some(s"/business-registration/business-tax-registration/$regId")))
+  def buildSelfLinkJsObj(regId: String = REG_ID): JsObject = {
+    Json.obj("links" -> Links(Some(controllers.routes.MetadataController.retrieveMetadata(regId).url)))
+  }
 
   lazy val metadataResponseJsObj = Json.toJson(buildMetadataResponse()).as[JsObject] ++ buildSelfLinkJsObj()
 

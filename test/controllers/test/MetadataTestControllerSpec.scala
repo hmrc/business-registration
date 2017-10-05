@@ -16,60 +16,63 @@
 
 package controllers.test
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
-import helpers.SCRSSpec
+import helpers.SCRSControllerSpec
 import org.mockito.ArgumentMatchers.any
 import play.api.test.FakeRequest
-import repositories.{MetadataMongo, MetadataRepository, MetadataRepositoryMongo}
+import repositories.MetadataRepositoryMongo
 import org.mockito.Mockito._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Request, Result}
 import play.api.test.Helpers._
 
 import scala.concurrent.Future
 
-class MetadataTestControllerSpec extends SCRSSpec {
+class MetadataTestControllerSpec extends SCRSControllerSpec {
 
-  val mockMetadataRepository = mock[MetadataMongo]
-  val mockrepo = mock[MetadataRepositoryMongo]
+  val mockMetadataRepository: MetadataRepositoryMongo = mock[MetadataRepositoryMongo]
 
-
-  def setupController = {
-    new MetadataTestController(mockMetadataRepository){
-      override val repo = mockrepo
+  trait Setup {
+    val controller: MetadataTestController = new MetadataTestController {
+      val repo: MetadataRepositoryMongo = mockMetadataRepository
     }
   }
 
   "dropMetadataCollection" should {
 
-    "return a 200 with a success message" in {
+    "return a 200 with a success message" in new Setup {
 
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
 
-      val controller = setupController
+      val result: Result = await(controller.dropMetadataCollection(FakeRequest()))
+      val expectedMessage: JsValue = Json.parse("""{"message":"Metadata collection dropped successfully"}""")
 
-      when(mockrepo.drop(any())).thenReturn(Future.successful(true))
-      val result = await(controller.dropMetadataCollection(FakeRequest()))
       status(result) shouldBe OK
-      jsonBodyOf(result).toString() shouldBe """{"message":"Metadata collection dropped successfully"}"""
+      bodyAsJson(result) shouldBe expectedMessage
     }
 
-    "return a 200 with an error message if the collection could not be dropped" in {
-      when(mockrepo.drop(any())).thenReturn(Future.successful(false))
+    "return a 200 with an error message if the collection could not be dropped" in new Setup {
 
-      val controller = setupController
-      val result = await(controller.dropMetadataCollection(FakeRequest()))
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
+
+      val result: Result = await(controller.dropMetadataCollection(FakeRequest()))
+      val expectedMessage: JsValue = Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}""")
+
       status(result) shouldBe OK
-      jsonBodyOf(result).toString() shouldBe """{"message":"An error occurred. Metadata collection could not be dropped"}"""
+      bodyAsJson(result) shouldBe expectedMessage
     }
   }
 
-  "updateCC" should {
-    "return a 200" in {
-      when(mockrepo.updateCompletionCapacity(any(), any()))
+  "updateCompletionCapacity" should {
+
+    "return a 200" in new Setup {
+
+      when(mockMetadataRepository.updateCompletionCapacity(any(), any()))
         .thenReturn(Future.successful("director"))
 
-      val result = setupController.updateCompletionCapacity("1234")(FakeRequest().withJsonBody(Json.parse("""{"completionCapacity" : "director"}""")))
-      status(result.run())
+      val request: Request[JsValue] = FakeRequest().withJsonBody(Json.parse("""{"completionCapacity" : "director"}"""))
+      val result: Result = controller.updateCompletionCapacity("1234")(request)
+
+      status(result) shouldBe 200
     }
   }
 }
