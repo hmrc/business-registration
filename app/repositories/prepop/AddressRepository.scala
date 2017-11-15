@@ -16,19 +16,22 @@
 
 package repositories.prepop
 
+import javax.inject.{Inject, Singleton}
+
 import auth.AuthorisationResource
 import models.prepop.Address
-import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
-import reactivemongo.api.indexes.{IndexType, Index}
+import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
+import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
 import uk.gov.hmrc.mongo.ReactiveRepository
-import javax.inject.{Inject, Singleton}
+
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
+
 
 @Singleton
 class AddressRepositoryImpl @Inject()(mongo: ReactiveMongoComponent) {
@@ -36,9 +39,9 @@ class AddressRepositoryImpl @Inject()(mongo: ReactiveMongoComponent) {
 }
 
 trait AddressRepository extends AuthorisationResource[String]{
-  def fetchAddresses(regId: String): Future[Option[JsObject]]
-  def insertAddress(regId: String, address: JsObject): Future[Boolean]
-  def updateAddress(regId: String, address: JsObject): Future[Boolean]
+  def fetchAddresses(regId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]]
+  def insertAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean]
+  def updateAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean]
 }
 
 class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObject, BSONObjectID](
@@ -74,21 +77,21 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
 
   private def regIdSelector(regId: String): (String, Json.JsValueWrapper) = "registration_id" -> regId
 
-  override def fetchAddresses(regId: String): Future[Option[JsObject]] = {
+  override def fetchAddresses(regId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     find(regIdSelector(regId)) map { addressList =>
-      if(addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id"))))) else None
+      if(addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id")))(Writes.traversableWrites[JsObject]))) else None
     }
   }
 
-  private def fetchAddress(regId: String, selector: BSONDocument): Future[Option[JsObject]] = {
+  private def fetchAddress(regId: String, selector: BSONDocument)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     collection.find(selector).one[JsObject]
   }
 
-  override def insertAddress(regId: String, address: JsObject): Future[Boolean] = {
-    collection.insert(address)(Address.mongoWrites, global).map(_.writeErrors.isEmpty)
+  override def insertAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
+    collection.insert(address)(Address.mongoWrites, ec).map(_.writeErrors.isEmpty)
   }
 
-  override def updateAddress(regId: String, address: JsObject): Future[Boolean] = {
+  override def updateAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
     val a = address.as[Address](Address.addressReads)
     val selector = BSONDocument("registration_id" -> regId.caseInsensitive) ++
       BSONDocument("addressLine1" -> a.addressLine1.caseInsensitive) ++
@@ -100,13 +103,13 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
     fetchAddress(regId, selector) flatMap { existingAddressOpt =>
       existingAddressOpt.fold(Future.successful(false)) { existingAddress =>
         val updatedAddress = address deepMerge updatedTTL
-        collection.update(selector, updatedAddress)(implicitly[OWrites[BSONDocument]], Address.mongoWrites, global)
+        collection.update(selector, updatedAddress)(implicitly[OWrites[BSONDocument]], Address.mongoWrites, ec)
           .map{err => err.writeErrors.isEmpty}
       }
     }
   }
 
-  override def getInternalId(registrationId: String): Future[Option[(String, String)]] = {
+  override def getInternalId(registrationId: String)(implicit ec: ExecutionContext): Future[Option[(String, String)]] = {
     fetchAddresses(registrationId) map { _ flatMap { js =>
       val listOfIDs = js \\ "internal_id"
       listOfIDs.headOption.flatMap(iId =>
@@ -114,7 +117,7 @@ class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObjec
     }
   }}
 
-  override def getInternalIds(registrationId: String): Future[Seq[String]] = {
+  override def getInternalIds(registrationId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
     fetchAddresses(registrationId) map ( _.fold[Seq[String]](Seq.empty)(addresses => (addresses \\ "internal_id").map(_.as[String])))
   }
 }

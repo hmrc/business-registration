@@ -25,6 +25,7 @@ import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any}
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
 
@@ -35,9 +36,9 @@ class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
       override val repository = mockAddressesRepository
     }
 
-    def mockFetchAddresses(toReturn: Option[JsObject]) = when(mockAddressesRepository.fetchAddresses(any())).thenReturn(Future.successful(toReturn))
-    def mockUpdateAddress(successful: Boolean) = when(mockAddressesRepository.insertAddress(any(), any())).thenReturn(Future.successful(successful))
-    def mockUpdateTTL(successful: Boolean) = when(mockAddressesRepository.updateAddress(any(), any())).thenReturn(Future.successful(successful))
+    def mockFetchAddresses(toReturn: Option[JsObject]) = when(mockAddressesRepository.fetchAddresses(any())(any())).thenReturn(Future.successful(toReturn))
+    def mockUpdateAddress(successful: Boolean) = when(mockAddressesRepository.insertAddress(any(), any())(any())).thenReturn(Future.successful(successful))
+    def mockUpdateTTL(successful: Boolean) = when(mockAddressesRepository.updateAddress(any(), any())(any())).thenReturn(Future.successful(successful))
   }
 
   val regId = "reg-12345"

@@ -16,28 +16,22 @@
 
 package config.filters
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.Inject
 
 import akka.stream.Materializer
+import config.MicroserviceAuditConnector
 import play.api.{Application, Configuration}
-import uk.gov.hmrc.play.audit.filters.AuditFilter
-import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.RunMode
+import uk.gov.hmrc.play.microservice.filters.AuditFilter
 
 class MicroserviceAuditFilter @Inject()(conf: Configuration, controllerConf: ControllerConfiguration, app: Application)
                                        (implicit val mat: Materializer) extends AuditFilter {
 
   override lazy val appName = conf.getString("appName").getOrElse("APP NAME NOT SET")
 
-  override def auditConnector: AuditConnector = new MicroserviceAuditConnector(app)
+  override def auditConnector: AuditConnector = MicroserviceAuditConnector
 
   override def controllerNeedsAuditing(controllerName: String): Boolean = {
     controllerConf.paramsForController(controllerName).needsAuditing
   }
-}
-
-@Singleton
-class MicroserviceAuditConnector @Inject()(val app: Application) extends AuditConnector with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
 }

@@ -25,18 +25,12 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import repositories._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
-//class MetadataServiceImp @Inject() (repositories: Repositories) extends MetadataService {
-//  override val metadataRepository = repositories.metadataRepository
-//  override val sequenceRepository = repositories.sequenceRepository
-//}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: SequenceRepository) {
   val metadataRepository = mongo.repository
-  def createMetadataRecord(internalID: String, lang: String) : Future[MetadataResponse] = {
+  def createMetadataRecord(internalID: String, lang: String)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
       val newMetadata = Metadata(
         internalID,
@@ -52,7 +46,7 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
     }
   }
 
-  private def generateRegistrationId: Future[Int] = {
+  private def generateRegistrationId(implicit ec: ExecutionContext): Future[Int] = {
     sequenceRepository.getNext("registrationID")
   }
 
@@ -64,29 +58,29 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
     format.format(new Date(timeStamp.getMillis))
   }
 
-  def searchMetadataRecord(internalID: String): Future[Option[MetadataResponse]] = {
+  def searchMetadataRecord(internalID: String)(implicit ec: ExecutionContext): Future[Option[MetadataResponse]] = {
     metadataRepository.searchMetadata(internalID).map{
       case Some(data) => Some(MetadataResponse.toMetadataResponse(data))
       case None => None
     }
   }
 
-  def retrieveMetadataRecord(registrationID: String): Future[Option[MetadataResponse]] = {
+  def retrieveMetadataRecord(registrationID: String)(implicit ec: ExecutionContext): Future[Option[MetadataResponse]] = {
     metadataRepository.retrieveMetadata(registrationID).map{
       case Some(data) => Some(MetadataResponse.toMetadataResponse(data))
       case None => None
     }
   }
 
-  def updateMetaDataRecord(registrationID : String, newMetaData : MetadataResponse) : Future[MetadataResponse] = {
+  def updateMetaDataRecord(registrationID : String, newMetaData : MetadataResponse)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
     metadataRepository.updateMetaData(registrationID, newMetaData)
   }
 
-  def removeMetadata(registrationId: String): Future[Boolean] = {
+  def removeMetadata(registrationId: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     metadataRepository.removeMetadata(registrationId)
   }
 
-  def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
+  def updateLastSignedIn(registrationId: String, dateTime: DateTime)(implicit ec: ExecutionContext): Future[DateTime] = {
     metadataRepository.updateLastSignedIn(registrationId, dateTime)
   }
 

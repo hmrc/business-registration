@@ -21,11 +21,14 @@ import models.Metadata
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
+import org.scalactic.source.Position
+import org.scalatest.Tag
 import org.scalatest.mockito.MockitoSugar
 import repositories._
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixture with MongoFixture {
 
@@ -46,9 +49,9 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "create a new metadata document" in {
-      when(mockMetadataRepository.createMetadata(any[Metadata]()))
+      when(mockMetadataRepository.createMetadata(any[Metadata]())(any()))
         .thenReturn(Future.successful(buildMetadata()))
-      when(mockSequenceRepository.getNext(contains("registrationID")))
+      when(mockSequenceRepository.getNext(contains("registrationID"))(any()))
         .thenReturn(Future.successful(1))
 
       val result = service.createMetadataRecord("intId", "en")
@@ -61,7 +64,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return MetadataResponse when a metadata document is retrieved" in {
-      when(mockMetadataRepository.retrieveMetadata(any()))
+      when(mockMetadataRepository.retrieveMetadata(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadata())))
 
       val result = service.retrieveMetadataRecord("testRegID")
@@ -69,7 +72,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     }
 
     "return None if no document is retrieved" in {
-      when(mockMetadataRepository.retrieveMetadata(any()))
+      when(mockMetadataRepository.retrieveMetadata(any())(any()))
         .thenReturn(Future.successful(None))
 
       val result = service.retrieveMetadataRecord("testRegID")
@@ -81,14 +84,14 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return MetadataResponse when a metadata document is retrieved" in {
-      when(mockMetadataRepository.searchMetadata(any()))
+      when(mockMetadataRepository.searchMetadata(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadata())))
       val result = service.searchMetadataRecord("testIntID")
       await(result) shouldBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in {
-      when(mockMetadataRepository.searchMetadata(any()))
+      when(mockMetadataRepository.searchMetadata(any())(any()))
         .thenReturn(Future.successful(None))
 
       val result = service.searchMetadataRecord("testIntID")
@@ -101,7 +104,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return a meta data response" in {
-      when(mockMetadataRepository.updateMetaData(eqTo("testIntID"), eqTo(buildMetadataResponse())))
+      when(mockMetadataRepository.updateMetaData(eqTo("testIntID"), eqTo(buildMetadataResponse()))(any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
       val result = service.updateMetaDataRecord("testIntID", buildMetadataResponse())
@@ -114,7 +117,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
 
     "return a Boolean" in {
-      when(mockMetadataRepository.removeMetadata(eqTo("testIntID")))
+      when(mockMetadataRepository.removeMetadata(eqTo("testIntID"))(any()))
         .thenReturn(Future.successful(true))
 
       val result = service.removeMetadata("testIntID")
@@ -125,7 +128,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
     val service = setupService
     val currentTime = DateTime.now(DateTimeZone.UTC)
     "return a date time response" in {
-      when(mockMetadataRepository.updateLastSignedIn(eqTo("testIntID"), eqTo(currentTime)))
+      when(mockMetadataRepository.updateLastSignedIn(eqTo("testIntID"), eqTo(currentTime))(any()))
         .thenReturn(Future.successful(currentTime))
 
       val result = service.updateLastSignedIn("testIntID", currentTime)

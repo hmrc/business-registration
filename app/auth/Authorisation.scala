@@ -16,15 +16,15 @@
 
 package auth
 
-import models.Authority
-import play.api.mvc.Result
-import play.api.Logger
 import connectors.AuthConnector
-import uk.gov.hmrc.play.http.HeaderCarrier
+import models.Authority
+import play.api.Logger
+import play.api.mvc.Result
 import play.api.mvc.Results._
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 sealed trait AuthorisationResult
 case object NotLoggedInOrAuthorised extends AuthorisationResult

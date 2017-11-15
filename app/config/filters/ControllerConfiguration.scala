@@ -17,6 +17,7 @@
 package config.filters
 
 import javax.inject.Inject
+
 import play.api.Configuration
 
 class ControllerConfiguration @Inject()(conf: Configuration) {

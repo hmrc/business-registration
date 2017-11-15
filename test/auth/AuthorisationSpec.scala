@@ -23,9 +23,9 @@ import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import play.api.mvc.Results
 import play.api.test.Helpers._
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
+import uk.gov.hmrc.http.HeaderCarrier
 
 class AuthorisationSpec extends SCRSSpec {
 
@@ -44,7 +44,8 @@ class AuthorisationSpec extends SCRSSpec {
     "indicate there's no logged in user where there isn't a valid bearer token" in {
 
       when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(None))
-      when(mockResource.getInternalId(any())).thenReturn(Future.successful(None))
+
+      when(mockResource.getInternalId(any())(any())).thenReturn(Future.successful(None))
 
       val result = Authorisation.authorised("xxx") { authResult => {
           authResult shouldBe NotLoggedInOrAuthorised
@@ -62,7 +63,7 @@ class AuthorisationSpec extends SCRSSpec {
       val a = Authority("x", "z", userIDs)
 
       when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+      when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
 
       val result = Authorisation.authorised(regId){ authResult => {
           authResult shouldBe Authorised(a)
@@ -79,7 +80,7 @@ class AuthorisationSpec extends SCRSSpec {
       val a = Authority("x", "z", userIDs)
 
       when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId + "xxx"))))
+      when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some((regId, userIDs.internalId + "xxx"))))
 
       val result = Authorisation.authorised(regId){ authResult => {
         authResult shouldBe NotAuthorised(a)
@@ -95,7 +96,7 @@ class AuthorisationSpec extends SCRSSpec {
       val a = Authority("x", "z", UserIds("tiid","teid"))
 
       when(mockAuth.getCurrentAuthority()(any())).thenReturn(Future.successful(Some(a)))
-      when(mockResource.getInternalId(any())).thenReturn(Future.successful(None))
+      when(mockResource.getInternalId(any())(any())).thenReturn(Future.successful(None))
 
       val result = Authorisation.authorised("xxx"){ authResult => {
           authResult shouldBe AuthResourceNotFound(a)
@@ -113,7 +114,7 @@ class AuthorisationSpec extends SCRSSpec {
       val userIDs = UserIds("foo", "bar")
       val authority = Authority("uri","userdeetsLink",UserIds("foo","bar"))
       when(mockAuth.getCurrentAuthority()(any[HeaderCarrier]())).thenReturn(Future.successful(Some(authority)))
-      when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+      when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
 
       val result = Authorisation.authorisedFor(regId,"myMethodName")(authority => Future.successful(Results.Ok))
       val response = await(result)
@@ -126,7 +127,7 @@ class AuthorisationSpec extends SCRSSpec {
     val userIDs = UserIds("foo", "bar")
     val authority = Authority("uri","userdeetsLink",UserIds("foo1","bar1"))
     when(mockAuth.getCurrentAuthority()(any[HeaderCarrier]())).thenReturn(Future.successful(Some(authority)))
-    when(mockResource.getInternalId(eqTo(regId))).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
+    when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some((regId, userIDs.internalId))))
 
     val result = Authorisation.authorisedFor(regId,"myMethodName")(authority => Future.failed(new Exception))
     val response = await(result)

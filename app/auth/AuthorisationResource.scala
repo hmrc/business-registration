@@ -16,7 +16,7 @@
 
 package auth
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthorisationResource[I] {
 
@@ -25,9 +25,9 @@ trait AuthorisationResource[I] {
     * @return I - The registration id of the logged in user
     *         String - The internal ID of the logged in user
     */
-  def getInternalId(id:I) : Future[Option[(I,String)]]
+  def getInternalId(id:I)(implicit ec: ExecutionContext) : Future[Option[(I,String)]]
 
-  def getInternalIds(registrationId: String): Future[Seq[String]] = Future.successful(Seq.empty)
+  def getInternalIds(registrationId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq.empty)
 }
 
 

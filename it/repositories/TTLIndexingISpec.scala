@@ -22,7 +22,7 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Format, Json}
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONLong, BSONObjectID}
+import reactivemongo.bson.{BSONDocument, BSONElement, BSONLong, BSONObjectID}
 import repositories.prepop.TTLIndexing
 import uk.gov.hmrc.mongo.ReactiveRepository
 
@@ -91,7 +91,7 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
 
       val ttlIndex: Index = repo.findIndex(ttlIndexName).get
       ttlIndex.eventualName shouldBe ttlIndexName
-      ttlIndex.options.elements.head shouldBe "expireAfterSeconds" -> BSONLong(ttl)
+      ttlIndex.options.elements.head shouldBe BSONElement("expireAfterSeconds", BSONLong(ttl))
     }
 
     "not change when ensureIndexes is called when the expiration value hasn't changed" in new Setup {
@@ -104,7 +104,7 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
 
       val ttlIndex: Index = repo.findIndex(ttlIndexName).get
       ttlIndex.eventualName shouldBe ttlIndexName
-      ttlIndex.options.elements.head shouldBe "expireAfterSeconds" -> BSONLong(ttl)
+      ttlIndex.options.elements.head shouldBe BSONElement("expireAfterSeconds", BSONLong(ttl))
 
       await(repo.ensureIndexes)
 
@@ -112,7 +112,7 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
 
       val ttlIndex2: Index = repo.findIndex(ttlIndexName).get
       ttlIndex2.eventualName shouldBe ttlIndexName
-      ttlIndex2.options.elements.head shouldBe "expireAfterSeconds" -> BSONLong(ttl)
+      ttlIndex2.options.elements.head shouldBe BSONElement("expireAfterSeconds", BSONLong(ttl))
     }
 
     "update the existing ttl index if the expiration value has changed" in new SetupWithIndex(buildTTLIndex(otherTTLValue)) {
@@ -121,7 +121,7 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
 
       val ttlIndex: Index = repo.findIndex(ttlIndexName).get
       ttlIndex.eventualName shouldBe ttlIndexName
-      ttlIndex.options.elements.head shouldBe "expireAfterSeconds" -> BSONLong(otherTTLValue)
+      ttlIndex.options.elements.head shouldBe BSONElement("expireAfterSeconds", BSONLong(otherTTLValue))
 
       await(repo.ensureIndexes)
 
@@ -129,7 +129,7 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
 
       val ttlIndex2: Index = repo.findIndex(ttlIndexName).get
       ttlIndex2.eventualName shouldBe ttlIndexName
-      ttlIndex2.options.elements.head shouldBe "expireAfterSeconds" -> BSONLong(ttl)
+      ttlIndex2.options.elements.head shouldBe BSONElement("expireAfterSeconds", BSONLong(ttl))
     }
   }
 }

@@ -23,10 +23,10 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Mode, Configuration, Application}
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.http.HeaderCarrier
 
 //todo: Scalatest 3.0.1 is not compatible with Scalatestplus-play 1.5.x. The version that Scalatestplus is built against is "org.scalatest" %% "scalatest" % "2.2.6".
 //todo: OneAppPerSuite will throw ClassCastExceptions when trying to stop the application after a suite of tests so use WithFakeApplication for now

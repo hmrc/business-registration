@@ -16,23 +16,22 @@
 
 package config
 
-import play.api.{Application, Configuration, Logger, Play}
-import uk.gov.hmrc.play.audit.filters.AuditFilter
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
-import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
-import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
-import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
 import com.typesafe.config.Config
-import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import net.ceedubs.ficus.Ficus._
+import play.api.{Application, Configuration, Logger, Play}
+import play.api.libs.concurrent.Execution.defaultContext
 import reactivemongo.api.indexes.Index
 import repositories.prepop.ContactDetailsMongo
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
+import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
+import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
+import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
+import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object ControllerConfiguration extends ControllerConfig {
   lazy val controllerConfigs: Config = Play.current.configuration.underlying.as[Config]("controllers")
@@ -72,7 +71,6 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
 
   override def onStart(app : play.api.Application) : scala.Unit = {
     super.onStart(app)
-
     val repoIndexEnsurer = RepositoryIndexEnsurer(app)
     repoIndexEnsurer.ensureIndexes()
     repoIndexEnsurer.deleteIndexes("uniqueIntID")
@@ -80,13 +78,13 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
 }
 
 case class RepositoryIndexEnsurer(app: Application) {
-  import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val ec: ExecutionContext = defaultContext
 
   def ensureIndexes(): Future[Unit] = {
     ensureIndexes(app.injector.instanceOf[ContactDetailsMongo].repository)
   }
 
-  def deleteIndexes(index: String) : Future[Unit] = {
+  def deleteIndexes(index: String): Future[Unit] = {
     val repo = app.injector.instanceOf[ContactDetailsMongo].repository
     repo.collection.indexesManager.list().map { l =>
       l.filter(i => i.eventualName == index) map {

@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package config.filters
+import sbt.Tests.{Group, SubProcess}
+import sbt._
 
-import javax.inject.{Inject, Singleton}
-
-import play.api.Application
-import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.AppName
-import uk.gov.hmrc.play.http.hooks.HttpHook
-import uk.gov.hmrc.play.http.ws.WSHttp
-
-@Singleton
-class MicroserviceHttp @Inject()(val auditConnector: AuditConnector, val app: Application) extends WSHttp with AppName with HttpAuditing {
-    override val hooks: Seq[HttpHook] = Seq(AuditingHook)
+object TestPhases {
+  def oneForkedJvmPerTest(tests: Seq[TestDefinition]) = tests map(test => Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name)))))
 }
+

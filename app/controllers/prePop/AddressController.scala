@@ -16,21 +16,21 @@
 
 package controllers.prePop
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
 import auth.{Authenticated, Authorisation}
 import connectors.AuthConnector
 import models.prepop.Address
 import play.api.libs.json._
-import play.api.mvc.{Result, BodyParsers, Action}
+import play.api.mvc.{Action, BodyParsers, Result}
 import repositories.prepop.AddressRepositoryImpl
 import services.prepop.AddressService
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 @Singleton
 class AddressControllerImpl @Inject()(val service: AddressService,

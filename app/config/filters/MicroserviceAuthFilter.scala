@@ -16,27 +16,24 @@
 
 package config.filters
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.Inject
+
 import akka.stream.Materializer
 import com.typesafe.config.Config
+import config.MicroserviceAuthConnector
 import play.api.{Application, Configuration}
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import uk.gov.hmrc.play.config.ServicesConfig
 
 class MicroserviceAuthFilter @Inject()(app: Application, conf: Configuration, controllerConf: ControllerConfiguration)
                                       (implicit val mat: Materializer) extends AuthorisationFilter {
-  override def authConnector: AuthConnector = new MicroserviceAuthConnector(app)
+
+  override def authConnector: AuthConnector = MicroserviceAuthConnector
   override def controllerNeedsAuth(controllerName: String): Boolean = {
     controllerConf.paramsForController(controllerName).needsAuth
   }
   override def authParamsConfig: AuthParamsControllerConfig = new AuthParamsControllerConfig() {
     override def controllerConfigs: Config = conf.underlying.atPath("controllers")
   }
-}
-
-@Singleton
-class MicroserviceAuthConnector @Inject()(val app: Application) extends AuthConnector with ServicesConfig {
-  override val authBaseUrl = baseUrl("auth")
 }

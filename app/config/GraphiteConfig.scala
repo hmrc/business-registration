@@ -19,8 +19,8 @@ package config
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit._
 
-import com.codahale.metrics.{MetricFilter, SharedMetricRegistries}
 import com.codahale.metrics.graphite.{Graphite, GraphiteReporter}
+import com.codahale.metrics.{MetricFilter, SharedMetricRegistries}
 import play.api.{Application, Configuration, Logger, Mode}
 
 /**

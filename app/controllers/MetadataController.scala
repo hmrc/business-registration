@@ -24,7 +24,7 @@ import models._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
-import repositories.{MetadataMongo, MetadataRepository}
+import repositories.MetadataMongo
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 

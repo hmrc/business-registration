@@ -18,20 +18,15 @@ package controllers.admin
 
 import javax.inject.{Inject, Singleton}
 
+import models.ErrorResponse
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, AnyContent}
-import play.api.mvc.Results.{Ok, NotFound}
 import services.MetadataService
-import models.ErrorResponse
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.play.microservice.controller.BaseController
 
 @Singleton
-class AdminControllerImpl @Inject()(val metadataService: MetadataService) extends AdminController
-
-trait AdminController {
-
-  val metadataService: MetadataService
+class AdminController @Inject()(val metadataService: MetadataService) extends BaseController {
 
   def retrieveBusinessRegistration(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
