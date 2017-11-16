@@ -18,8 +18,7 @@ package config.filters
 
 import javax.inject.Inject
 
-import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.http.logging.filters.LoggingFilter
+import uk.gov.hmrc.play.microservice.filters.{LoggingFilter, MicroserviceFilterSupport}
 
 class MicroserviceLoggingFilter @Inject()(controllerConf: ControllerConfiguration) extends LoggingFilter with MicroserviceFilterSupport {
 

@@ -18,20 +18,16 @@ package repositories.prepop
 
 import helpers.{MongoSpec, RichReactiveRepository}
 import models.prepop.Address
-import org.joda.time.{DateTimeZone, DateTime}
-import org.scalactic.Fail
-import play.api.Logger
-import play.api.libs.json.{Reads, Json, JsObject}
+import org.joda.time.DateTime
+import play.api.libs.json.{JsObject, Json, Reads}
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-import scala.util.Random
-
 class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
 
   class Setup {
-    val repo = new AddressMongoRepository(mongo)
+    val repo = fakeApplication.injector.instanceOf(classOf[AddressRepositoryImpl]).repository
 
     repo.awaitDrop
     await(repo.ensureIndexes)
@@ -319,6 +315,76 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
       existingAddress.getTTL isBefore updatedAddress.getTTL shouldBe true
 
       updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddress.withoutTTL
+    }
+
+    "update with country and postcode missing" in new Setup {
+      val dateTimeNow = now
+
+      val existingAddress = Json.parse(
+        s"""{
+           |  "_id" : {"$$oid" : "$generateOID"},
+           |  "registration_id" : "$regId",
+           |  "addressLine1" : "testAddressLine1",
+           |  "addressLine2" : "testAddressLine2",
+           |  "addressLine3" : "testAddressLine3",
+           |  "addressLine4" : "testAddressLine4",
+           |  "postcode" : "testPostcode",
+           |  "country" : "testCountry",
+           |  "lastUpdated" : $dateTimeNow
+           |}
+           |""".stripMargin).as[JsObject]
+
+      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+
+      val suppliedAddress = Json.parse(
+        s"""{
+           |  "registration_id" : "$regId",
+           |  "addressLine1" : "TESTADDRESSLINE1",
+           |  "addressLine2" : "testAddressLine2",
+           |  "addressLine3" : "testAddressLine3",
+           |  "addressLine4" : "testAddressLine4"
+           |}
+           |""".stripMargin).as[JsObject]
+
+      repo.awaitInsert(existingAddress)
+      repo.awaitCount shouldBe 1
+
+      val result = await(repo.updateAddress(regId, suppliedAddress))
+
+      result shouldBe true
+
+      repo.awaitCount shouldBe 1
+
+      val updatedAddress = await(repo.findById(oid)).get
+
+      existingAddress.getTTL isBefore updatedAddress.getTTL shouldBe true
+
+      updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddress.withoutTTL
+    }
+  }
+
+  "getInternalId" should {
+    "return a single internalId if present" in new Setup {
+      repo.awaitInsert(buildAddressJson(regId) ++ Json.parse("""{"internal_id":"testInternalId"}"""))
+      val internalIdResponse = await(repo.getInternalId(regId))
+      internalIdResponse shouldBe defined
+      internalIdResponse shouldBe Some(regId,"testInternalId")
+    }
+
+    "none if not present" in new Setup {
+      await(repo.getInternalId(regId)) shouldBe None
+    }
+  }
+
+  "getInternalIds" should {
+    "return a single internalId if present" in new Setup {
+      repo.awaitInsert(buildAddressJson(regId) ++ Json.parse("""{"internal_id":"testInternalId"}"""))
+      val internalIdResponse = await(repo.getInternalIds(regId))
+      internalIdResponse shouldBe Seq("testInternalId")
+    }
+
+    "none if not present" in new Setup {
+      await(repo.getInternalIds(regId)) shouldBe Seq()
     }
   }
 }

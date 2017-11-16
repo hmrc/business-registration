@@ -26,10 +26,11 @@ import play.api.libs.json.JsObject
 import reactivemongo.api.commands.{UpdateWriteResult, WriteConcern, WriteResult}
 import reactivemongo.api.indexes.CollectionIndexesManager
 import reactivemongo.api.{CollectionProducer, Cursor, DefaultDB, FailoverStrategy}
-import reactivemongo.json.collection.{JSONCollection, JSONQueryBuilder}
+import reactivemongo.play.json.collection.{JSONCollection, JSONQueryBuilder}
 
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect._
 
 trait MongoMocks {

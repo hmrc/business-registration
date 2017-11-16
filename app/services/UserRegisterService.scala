@@ -20,35 +20,30 @@ import javax.inject.{Inject, Singleton}
 
 import models.{ErrorResponse, Response, WhiteListDetailsSubmit}
 import play.api.libs.json.Json
-import repositories.{UserDetailsMongo, UserDetailsRepository}
 import play.api.mvc.Result
 import play.api.mvc.Results.{Created, NotFound, Ok}
+import repositories.UserDetailsMongo
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
-//class UserRegisterServiceImp @Inject() (repositories: Repositories) extends UserRegisterService {
-//  val userDetailsRepository = repositories.userDetailsRepository
-//}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserRegisterService @Inject() (userDetails: UserDetailsMongo){
 
   val repository = userDetails.repository
 
-  def createRegistration(details : WhiteListDetailsSubmit) : Future[Result] = {
+  def createRegistration(details : WhiteListDetailsSubmit)(implicit ec: ExecutionContext): Future[Result] = {
     repository.createRegistration(details).map(res => Created(Json.toJson(res)))
   }
 
-  def searchRegistrations(email : String) : Future[Result] = {
+  def searchRegistrations(email : String)(implicit ec: ExecutionContext): Future[Result] = {
     repository.searchRegistration(email).map {
       case Some(data) => Ok(Json.toJson[WhiteListDetailsSubmit](data))
       case _ => NotFound(ErrorResponse.UserNotFound)
     }
   }
 
-  def dropUsers() : Future[Result] = {
-    repository.removeBetaUsers().map {
+  def dropUsers(implicit ec: ExecutionContext) : Future[Result] = {
+    repository.removeBetaUsers.map {
       resp => Ok(Json.toJson[Response](resp.get))
     }
   }

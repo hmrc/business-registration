@@ -32,7 +32,6 @@ import services.MetadataService
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.ArgumentCaptor
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
 
@@ -62,7 +61,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 201" in {
 
-      when(mockMetadataService.createMetadataRecord(any(), any()))
+      when(mockMetadataService.createMetadataRecord(any(), any())(any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
       val controller = setupController(Some(validAuthority))
@@ -91,7 +90,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     "return a 200 and a MetadataResponse as json if metadata is found" in {
 
-      when(mockMetadataService.searchMetadataRecord(any()))
+      when(mockMetadataService.searchMetadataRecord(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
       val controller = setupController(Some(validAuthority))
@@ -111,7 +110,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
     "return a 404 - NotFound when the resource doesn't exist" in {
       val controller = setupController(Some(validAuthority))
 
-      when(mockMetadataService.searchMetadataRecord(any()))
+      when(mockMetadataService.searchMetadataRecord(any())(any()))
         .thenReturn(Future.successful(None))
 
       val result = call(controller.searchMetadata, FakeRequest())
@@ -128,7 +127,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
-      when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture()))
+      when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
       mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
@@ -146,7 +145,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
-      when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture()))
+      when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
       mockNotLoggedIn(mockMetadataRepo)
@@ -156,7 +155,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
       status(result) shouldBe FORBIDDEN
 
-      verify(mockMetadataService, times(0)).retrieveMetadataRecord(any())
+      verify(mockMetadataService, times(0)).retrieveMetadataRecord(any())(any())
     }
 
     "return a 403 when the user is logged in but not authorised to access the resource" in {
@@ -180,10 +179,10 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
     "return a 404 - not found logged in the requested document doesn't exist but got through auth" in {
       val controller = setupController(Some(validAuthority))
 
-      when(mockMetadataRepo.getInternalId(eqTo(regId))).
+      when(mockMetadataRepo.getInternalId(eqTo(regId))(any())).
         thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
 
-      when(mockMetadataService.retrieveMetadataRecord(eqTo(regId)))
+      when(mockMetadataService.retrieveMetadataRecord(eqTo(regId))(any()))
         .thenReturn(Future.successful(None))
 
       val result = call(controller.retrieveMetadata(regId), FakeRequest())
@@ -200,7 +199,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val controller = setupController(Some(validAuthority))
       mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
 
-      when(mockMetadataService.updateMetaDataRecord(eqTo(regId), eqTo(buildMetadataResponse())))
+      when(mockMetadataService.updateMetaDataRecord(eqTo(regId), eqTo(buildMetadataResponse()))(any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
       val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(buildMetadataResponse())))
@@ -245,7 +244,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val controller = setupController(Some(validAuthority))
       mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
 
-      when(mockMetadataService.updateLastSignedIn(eqTo(regId), currentTimeCaptor.capture()))
+      when(mockMetadataService.updateLastSignedIn(eqTo(regId), currentTimeCaptor.capture())(any()))
         .thenReturn(Future.successful(currentTime))
 
       val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
@@ -288,7 +287,7 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
       val controller = setupController(Some(validAuthority))
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
-      when(mockMetadataService.removeMetadata(regIdCaptor.capture()))
+      when(mockMetadataService.removeMetadata(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(true))
 
       val result = call(controller.removeMetadata(regId), FakeRequest())

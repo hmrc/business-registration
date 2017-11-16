@@ -16,13 +16,15 @@
 
 package controllers.beta
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.Inject
 
 import models.WhiteListDetailsSubmit
 import play.api.libs.json.JsValue
 import play.api.mvc.Action
 import services.UserRegisterService
 import uk.gov.hmrc.play.microservice.controller.BaseController
+
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 //class UserRegisterControllerImp @Inject() (userRegisterServ: UserRegisterService) extends UserRegisterController {
 //  val userRegisterService = userRegisterServ

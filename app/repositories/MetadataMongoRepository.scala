@@ -19,21 +19,18 @@ package repositories
 import javax.inject.{Inject, Singleton}
 
 import auth.AuthorisationResource
-import com.google.inject.ImplementedBy
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
-import play.api.{Application, Logger}
-import play.api.libs.json.Format
+import play.api.Logger
+import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
+import reactivemongo.play.json._
+import repositories.CollectionsNames.METADATA
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
-import CollectionsNames.METADATA
-import InjectDB.injectDB
-import play.modules.reactivemongo.ReactiveMongoComponent
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class MetadataMongo @Inject()(mongo: ReactiveMongoComponent) {
@@ -41,13 +38,13 @@ class MetadataMongo @Inject()(mongo: ReactiveMongoComponent) {
 }
 
 trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource[String]{
-  def createMetadata(metadata: Metadata): Future[Metadata]
-  def searchMetadata(internalID: String): Future[Option[Metadata]]
-  def retrieveMetadata(regI: String): Future[Option[Metadata]]
-  def updateMetaData(regID : String, newMetaData : MetadataResponse) : Future[MetadataResponse]
-  def removeMetadata(registrationId: String): Future[Boolean]
-  def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime]
-  def updateCompletionCapacity(registrationId: String, completionCapacity: String): Future[String]
+  def createMetadata(metadata: Metadata)(implicit ec: ExecutionContext): Future[Metadata]
+  def searchMetadata(internalID: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
+  def retrieveMetadata(regI: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
+  def updateMetaData(regID : String, newMetaData : MetadataResponse)(implicit ec: ExecutionContext): Future[MetadataResponse]
+  def removeMetadata(registrationId: String)(implicit ec: ExecutionContext): Future[Boolean]
+  def updateLastSignedIn(registrationId: String, dateTime: DateTime)(implicit ec: ExecutionContext): Future[DateTime]
+  def updateCompletionCapacity(registrationId: String, completionCapacity: String)(implicit ec: ExecutionContext): Future[String]
 }
 
 class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metadata, BSONObjectID](METADATA, mongo, Metadata.formats)
@@ -65,40 +62,40 @@ class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metad
     "registrationID" -> BSONString(registrationID)
   )
 
-  override def updateCompletionCapacity(registrationId: String, completionCapacity: String): Future[String] = {
+  override def updateCompletionCapacity(registrationId: String, completionCapacity: String)(implicit ec: ExecutionContext): Future[String] = {
     val selector = regIDMetadataSelector(registrationId)
     val update = BSONDocument("$set" -> BSONDocument("completionCapacity" -> completionCapacity))
     collection.update(selector, update) map(_ => completionCapacity)
   }
 
-  override def updateLastSignedIn(registrationId: String, dateTime: DateTime): Future[DateTime] = {
+  override def updateLastSignedIn(registrationId: String, dateTime: DateTime)(implicit ec: ExecutionContext): Future[DateTime] = {
     val selector = regIDMetadataSelector(registrationId)
     val update = BSONDocument("$set" -> BSONDocument("lastSignedIn" -> dateTime.getMillis))
     collection.update(selector, update).map(_ => dateTime)
   }
 
-  override def createMetadata(metadata: Metadata): Future[Metadata] = {
+  override def createMetadata(metadata: Metadata)(implicit ec: ExecutionContext): Future[Metadata] = {
     collection.insert(metadata).map { res =>
       metadata
     }
   }
 
-  override def retrieveMetadata(registrationID: String): Future[Option[Metadata]] = {
+  override def retrieveMetadata(registrationID: String)(implicit ec: ExecutionContext): Future[Option[Metadata]] = {
     val selector = regIDMetadataSelector(registrationID)
     collection.find(selector).one[Metadata]
   }
 
-  override def updateMetaData(regID: String, newMetaData: MetadataResponse): Future[MetadataResponse] = {
+  override def updateMetaData(regID: String, newMetaData: MetadataResponse)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
     val selector = regIDMetadataSelector(regID)
     collection.update(selector, BSONDocument("$set" -> BSONDocument("completionCapacity" -> newMetaData.completionCapacity))) map { res =>
-      if (res.hasErrors) {
+      if (!res.ok) {
         Logger.error(s"Failed to update metadata. Error: ${res.errmsg.getOrElse("")} for registration ud ${newMetaData.registrationID}")
       }
       newMetaData
     }
   }
 
-  def getInternalId(id: String): Future[Option[(String, String)]] = {
+  def getInternalId(id: String)(implicit ec: ExecutionContext): Future[Option[(String, String)]] = {
     // TODO : this can be made more efficient by performing an index scan rather than document lookup
     retrieveMetadata(id) map {
       case None => None
@@ -106,12 +103,12 @@ class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metad
     }
   }
 
-  override def searchMetadata(internalID: String): Future[Option[Metadata]] = {
+  override def searchMetadata(internalID: String)(implicit ec: ExecutionContext): Future[Option[Metadata]] = {
     val selector = internalIDMetadataSelector(internalID)
     collection.find(selector).one[Metadata]
   }
 
-  override def removeMetadata(registrationId: String): Future[Boolean] = {
+  override def removeMetadata(registrationId: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     val selector = regIDMetadataSelector(registrationId)
     collection.remove(selector, firstMatchOnly = true).map(_.ok)
   }

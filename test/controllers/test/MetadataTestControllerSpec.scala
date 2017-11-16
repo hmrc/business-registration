@@ -65,7 +65,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
   "updateCC" should {
     "return a 200" in {
-      when(mockrepo.updateCompletionCapacity(any(), any()))
+      when(mockrepo.updateCompletionCapacity(any(), any())(any()))
         .thenReturn(Future.successful("director"))
 
       val result = setupController.updateCompletionCapacity("1234")(FakeRequest().withJsonBody(Json.parse("""{"completionCapacity" : "director"}""")))

@@ -19,17 +19,16 @@ package controllers.prePop
 import javax.inject.{Inject, Singleton}
 
 import auth.{Authenticated, LoggedIn, NotLoggedIn}
-import auth._
 import connectors.AuthConnector
 import models.prepop.{ContactDetails, PermissionDenied}
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Result}
-import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepository}
+import play.api.mvc.Action
 import repositories.MetadataMongo
+import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepository}
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 @Singleton
 class ContactDetailsControllerImpl @Inject()(val authConnector: AuthConnector,

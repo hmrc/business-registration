@@ -20,12 +20,10 @@ import play.api.Logger
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONLong}
 import reactivemongo.core.commands.DeleteIndex
-import uk.gov.hmrc.mongo.ReactiveRepository
 import repositories.CollectionsNames.getConfString
+import uk.gov.hmrc.mongo.ReactiveRepository
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
+import scala.concurrent.{ExecutionContext, Future}
 
 trait TTLIndexing[A, ID] {
   self: ReactiveRepository[A, ID] =>
@@ -59,11 +57,11 @@ trait TTLIndexing[A, ID] {
     } recoverWith errorHandler
   }
 
-  private val doNothing = Future(Seq(true))
+  private def doNothing(implicit ec: ExecutionContext) = Future(Seq(true))
 
   private def hasSameTTL(index: Index): Boolean = index.options.getAs[BSONLong](EXPIRE_AFTER_SECONDS).exists(_.as[Long] == ttl)
 
-  private def deleteIndex(index: Index) = collection.db.command(DeleteIndex(collection.name, index.eventualName))
+  private def deleteIndex(index: Index)(implicit ec: ExecutionContext) = collection.db.command(DeleteIndex(collection.name, index.eventualName))
 
   private def errorHandler: PartialFunction[Throwable, Future[Seq[Boolean]]] = {
     case ex =>
@@ -71,7 +69,7 @@ trait TTLIndexing[A, ID] {
       throw ex
   }
 
-  private def ensureLastUpdated: Future[Seq[Boolean]] = {
+  private def ensureLastUpdated(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
     Future.sequence(Seq(collection.indexesManager.ensure(
       Index(
         key = Seq("lastUpdated" -> IndexType.Ascending),

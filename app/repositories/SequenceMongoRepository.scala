@@ -24,16 +24,17 @@ import play.api.Application
 import play.api.libs.json.{Format, JsValue}
 import reactivemongo.api.DB
 import reactivemongo.bson._
+import reactivemongo.play.json._
 import repositories.CollectionsNames.SEQUENCE
+import repositories.InjectDB.injectDB
 import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
-import InjectDB.injectDB
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
+
 
 @ImplementedBy(classOf[SequenceRepositoryImpl])
 trait SequenceRepository extends Repository[Metadata, BSONObjectID]{
-  def getNext(sequence: String): Future[Int]
+  def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int]
 }
 
 abstract class SequenceRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
@@ -43,7 +44,7 @@ abstract class SequenceRepositoryBase(mongo: () => DB)(implicit formats: Format[
 @Singleton
 class SequenceRepositoryImpl @Inject()(implicit app: Application) extends SequenceRepositoryBase(injectDB(app)) {
 
-  def getNext(sequence: String): Future[Int] = {
+  def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int] = {
     val selector = BSONDocument("_id" -> sequence)
     val modifier = BSONDocument("$inc" -> BSONDocument("seq" -> 1))
 

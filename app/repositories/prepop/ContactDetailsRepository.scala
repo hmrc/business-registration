@@ -22,13 +22,12 @@ import models.prepop.{ContactDetails, PermissionDenied}
 import play.api.libs.json.JsObject
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
-import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.play.json._
 import repositories.CollectionsNames.CONTACTDETAILS
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.collection.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -37,10 +36,10 @@ class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent) {
 }
 
 trait ContactDetailsRepository{
-  def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails): Future[Option[ContactDetails]]
-  def getContactDetails(registrationID: String, intID: String): Future[Option[ContactDetails]]
-  private[repositories] def getContactDetailsWithJustRegID(registrationID: String):Future[Option[JsObject]]
-  def getContactDetailsUnVerifiedUser(RegistrationID:String, InternalID:String):Future[Option[ContactDetails]]
+  def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]]
+  def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]]
+  private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext):Future[Option[JsObject]]
+  def getContactDetailsUnVerifiedUser(RegistrationID:String, InternalID:String)(implicit ec: ExecutionContext):Future[Option[ContactDetails]]
 }
 
 class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[ContactDetails, BSONObjectID](collectionName = CONTACTDETAILS, mongo, ContactDetails.formats)
@@ -55,7 +54,7 @@ class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[Contac
     }
   }
 
-  def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails): Future[Option[ContactDetails]] = {
+  def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
     val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
     getContactDetailsUnVerifiedUser(registrationID, intID) .flatMap{ res =>
         val js = ContactDetails.mongoWrites(registrationID, internalID = intID,originalContactDetails = res).writes(contactDetails)
@@ -67,7 +66,7 @@ class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[Contac
 
 
 
-  def getContactDetails(registrationID: String, intID: String): Future[Option[ContactDetails]] = {
+  def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
     val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
     getContactDetailsUnVerifiedUser(registrationID, intID).flatMap {
       case Some(cd: ContactDetails) => Future.successful(Some(cd))
@@ -75,13 +74,13 @@ class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[Contac
     }
   }
 
-  private[repositories] def getContactDetailsWithJustRegID(registrationID: String): Future[Option[JsObject]] = {
+  private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     val selector = BSONDocument("_id" -> registrationID)
     collection.find(selector).one[JsObject]
 
   }
 
-  def getContactDetailsUnVerifiedUser(registrationID: String, intID: String): Future[Option[ContactDetails]] = {
+  def getContactDetailsUnVerifiedUser(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
     getContactDetailsWithJustRegID(registrationID).map {
       case Some(s) if ((s \ "InternalID").get.as[String] != intID) =>
      throw PermissionDenied(registrationID, intID)

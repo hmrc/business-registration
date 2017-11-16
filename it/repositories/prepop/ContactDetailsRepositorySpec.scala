@@ -24,13 +24,11 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson.{BSONDocument, BSONLong}
-import reactivemongo.json.collection.JSONCollection
+import reactivemongo.bson.{BSONDocument, BSONElement, BSONLong}
 import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll
   with ScalaFutures with Eventually with WithFakeApplication {
@@ -179,7 +177,7 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
       val indexes: List[Index] = repository.collection.indexesManager.list
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
 
     "overwrite the current ttl index with a new one from config" in new Setup {
@@ -211,14 +209,14 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
       val indexes: List[Index] = repository.collection.indexesManager.list
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(setupTTl))
+      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(setupTTl)))
 
       await(repository.ensureIndexes)
 
       indexCount shouldBe 2
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
 
     "do nothing when ensuring the ttl index but one already exists and has the same expiration time" in new Setup {
@@ -233,12 +231,12 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
       val indexes: List[Index] = repository.collection.indexesManager.list
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
 
       await(repository.ensureIndexes)
 
       indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream("expireAfterSeconds" -> BSONLong(timeToExpire))
+      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
   }
 }

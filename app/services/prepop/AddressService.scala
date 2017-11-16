@@ -16,15 +16,13 @@
 
 package services.prepop
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
 import models.prepop.Address
-import play.api.Logger
-import play.api.libs.json.{JsArray, Reads, Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 import repositories.prepop.{AddressRepository, AddressRepositoryImpl}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AddressServiceImpl @Inject()(addressesRepository: AddressRepositoryImpl) extends AddressService {
@@ -35,19 +33,19 @@ trait AddressService {
 
   val repository: AddressRepository
 
-  def fetchAddresses(registrationId: String): Future[Option[JsObject]] = {
+  def fetchAddresses(registrationId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     repository.fetchAddresses(registrationId) map { _ map { js =>
       Json.obj("addresses" -> Json.toJson((js \ "addresses").as[Seq[JsObject]] map (_.as[JsObject] - "lastUpdated" - "registration_id" - "internal_id")))
     }}
   }
 
-  def updateAddress(registrationId: String, address: JsObject): Future[Boolean] = {
+  def updateAddress(registrationId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
     addressExists(registrationId, address) flatMap { exists =>
       if(!exists) repository.insertAddress(registrationId, address) else repository.updateAddress(registrationId, address)
     }
   }
 
-  private[services] def addressExists(registrationId: String, address: JsObject): Future[Boolean] = {
+  private[services] def addressExists(registrationId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
     val addressToUpdate = address.as[Address](Address.addressReads)
     fetchAddresses(registrationId).map(_.fold(false)(_.as[Seq[Address]](Address.listReads).exists(_.sameAs(addressToUpdate))))
   }

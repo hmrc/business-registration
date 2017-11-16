@@ -27,13 +27,14 @@ import play.api.mvc.Results
 import play.api.test.FakeRequest
 import repositories.prepop.AddressRepository
 import services.prepop.AddressService
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import play.api.mvc.Results.Ok
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.HeaderCarrier
 
 class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelper with AuthMocks {
 
@@ -48,9 +49,9 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
       override val resourceConn: AuthorisationResource[String] = mockAddressRepository
     }
 
-    def mockGetInternalIds(internalIds: String*) = when(mockAddressRepository.getInternalIds(any())).thenReturn(Future.successful(internalIds))
-    def mockFetchAddress(address: Option[JsObject]) = when(mockAddressService.fetchAddresses(any())).thenReturn(Future.successful(address))
-    def mockUpdateAddress(succeeded: Boolean) = when(mockAddressService.updateAddress(any(), any())).thenReturn(Future.successful(succeeded))
+    def mockGetInternalIds(internalIds: String*) = when(mockAddressRepository.getInternalIds(any())(any())).thenReturn(Future.successful(internalIds))
+    def mockFetchAddress(address: Option[JsObject]) = when(mockAddressService.fetchAddresses(any())(any())).thenReturn(Future.successful(address))
+    def mockUpdateAddress(succeeded: Boolean) = when(mockAddressService.updateAddress(any(), any())(any())).thenReturn(Future.successful(succeeded))
   }
 
   val regId = "reg-12345"

@@ -24,10 +24,15 @@ trait MongoFixture {
   private lazy val mongoUri: String = s"mongodb://127.0.0.1:27017/scrs"
   private lazy val conn = new MongoConnector(mongoUri)
 
-  lazy val mongoDB = () => new DB {
-    override def failoverStrategy: FailoverStrategy = conn.helper.failoverStrategy.getOrElse(FailoverStrategy())
-    override def connection: MongoConnection = conn.helper.connection
-    override def name: String = conn.helper.dbName
-  }
+//  lazy val mongoDB = () => new DB {
+//    override def failoverStrategy: FailoverStrategy = conn.helper.failoverStrategy.getOrElse(FailoverStrategy())
+//    override def connection: MongoConnection = conn.helper.connection
+//    override def name: String = conn.helper.dbName
+//  }
 
+  lazy val mongoDB = () => DB(
+    name              = conn.helper.dbName,
+    connection        = conn.helper.connection,
+    failoverStrategy  = conn.helper.failoverStrategy.getOrElse(FailoverStrategy())
+  )
 }

@@ -25,9 +25,10 @@ import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import repositories.{MetadataRepository, SequenceRepository}
 import services.MetadataService
-import uk.gov.hmrc.play.http.HeaderCarrier
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.HeaderCarrier
 
 trait SCRSMocks {
   this: MockitoSugar =>

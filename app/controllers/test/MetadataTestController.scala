@@ -20,10 +20,10 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
-import repositories.{MetadataRepositoryMongo, _}
+import repositories._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 @Singleton
 class MetadataTestController @Inject()(metaDataRepo: MetadataMongo) extends BaseController with BRMongoTestControllerT{
