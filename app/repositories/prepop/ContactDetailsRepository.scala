@@ -19,6 +19,7 @@ package repositories.prepop
 import javax.inject.{Inject, Singleton}
 
 import models.prepop.{ContactDetails, PermissionDenied}
+import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
@@ -31,8 +32,8 @@ import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent) {
-  val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db)
+class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent, configuration: Configuration) {
+  val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db, configuration)
 }
 
 trait ContactDetailsRepository{
@@ -42,7 +43,8 @@ trait ContactDetailsRepository{
   def getContactDetailsUnVerifiedUser(RegistrationID:String, InternalID:String)(implicit ec: ExecutionContext):Future[Option[ContactDetails]]
 }
 
-class ContactDetailsRepoMongo(mongo: () => DB) extends ReactiveRepository[ContactDetails, BSONObjectID](collectionName = CONTACTDETAILS, mongo, ContactDetails.formats)
+class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
+  extends ReactiveRepository[ContactDetails, BSONObjectID](collectionName = CONTACTDETAILS, mongo, ContactDetails.formats)
   with ContactDetailsRepository with TTLIndexing[ContactDetails, BSONObjectID] {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {

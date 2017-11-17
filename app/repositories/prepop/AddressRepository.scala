@@ -21,6 +21,7 @@ import javax.inject.{Inject, Singleton}
 import auth.AuthorisationResource
 import models.prepop.Address
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.Configuration
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
@@ -34,8 +35,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class AddressRepositoryImpl @Inject()(mongo: ReactiveMongoComponent) {
-  val repository = new AddressMongoRepository(mongo.mongoConnector.db)
+class AddressRepositoryImpl @Inject()(mongo: ReactiveMongoComponent, configuration: Configuration) {
+  val repository = new AddressMongoRepository(mongo.mongoConnector.db, configuration)
 }
 
 trait AddressRepository extends AuthorisationResource[String]{
@@ -44,7 +45,7 @@ trait AddressRepository extends AuthorisationResource[String]{
   def updateAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean]
 }
 
-class AddressMongoRepository(mongo: () => DB) extends ReactiveRepository[JsObject, BSONObjectID](
+class AddressMongoRepository(mongo: () => DB, val configuration: Configuration) extends ReactiveRepository[JsObject, BSONObjectID](
   collectionName = "SharedAddresses",
   mongo = mongo,
   domainFormat = Address.format) with AddressRepository with TTLIndexing[JsObject,BSONObjectID] {

@@ -39,7 +39,7 @@ object WSHttp extends WSHttp with AppName with HttpAuditing { // with AppName wi
 }
 
 object MicroserviceAuditConnector extends AuditConnector with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
 object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with WSHttp {

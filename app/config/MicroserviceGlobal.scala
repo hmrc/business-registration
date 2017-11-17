@@ -19,7 +19,6 @@ package config
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration, Logger, Play}
-import play.api.libs.concurrent.Execution.defaultContext
 import reactivemongo.api.indexes.Index
 import repositories.prepop.ContactDetailsMongo
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -31,7 +30,8 @@ import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
 import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
 import uk.gov.hmrc.play.microservice.filters.{AuditFilter, LoggingFilter, MicroserviceFilterSupport}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ControllerConfiguration extends ControllerConfig {
   lazy val controllerConfigs: Config = Play.current.configuration.underlying.as[Config]("controllers")
@@ -78,8 +78,6 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
 }
 
 case class RepositoryIndexEnsurer(app: Application) {
-  implicit val ec: ExecutionContext = defaultContext
-
   def ensureIndexes(): Future[Unit] = {
     ensureIndexes(app.injector.instanceOf[ContactDetailsMongo].repository)
   }

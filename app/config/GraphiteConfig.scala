@@ -28,12 +28,7 @@ import play.api.{Application, Configuration, Logger, Mode}
   */
 class GraphiteConfig(app: Application) {
 
-  private lazy val env = {
-    if (app.mode.equals(Mode.Test)) {"Test"}
-    else {app.configuration.getString("run.mode").getOrElse("Dev")}
-  }
-
-  private def microserviceMetricsConfig: Option[Configuration] = app.configuration.getConfig(s"$env.microservice.metrics")
+  private def microserviceMetricsConfig: Option[Configuration] = app.configuration.getConfig("microservice.metrics")
 
   def enabled: Boolean = metricsPluginEnabled && graphitePublisherEnabled
 

@@ -19,7 +19,7 @@ package repositories.prepop
 import models.prepop.{ContactDetails, PermissionDenied}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import play.api.Application
+import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll
   with ScalaFutures with Eventually with WithFakeApplication {
 
-  val timeToExpire: Int = 999
+  val timeToExpire: Int = 9999
 
   val additionalConfig = Map("Test.microservice.services.prePop.ttl" -> s"$timeToExpire")
 
@@ -48,8 +48,9 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
   val contactDetailsUpdated = ContactDetails(Some("name2"),Some("name"),Some("sName"), Some("email"), Some("num"), Some("foo"))
 
   class Setup {
+    private val config    = fakeApplication.injector.instanceOf(classOf[Configuration])
     private val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo(mongoComp).repository
+    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo(mongoComp, config).repository
     await(repository.drop)
     await(repository.ensureIndexes)
 

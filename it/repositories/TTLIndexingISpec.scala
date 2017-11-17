@@ -18,7 +18,7 @@ package repositories
 
 import helpers.MongoSpec
 import org.scalatest.concurrent.Eventually
-import play.api.Application
+import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Format, Json}
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -46,8 +46,13 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
     implicit val format: Format[TestCaseClass] = Json.format[TestCaseClass]
   }
 
+  val config = fakeApplication.injector.instanceOf(classOf[Configuration])
+
   class TestTTLRepository extends ReactiveRepository[TestCaseClass, BSONObjectID](collectionName = "test-collection", mongo, TestCaseClass.format)
     with TTLIndexing[TestCaseClass, BSONObjectID] {
+
+
+    override val configuration = config
 
     override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
       for{

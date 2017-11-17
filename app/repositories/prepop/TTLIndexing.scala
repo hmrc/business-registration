@@ -16,11 +16,10 @@
 
 package repositories.prepop
 
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONLong}
 import reactivemongo.core.commands.DeleteIndex
-import repositories.CollectionsNames.getConfString
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,7 +27,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait TTLIndexing[A, ID] {
   self: ReactiveRepository[A, ID] =>
 
-  lazy val ttl: Long = getConfString("prePop.ttl", throw new Exception("Can't find key prePop.ttl")).toLong
+  val configuration: Configuration
+
+  lazy val ttl: Long = configuration.getLong("microservice.services.prePop.ttl").getOrElse(throw new Exception("Can't find key prePop.ttl"))
 
   private val collectionName: String = self.collection.name
 

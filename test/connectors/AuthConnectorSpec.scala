@@ -38,10 +38,8 @@ class AuthConnectorSpec extends SCRSSpec {
 
   val testAppConfig = new MicroserviceAppConfigImpl(fakeApplication)
 
-  val testAuthConnector = new AuthConnect {
-    override val http: CoreGet  = mockHttp
-    override val serviceUrl     = "/test/service"
-    override val authorityUri   = "/test/auth"
+  val testAuthConnector = new AuthConnectorImpl(testAppConfig) {
+    override val http = mockHttp
   }
 
   def authResponseJson(uri: String, userDetailsLink: String, idsLink: String) = Json.parse(

@@ -23,29 +23,24 @@ import config.{MicroserviceAppConfig, WSHttp}
 import models.{Authority, UserIds}
 import play.api.http.Status._
 import uk.gov.hmrc.http.{CoreGet, HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 @Singleton
-class AuthConnector @Inject()() extends AuthConnect with RawResponseReads with ServicesConfig {
-  val http          = WSHttp
-  val serviceUrl    = baseUrl("auth")
-  val authorityUri  = "auth/authority"
-}
+class AuthConnectorImpl @Inject()(config: MicroserviceAppConfig) extends AuthConnector with RawResponseReads {
 
-trait AuthConnect {
-  val http: CoreGet
+  val http: CoreGet = WSHttp
 
-  val serviceUrl: String
-  val authorityUri: String
+  lazy val serviceUrl = config.authUrl
+
+  def authorityUri = "auth/authority"
 
   def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]] = {
     val getUrl = s"""$serviceUrl/$authorityUri"""
     http.GET[HttpResponse](getUrl) flatMap { response =>
       response.status match {
-        case OK =>
+        case OK => {
           val uri         = (response.json \ "uri").as[String]
           val userDetails = (response.json \ "userDetailsLink").as[String]
           val idsLink     = (response.json \ "ids").as[String]
@@ -54,8 +49,14 @@ trait AuthConnect {
             val ids = response.json.as[UserIds]
             Some(Authority(uri, userDetails, ids))
           }
+        }
         case _ => Future.successful(None)
       }
     }
   }
+}
+
+@ImplementedBy(classOf[AuthConnectorImpl])
+trait AuthConnector {
+  def getCurrentAuthority()(implicit headerCarrier: HeaderCarrier): Future[Option[Authority]]
 }
