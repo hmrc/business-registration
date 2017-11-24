@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 import javax.inject.{Inject, Singleton}
 
+import akka.event.slf4j.Logger
 import models.{Links, Metadata, MetadataResponse}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
@@ -86,5 +87,25 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
 
   def buildSelfLink(registrationId: String): JsObject = {
     Json.obj("links" -> Links(Some(controllers.routes.MetadataController.retrieveMetadata(registrationId).url)))
+  }
+
+  def checkCompletionCapacity(regIds: Seq[String])(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
+    val logger = "StartUp"
+    def check(regId: String) = {
+      metadataRepository.retrieveMetadata(regId) map {
+        case Some(doc) =>
+          val cc = doc.completionCapacity.getOrElse("[Not found]")
+          Logger(logger).warn(s"Current completion capacity for regid: $regId is $cc")
+          true
+        case _ =>
+          if (regId.nonEmpty) Logger(logger).warn(s"No document found for regId: $regId")
+          false
+      } recover {
+        case e =>
+          Logger(logger).error(s"Data check was unsuccessful for regId: $regId with error ${e.getMessage}")
+          false
+      }
+    }
+    Future.sequence(regIds.map(check))
   }
 }
