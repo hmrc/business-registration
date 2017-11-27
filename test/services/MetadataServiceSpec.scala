@@ -135,4 +135,43 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       await(result) shouldBe currentTime
     }
   }
+
+  "checkCompletionCapacity" should {
+    val service = setupService
+    "return a true if regId is present" in {
+      val regId = Seq("regId")
+      when(mockMetadataRepository.retrieveMetadata(any())(any()))
+        .thenReturn(Future.successful(Some(buildMetadata(regId = "regId"))))
+
+      await(service.checkCompletionCapacity(regId)) shouldBe Seq(true)
+    }
+
+    "return a false if regId is absent" in {
+      val regId = Seq("regId")
+      when(mockMetadataRepository.retrieveMetadata(any())(any()))
+        .thenReturn(Future.failed(new Exception))
+
+      await(service.checkCompletionCapacity(regId)) shouldBe Seq(false)
+    }
+
+    "return a false if no no document is returned" in {
+      val regId = Seq("regId")
+      when(mockMetadataRepository.retrieveMetadata(any())(any()))
+        .thenReturn(Future.successful(None))
+
+      await(service.checkCompletionCapacity(regId)) shouldBe Seq(false)
+    }
+
+    "return a sequence of booleans if more than one regId present" in {
+      val regIds = Seq("failed", "passed")
+
+      when(mockMetadataRepository.retrieveMetadata(eqTo("passed"))(any()))
+        .thenReturn(Future.successful(Some(buildMetadata(regId = "passed"))))
+
+      when(mockMetadataRepository.retrieveMetadata(eqTo("failed"))(any()))
+        .thenReturn(Future.failed(new Exception))
+
+      await(service.checkCompletionCapacity(regIds)) shouldBe Seq(false, true)
+    }
+  }
 }

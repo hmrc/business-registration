@@ -21,6 +21,7 @@ import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration, Logger, Play}
 import reactivemongo.api.indexes.Index
 import repositories.prepop.ContactDetailsMongo
+import services.MetadataService
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig

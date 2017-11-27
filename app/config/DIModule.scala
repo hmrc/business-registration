@@ -31,5 +31,8 @@ class DIModule extends AbstractModule {
     //services
     bind(classOf[AddressService]).to(classOf[AddressServiceImpl])
     bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
+
+    //start up
+    bind(classOf[StartUpChecks]).asEagerSingleton()
   }
 }
