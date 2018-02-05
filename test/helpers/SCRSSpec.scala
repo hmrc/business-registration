@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,29 @@
 
 package helpers
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import java.util.concurrent.TimeUnit
+
+import akka.util.Timeout
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Mode, Configuration, Application}
-import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
-
-import scala.concurrent.ExecutionContext
+import org.scalatestplus.play.PlaySpec
+import play.api.http.{HeaderNames, Status}
+import play.api.libs.json.JsValue
+import play.api.mvc.{AnyContentAsJson, Request, Result}
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits, Helpers, ResultExtractors}
 import uk.gov.hmrc.http.HeaderCarrier
 
-//todo: Scalatest 3.0.1 is not compatible with Scalatestplus-play 1.5.x. The version that Scalatestplus is built against is "org.scalatest" %% "scalatest" % "2.2.6".
-//todo: OneAppPerSuite will throw ClassCastExceptions when trying to stop the application after a suite of tests so use WithFakeApplication for now
-//todo: see https://github.com/playframework/scalatestplus-play/issues/55
-trait SCRSSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+import scala.concurrent.{ExecutionContext, Future}
 
-  //override lazy val fakeApplication = new GuiceApplicationBuilder().build()
-
-  implicit val actorSystem: ActorSystem = fakeApplication.actorSystem
-  implicit val materializer: Materializer = fakeApplication.materializer
+trait SCRSSpec extends PlaySpec with MockitoSugar with BeforeAndAfterEach with FutureAwaits with DefaultAwaitTimeout with ResultExtractors with HeaderNames with Status {
 
   implicit val defaultHC: HeaderCarrier = HeaderCarrier()
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
-//  def buildApp(additionalConfig: (String, Any)*): Application = {
-//    new GuiceApplicationBuilder()
-//      .configure(additionalConfig: _*)
-//      .in(Mode.Test)
-//      .build()
-//  }
+  private val FIVE = 5L
+  private implicit val timeout: Timeout = Timeout(FIVE, TimeUnit.SECONDS)
+
+  def bodyAsJson(res: Future[Result]): JsValue = Helpers.contentAsJson(res)
+
+  implicit def anyContentAsJsonToJsValue(r: Request[AnyContentAsJson]): Request[JsValue] = r.map(_.json)
 }

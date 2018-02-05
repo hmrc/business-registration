@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,60 +17,48 @@
 package helpers
 
 import auth.AuthorisationResource
-import connectors.AuthConnector
 import fixtures.AuthFixture
-import models.{Authority, UserIds}
-import org.scalatest.mockito.MockitoSugar
-import repositories.MetadataRepository
-import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito._
+import org.mockito.stubbing.OngoingStubbing
+import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 
-import scala.annotation.implicitNotFound
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.http.HeaderCarrier
 
-@implicitNotFound("Could not find an implicit AuthConnector in scope")
 trait AuthMocks extends AuthFixture {
   self: MockitoSugar =>
 
-  def mockGetCurrentAuthority(authority: Option[Authority] = Some(Authority("x", "z", UserIds("tiid","teid"))))(implicit mockAuthConnector: AuthConnector) = {
-    when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
-      .thenReturn(Future.successful(authority))
+  lazy val mockAuthConnector: AuthConnector = mock[AuthConnector]
+
+  def mockSuccessfulAuthentication: OngoingStubbing[Future[Option[String]]] = {
+    when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any()))
+      .thenReturn(Future.successful(Some("internal-id")))
   }
 
-  def mockSuccessfulAuthorisation(resource: AuthorisationResource[String], regId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
+  def mockNotLoggedIn: OngoingStubbing[Future[Option[String]]] = {
+    when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any()))
+      .thenReturn(Future.failed(MissingBearerToken()))
+  }
+
+  def mockSuccessfulAuthorisation(resource: AuthorisationResource, regId: String): OngoingStubbing[Future[Option[String]]] = {
     when(resource.getInternalId(eqTo(regId))(any()))
-      .thenReturn(Future.successful(Some((regId, authority.ids.internalId))))
-    when(mockAuthConnector.getCurrentAuthority()(any()))
-      .thenReturn(Future.successful(Some(authority)))
+      .thenReturn(Future.successful(Some("internal-id")))
+    when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any()))
+      .thenReturn(Future.successful(Some("internal-id")))
   }
 
-  def mockSuccessfulAuthorisation(mockMetadataRepo: MetadataRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
-    when(mockMetadataRepo.getInternalId(eqTo(registrationId))(any()))
-      .thenReturn(Future.successful(Some((registrationId, authority.ids.internalId))))
-    when(mockAuthConnector.getCurrentAuthority()(any()))
-      .thenReturn(Future.successful(Some(authority)))
+  def mockNotAuthorised(resource: AuthorisationResource, regId: String): OngoingStubbing[Future[Option[String]]] = {
+    when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any()))
+      .thenReturn(Future.successful(Some("internal-id")))
+    when(resource.getInternalId(eqTo(regId))(any()))
+      .thenReturn(Future.successful(Some("wrong-internal-id")))
   }
 
-  def mockNotLoggedIn(mockMetadataRepo: MetadataRepository)(implicit mockAuthConnector: AuthConnector) = {
-    when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
-      .thenReturn(Future.successful(None))
-    when(mockMetadataRepo.getInternalId(any())(any()))
-      .thenReturn(Future.successful(None))
-  }
-
-  def mockNotAuthorised(mockMetadataRepo: MetadataRepository, registrationId: String, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
-    when(mockAuthConnector.getCurrentAuthority()(any()))
-      .thenReturn(Future.successful(Some(authority)))
-    when(mockMetadataRepo.getInternalId(eqTo(registrationId))(any()))
-      .thenReturn(Future.successful(Some((registrationId, authority.ids.internalId + "xxx"))))
-  }
-
-  def mockAuthResourceNotFound(mockMetadataRepo: MetadataRepository, authority: Authority)(implicit mockAuthConnector: AuthConnector) = {
-    when(mockAuthConnector.getCurrentAuthority()(any()))
-      .thenReturn(Future.successful(Some(authority)))
-    when(mockMetadataRepo.getInternalId(any())(any()))
+  def mockAuthResourceNotFound(resource: AuthorisationResource): OngoingStubbing[Future[Option[String]]] = {
+    when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any()))
+      .thenReturn(Future.successful(Some("internal-id")))
+    when(resource.getInternalId(any())(any()))
       .thenReturn(Future.successful(None))
   }
 }

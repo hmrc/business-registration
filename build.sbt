@@ -42,6 +42,7 @@ lazy val microservice = Project(appName, file("."))
     evictionWarningOptions in update              :=  EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
     routesGenerator                               :=  InjectedRoutesGenerator,
     scalaVersion                                  :=  "2.11.11",
+    Keys.fork in Test                             :=  true,
     Keys.fork in IntegrationTest                  :=  false,
     unmanagedSourceDirectories in IntegrationTest :=  (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package models
 
 import fixtures.MetadataFixture
-import org.joda.time.{DateTime, DateTimeZone, Chronology}
 import org.joda.time.chrono.ISOChronology
+import org.joda.time.{DateTime, DateTimeZone}
+import org.scalatestplus.play.PlaySpec
 import play.api.data.validation.ValidationError
-import play.api.libs.json.{JsPath, JsSuccess, Json}
-import uk.gov.hmrc.play.test.UnitSpec
+import play.api.libs.json.{JsPath, Json}
 
-class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixture {
+class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixture {
 
   def now = DateTime.now(DateTimeZone.UTC)
 
@@ -43,10 +43,10 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
 
       val result = json.validate[Metadata]
-      result.isSuccess shouldBe true
+      result.isSuccess mustBe true
       val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true, result.get.lastSignedIn)
 
-      result.get shouldBe expected
+      result.get mustBe expected
     }
 
     "Be able to be parsed from JSON and the generated date time is now " in {
@@ -66,7 +66,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val lastSignedIn = Json.fromJson[Metadata](json)(Metadata.reads).get.lastSignedIn.getMillis
       val after = now.getMillis
 
-      lastSignedIn >= before && lastSignedIn <= after shouldBe true
+      lastSignedIn >= before && lastSignedIn <= after mustBe true
     }
 
     "Be able to be parsed from a full JSON structure " in {
@@ -85,10 +85,10 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
 
       val result = json.validate[Metadata]
-      result.isSuccess shouldBe true
+      result.isSuccess mustBe true
       val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true, dateTime)
 
-      result.get shouldBe expected
+      result.get mustBe expected
     }
 
     "fail validation when an invalid completion capacity is present" in {
@@ -105,7 +105,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
       val result = json.validate[Metadata]
 
-      //shouldHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
+      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
     }
 
     "fail validation when an invalid language is present" in {
@@ -122,7 +122,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
       val result = json.validate[Metadata]
 
-      //shouldHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
     }
   }
 
@@ -133,21 +133,21 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val expected = buildMetadataResponse()
       val result = json.validate[MetadataResponse]
 
-      shouldBeSuccess(expected, result)
+      mustBeSuccess(expected, result)
     }
 
     "fail validation when an incorrect language is present" in {
       val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"test-to-fail","completionCapacity":"Director"}""")
       val result = json.validate[MetadataResponse]
 
-      shouldHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
     }
 
     "fail validation when an incorrect completion capacity is present" in {
       val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"ENG","completionCapacity":"123£$test-to-fail"}""")
       val result = json.validate[MetadataResponse]
 
-      shouldHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
+      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
     }
   }
 
@@ -158,7 +158,7 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val expected = MetadataRequest("ENG")
       val result = json.validate[MetadataRequest]
 
-      shouldBeSuccess(expected, result)
+      mustBeSuccess(expected, result)
     }
 
     "Be able to be parsed from JSON when language is 'CYM'" in {
@@ -166,14 +166,14 @@ class MetadataSpec extends UnitSpec with JsonFormatValidation with MetadataFixtu
       val expected = MetadataRequest("CYM")
       val result = json.validate[MetadataRequest]
 
-      shouldBeSuccess(expected, result)
+      mustBeSuccess(expected, result)
     }
 
     "fail validation is 'ENG' or 'CYM' is not present in language" in {
       val json = Json.parse("""{"language":"toFail"}""")
       val result = json.validate[MetadataRequest]
 
-      shouldHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
     }
   }
 }

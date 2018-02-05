@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,42 @@
 package controllers
 
 import auth.AuthorisationResource
-import connectors.AuthConnector
 import fixtures.{AuthFixture, MetadataFixture}
 import helpers.{AuthMocks, SCRSSpec}
 import mocks.MetricServiceMock
-import models.{Authority, ErrorResponse}
+import models.ErrorResponse
 import org.joda.time.{DateTime, DateTimeZone}
-import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{JsObject, JsValue, Json}
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito._
+import org.scalatest.mockito.MockitoSugar
+import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.{MetadataMongo, MetadataRepository, MetadataRepositoryMongo}
-import services.MetadataService
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.ArgumentCaptor
+import services.{MetadataService, MetricsService}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
-class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture with AuthMocks with BeforeAndAfterEach {
+class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixture with AuthMocks with MockitoSugar {
 
   val mockMetadataService = mock[MetadataService]
   val mockMetadataRepo = mock[MetadataRepositoryMongo]
+  val mockMetadataAuthRepo = mock[MetadataRepository]
   val mockMetaDataMongo = mock[MetadataMongo]
-  implicit val mockAuthConnector = mock[AuthConnector]
+
+  class Setup{
+    val controller = new MetadataController {
+      val metadataService: MetadataService = mockMetadataService
+      val metricsService: MetricsService = MetricServiceMock
+      val resourceConn: AuthorisationResource = mockMetadataRepo
+
+      val authConnector = mockAuthConnector
+    }
+  }
+
+  implicit val hc = HeaderCarrier()
 
   override protected def beforeEach() = {
     reset(
@@ -50,72 +62,67 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
     )
   }
 
-  def setupController(authority: Option[Authority] = None): MetadataController = {
-    mockGetCurrentAuthority(authority)
-    new MetadataController(mockMetadataService, mockAuthConnector, MetricServiceMock, mockMetaDataMongo){
-      override val resourceConn = mockMetadataRepo
-    }
-  }
 
   "calling createMetadata" should {
 
-    "return a 201" in {
+    "return a 201" in new Setup {
+
+      mockSuccessfulAuthentication
 
       when(mockMetadataService.createMetadataRecord(any(), any())(any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
-      val controller = setupController(Some(validAuthority))
-
       val metadataRequest = buildMetadataRequest()
-      val request = FakeRequest().withJsonBody(Json.toJson(metadataRequest))
-      val result = call(controller.createMetadata, request)
+      val request = FakeRequest().withBody[JsValue](Json.toJson(metadataRequest))
+      val result = controller.createMetadata(request)
 
-      status(result) shouldBe CREATED
+      status(result) mustBe CREATED
 
-      contentType(result) shouldBe Some("application/json")
-      await(jsonBodyOf(result)).as[JsObject] shouldBe metadataResponseJsObj
+      contentType(result) mustBe Some("application/json")
+      bodyAsJson(result) mustBe metadataResponseJsObj
     }
 
-    "return a 403 when the user is not authenticated" in {
+    "return a 403 when the user is not authenticated" in new Setup {
+      mockNotLoggedIn
 
-      val controller = setupController(None)
-      val request = FakeRequest().withJsonBody(validMetadataJson)
-      val result = call(controller.createMetadata, request)
+      val request = FakeRequest().withBody[JsValue](validMetadataJson)
+      val result = controller.createMetadata(request)
 
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 
   "searchMetadata" should {
 
-    "return a 200 and a MetadataResponse as json if metadata is found" in {
+    "return a 200 and a MetadataResponse as json if metadata is found" in new Setup {
+
+      mockSuccessfulAuthentication
 
       when(mockMetadataService.searchMetadataRecord(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
-      val controller = setupController(Some(validAuthority))
+      val result = controller.searchMetadata(FakeRequest())
 
-      val result = call(controller.searchMetadata, FakeRequest())
-      status(result) shouldBe OK
-      await(jsonBodyOf(result)).as[JsObject] shouldBe metadataResponseJsObj
+      status(result) mustBe OK
+      bodyAsJson(result) mustBe metadataResponseJsObj
     }
 
-    "return a 403 - forbidden when the user is not authenticated" in {
-      val controller = setupController(None)
+    "return a 403 - forbidden when the user is not authenticated" in new Setup {
+      mockNotLoggedIn
 
-      val result = call(controller.searchMetadata, FakeRequest())
-      status(result) shouldBe FORBIDDEN
+      val result = controller.searchMetadata(FakeRequest())
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 404 - NotFound when the resource doesn't exist" in {
-      val controller = setupController(Some(validAuthority))
+    "return a 404 - NotFound when the resource doesn't exist" in new Setup {
+      mockSuccessfulAuthentication
 
       when(mockMetadataService.searchMetadataRecord(any())(any()))
         .thenReturn(Future.successful(None))
 
-      val result = call(controller.searchMetadata, FakeRequest())
-      status(result) shouldBe NOT_FOUND
-      await(jsonBodyOf(result)) shouldBe ErrorResponse.MetadataNotFound
+      val result = controller.searchMetadata(FakeRequest())
+      status(result) mustBe NOT_FOUND
+      bodyAsJson(result) mustBe ErrorResponse.MetadataNotFound
     }
   }
 
@@ -123,71 +130,63 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     val regId = "0123456789"
 
-    "return a 200 and a metadata model is one is found" in {
+    "return a 200 and a metadata model is one is found" in new Setup {
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
       when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
-      mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
+      mockSuccessfulAuthorisation(mockMetadataRepo, regId)
 
-      val controller = setupController(Some(validAuthority))
+      val result = controller.retrieveMetadata(regId)(FakeRequest())
 
-      val result = call(controller.retrieveMetadata(regId), FakeRequest())
-
-      status(result) shouldBe OK
-      regIdCaptor.getValue shouldBe regId
-      await(jsonBodyOf(result)).as[JsValue] shouldBe metadataResponseJsObj
+      status(result) mustBe OK
+      regIdCaptor.getValue mustBe regId
+      bodyAsJson(result) mustBe metadataResponseJsObj
     }
 
-    "return a 403 when the user is not logged in" in {
+    "return a 403 when the user is not logged in" in new Setup {
 
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
       when(mockMetadataService.retrieveMetadataRecord(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
-      mockNotLoggedIn(mockMetadataRepo)
+      mockNotLoggedIn
 
-      val controller = setupController(None)
-
-      val result = call(controller.retrieveMetadata(regId), FakeRequest())
-      status(result) shouldBe FORBIDDEN
+      val result = controller.retrieveMetadata("noitisnot")(FakeRequest())
+      status(result) mustBe FORBIDDEN
 
       verify(mockMetadataService, times(0)).retrieveMetadataRecord(any())(any())
     }
 
-    "return a 403 when the user is logged in but not authorised to access the resource" in {
-      mockNotAuthorised(mockMetadataRepo, regId, validAuthority)
+    "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {
+      mockNotAuthorised(mockMetadataRepo, regId)
 
-      val controller = setupController(Some(validAuthority))
-
-      val result = call(controller.retrieveMetadata(regId), FakeRequest())
-      status(result) shouldBe FORBIDDEN
+      val result = controller.retrieveMetadata(regId)(FakeRequest())
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 404 when the user is logged in but the requested document doesn't exist" in {
-      mockAuthResourceNotFound(mockMetadataRepo, validAuthority)
+    "return a 404 when the user is logged in but the requested document doesn't exist" in new Setup {
+      mockAuthResourceNotFound(mockMetadataRepo)
 
-      val controller = setupController(Some(validAuthority))
-
-      val result = call(controller.retrieveMetadata(regId), FakeRequest())
-      status(result) shouldBe NOT_FOUND
+      val result = controller.retrieveMetadata(regId)(FakeRequest())
+      status(result) mustBe NOT_FOUND
     }
 
-    "return a 404 - not found logged in the requested document doesn't exist but got through auth" in {
-      val controller = setupController(Some(validAuthority))
+    "return a 404 - not found logged in the requested document doesn't exist but got through auth" in new Setup {
+      mockSuccessfulAuthentication
 
       when(mockMetadataRepo.getInternalId(eqTo(regId))(any())).
-        thenReturn(Future.successful(Some((regId,validAuthority.ids.internalId))))
+        thenReturn(Future.successful(Some("internal-id")))
 
       when(mockMetadataService.retrieveMetadataRecord(eqTo(regId))(any()))
         .thenReturn(Future.successful(None))
 
-      val result = call(controller.retrieveMetadata(regId), FakeRequest())
-      status(result) shouldBe NOT_FOUND
-      await(jsonBodyOf(result)) shouldBe ErrorResponse.MetadataNotFound
+      val result = controller.retrieveMetadata(regId)(FakeRequest())
+      status(result) mustBe NOT_FOUND
+      bodyAsJson(result) mustBe ErrorResponse.MetadataNotFound
     }
   }
 
@@ -195,40 +194,40 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     val regId = "0123456789"
 
-    "return a 200 if Json body can be parsed and meta data has been updated" in {
-      val controller = setupController(Some(validAuthority))
-      mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
+    "return a 200 if Json body can be parsed and meta data has been updated" in new Setup {
+      mockSuccessfulAuthorisation(mockMetadataRepo, regId)
+
 
       when(mockMetadataService.updateMetaDataRecord(eqTo(regId), eqTo(buildMetadataResponse()))(any()))
         .thenReturn(Future.successful(buildMetadataResponse()))
 
-      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(buildMetadataResponse())))
-      status(result) shouldBe OK
-      await(jsonBodyOf(result)).as[JsObject] shouldBe metadataResponseJsObj
+      val result = controller.updateMetaData(regId)(FakeRequest().withBody[JsValue](Json.toJson(buildMetadataResponse())))
+      status(result) mustBe OK
+      bodyAsJson(result) mustBe metadataResponseJsObj
     }
 
-    "return a 403 when the user is not logged in" in {
-      val controller = setupController(None)
-      mockNotLoggedIn(mockMetadataRepo)
+    "return a 403 when the user is not logged in" in new Setup {
+      mockNotLoggedIn
 
-      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(buildMetadataResponse())))
-      status(result) shouldBe FORBIDDEN
+
+      val result = controller.updateMetaData(regId)(FakeRequest().withBody[JsValue](Json.toJson(buildMetadataResponse())))
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 403 when the user is logged in but not authorised to access the resource" in {
-      val controller = setupController(Some(validAuthority))
-      mockNotAuthorised(mockMetadataRepo, regId, validAuthority)
+    "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {
+      mockNotAuthorised(mockMetadataRepo, regId)
 
-      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(buildMetadataResponse())))
-      status(result) shouldBe FORBIDDEN
+
+      val result = controller.updateMetaData(regId)(FakeRequest().withBody[JsValue](Json.toJson(buildMetadataResponse())))
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 404 when the user is logged in but the requested document doesn't exist" in {
-      val controller = setupController(Some(validAuthority))
-      mockAuthResourceNotFound(mockMetadataRepo, validAuthority)
+    "return a 404 when the user is logged in but the requested document doesn't exist" in new Setup {
+      mockAuthResourceNotFound(mockMetadataRepo)
 
-      val result = call(controller.updateMetaData(regId), FakeRequest().withJsonBody(Json.toJson(buildMetadataResponse())))
-      status(result) shouldBe NOT_FOUND
+
+      val result = controller.updateMetaData(regId)(FakeRequest().withBody[JsValue](Json.toJson(buildMetadataResponse())))
+      status(result) mustBe NOT_FOUND
     }
   }
 
@@ -240,42 +239,41 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     val currentTimeCaptor = ArgumentCaptor.forClass[DateTime, DateTime](classOf[DateTime])
 
-    "return a 200 if Json body can be parsed and last timestamp has been updated" in {
-      val controller = setupController(Some(validAuthority))
-      mockSuccessfulAuthorisation(mockMetadataRepo, regId, validAuthority)
+    "return a 200 if Json body can be parsed and last timestamp has been updated" in new Setup {
+      mockSuccessfulAuthorisation(mockMetadataRepo, regId)
+
 
       when(mockMetadataService.updateLastSignedIn(eqTo(regId), currentTimeCaptor.capture())(any()))
         .thenReturn(Future.successful(currentTime))
 
-      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
+      val result = controller.updateLastSignedIn(regId)(FakeRequest().withBody[JsValue](Json.toJson(currentTime)))
 
-      status(result) shouldBe OK
+      status(result) mustBe OK
 
-      Json.toJson[DateTime](currentTimeCaptor.getValue) shouldBe await(jsonBodyOf(result))
+      Json.toJson[DateTime](currentTimeCaptor.getValue) mustBe bodyAsJson(result)
     }
 
-    "return a 403 when the user is not logged in" in {
-      val controller = setupController(None)
-      mockNotLoggedIn(mockMetadataRepo)
+    "return a 403 when the user is not logged in" in new Setup {
+      mockNotLoggedIn
 
-      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
-      status(result) shouldBe FORBIDDEN
+      val result = controller.updateLastSignedIn(regId)(FakeRequest().withBody[JsValue](Json.toJson(currentTime)))
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 403 when the user is logged in but not authorised to access the resource" in {
-      val controller = setupController(Some(validAuthority))
-      mockNotAuthorised(mockMetadataRepo, regId, validAuthority)
+    "return a 403 when the user is logged in but not authorised to access the resource" in new Setup {
+      mockNotAuthorised(mockMetadataRepo, regId)
 
-      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
-      status(result) shouldBe FORBIDDEN
+
+      val result = controller.updateLastSignedIn(regId)(FakeRequest().withBody[JsValue](Json.toJson(currentTime)))
+      status(result) mustBe FORBIDDEN
     }
 
-    "return a 404 when the user is logged in but the requested document doesn't exist" in {
-      val controller = setupController(Some(validAuthority))
-      mockAuthResourceNotFound(mockMetadataRepo, validAuthority)
+    "return a 404 when the user is logged in but the requested document doesn't exist" in new Setup {
+      mockAuthResourceNotFound(mockMetadataRepo)
 
-      val result = call(controller.updateLastSignedIn(regId), FakeRequest().withJsonBody(Json.toJson(currentTime)))
-      status(result) shouldBe NOT_FOUND
+
+      val result = controller.updateLastSignedIn(regId)(FakeRequest().withBody[JsValue](Json.toJson(currentTime)))
+      status(result) mustBe NOT_FOUND
     }
   }
 
@@ -283,17 +281,41 @@ class MetadataControllerSpec extends SCRSSpec with MetadataFixture with AuthFixt
 
     val regId = "0123456789"
 
-    "return a 200 if the regId is found and deleted" in {
-      val controller = setupController(Some(validAuthority))
+    "return a 200 if the regId is found and deleted" in new Setup {
+      mockSuccessfulAuthorisation(mockMetadataRepo, regId)
       val regIdCaptor = ArgumentCaptor.forClass[String, String](classOf[String])
 
       when(mockMetadataService.removeMetadata(regIdCaptor.capture())(any()))
         .thenReturn(Future.successful(true))
 
-      val result = call(controller.removeMetadata(regId), FakeRequest())
+      val result = controller.removeMetadata(regId)(FakeRequest())
 
-      status(result) shouldBe OK
-      regIdCaptor.getValue shouldBe regId
+      status(result) mustBe OK
+      regIdCaptor.getValue mustBe regId
+    }
+
+    "return a Forbidden if the logged in user is not authorised" in new Setup {
+      mockNotAuthorised(mockMetadataRepo, regId)
+
+      val result = controller.removeMetadata(regId)(FakeRequest())
+
+      status(result) mustBe FORBIDDEN
+    }
+
+    "return a Forbidden if the user is not logged in" in new Setup {
+      mockNotLoggedIn
+
+      val result = controller.removeMetadata(regId)(FakeRequest())
+
+      status(result) mustBe FORBIDDEN
+    }
+
+    "return a NotFound if the logged in user is not authorised" in new Setup {
+      mockAuthResourceNotFound(mockMetadataRepo)
+
+      val result = controller.removeMetadata(regId)(FakeRequest())
+
+      status(result) mustBe NOT_FOUND
     }
   }
 }

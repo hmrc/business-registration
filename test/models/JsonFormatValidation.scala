@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,35 @@
 
 package models
 
+import org.scalatestplus.play.PlaySpec
 import play.api.data.validation.ValidationError
 import play.api.libs.json._
-import uk.gov.hmrc.play.test.UnitSpec
 
 trait JsonFormatValidation {
-  this: UnitSpec =>
+  this: PlaySpec =>
 
-  def shouldBeSuccess[T](expected: T, result: JsResult[T]) = {
+  def mustBeSuccess[T](expected: T, result: JsResult[T]) = {
     result match {
-      case JsSuccess(v, path) => v shouldBe expected
+      case JsSuccess(v, path) => v mustBe expected
       case JsError(errors) => fail(s"Test produced errors - $errors")
     }
   }
 
-  def shouldHaveErrors[T](result: JsResult[T], errorPath: JsPath, expectedErrors: Seq[ValidationError]): Unit = {
-    shouldHaveErrors[T](result, Map(errorPath -> expectedErrors))
+  def mustHaveErrors[T](result: JsResult[T], errorPath: JsPath, expectedErrors: Seq[ValidationError]): Unit = {
+    mustHaveErrors[T](result, Map(errorPath -> expectedErrors))
   }
 
-  def shouldHaveErrors[T](result: JsResult[T], expectedErrors: Map[JsPath, Seq[ValidationError]]): Unit = {
+  def mustHaveErrors[T](result: JsResult[T], expectedErrors: Map[JsPath, Seq[ValidationError]]): Unit = {
     result match {
       case JsSuccess(v, path) => fail(s"read should have failed and didn't - produced $v")
       case JsError(errors) => {
-        errors.length shouldBe expectedErrors.keySet.toSeq.length
+        errors.length mustBe expectedErrors.keySet.toSeq.length
 
         for( error <- errors ) {
           error match {
             case (path, valErrs) => {
-              expectedErrors.keySet should contain(path)
-              expectedErrors(path) shouldBe valErrs
+              expectedErrors.keySet must contain(path)
+              expectedErrors(path) mustBe valErrs
             }
           }
         }

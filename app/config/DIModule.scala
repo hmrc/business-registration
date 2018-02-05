@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,45 @@
 package config
 
 import com.google.inject.AbstractModule
+import controllers.admin.AdminController
 import controllers.prePop.{AddressController, AddressControllerImpl, ContactDetailsController, ContactDetailsControllerImpl}
+import controllers.test.{BRMongoTestController, MetadataTestControllerImpl}
+import controllers.{MetadataController, MetadataControllerImpl}
+import repositories.prepop.ContactDetailsMongo
+import repositories.{MetadataMongo, SequenceRepository, SequenceRepositoryImpl}
 import services.prepop.{AddressService, AddressServiceImpl}
 import services.{MetricsService, MetricsServiceImp}
 
 class DIModule extends AbstractModule {
 
   protected def configure() = {
-    //controllers
-    bind(classOf[AddressController]).to(classOf[AddressControllerImpl])
-    bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl])
+    configureConfig()
+    configureControllers()
+    configureServices()
+    configureRepositories()
+  }
 
-    //services
-    bind(classOf[AddressService]).to(classOf[AddressServiceImpl])
-    bind(classOf[MetricsService]).to(classOf[MetricsServiceImp])
+  def configureControllers(): Unit = {
+    bind(classOf[AddressController]).to(classOf[AddressControllerImpl]).asEagerSingleton()
+    bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl]).asEagerSingleton()
+    bind(classOf[MetadataController]).to(classOf[MetadataControllerImpl]).asEagerSingleton()
+    bind(classOf[BRMongoTestController]).to(classOf[MetadataTestControllerImpl]).asEagerSingleton()
+    bind(classOf[AdminController]).asEagerSingleton()
+  }
 
-    //start up
-    bind(classOf[StartUpChecks]).asEagerSingleton()
+  def configureConfig(): Unit = {
+    bind(classOf[StartUpChecks]).to(classOf[StartUpChecksImpl]).asEagerSingleton()
+  }
+
+  def configureServices(): Unit = {
+    bind(classOf[AddressService]).to(classOf[AddressServiceImpl]).asEagerSingleton()
+    bind(classOf[MetricsService]).to(classOf[MetricsServiceImp]).asEagerSingleton()
+  }
+
+
+  def configureRepositories(): Unit = {
+    bind(classOf[MetadataMongo]).asEagerSingleton()
+    bind(classOf[SequenceRepository]).to(classOf[SequenceRepositoryImpl]).asEagerSingleton()
+    bind(classOf[ContactDetailsMongo]).asEagerSingleton()
   }
 }

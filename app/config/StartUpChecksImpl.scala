@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 
-@Singleton
-class StartUpChecks @Inject()(val metadataService: MetadataService, val config: Configuration) extends StartUpCheck{
+
+class StartUpChecksImpl @Inject()(val metadataService: MetadataService, val config: Configuration) extends StartUpChecks {
   lazy val regIdConf = config.getString("registrationList").getOrElse("")
 }
 
-trait StartUpCheck {
+trait StartUpChecks {
   val metadataService: MetadataService
   val config: Configuration
   val regIdConf: String

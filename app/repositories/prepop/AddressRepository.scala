@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class AddressRepositoryImpl @Inject()(mongo: ReactiveMongoComponent, configurati
   val repository = new AddressMongoRepository(mongo.mongoConnector.db, configuration)
 }
 
-trait AddressRepository extends AuthorisationResource[String]{
+trait AddressRepository extends AuthorisationResource {
   def fetchAddresses(regId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]]
   def insertAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean]
   def updateAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean]
@@ -110,11 +110,11 @@ class AddressMongoRepository(mongo: () => DB, val configuration: Configuration) 
     }
   }
 
-  override def getInternalId(registrationId: String)(implicit ec: ExecutionContext): Future[Option[(String, String)]] = {
+  override def getInternalId(registrationId: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
     fetchAddresses(registrationId) map { _ flatMap { js =>
       val listOfIDs = js \\ "internal_id"
       listOfIDs.headOption.flatMap(iId =>
-        if(listOfIDs.forall(_ == iId)) Some((registrationId, iId.as[String])) else None)
+        if(listOfIDs.forall(_ == iId)) Some(iId.as[String]) else None)
     }
   }}
 

@@ -21,12 +21,13 @@ object AppDependencies {
 }
 
 object MainDependencies {
-  private val playReactiveMongo = "5.2.0"
-  private val bootstrap         = "6.13.0"
+  private val playReactiveMongo = "6.2.0"
+  private val bootstrap         = "6.15.0"
   private val urlBinders        = "2.1.0"
-  private val domain            = "5.0.0"
+  private val domain            = "5.1.0"
   private val scheduling        = "4.1.0"
-  private val mongoLock         = "5.0.0"
+  private val mongoLock         = "5.1.0"
+  private val authClientVersion = "2.5.0"
 
   def apply(): Seq[ModuleID] = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo"     % playReactiveMongo,
@@ -34,15 +35,17 @@ object MainDependencies {
     "uk.gov.hmrc" %% "play-url-binders"       % urlBinders,
     "uk.gov.hmrc" %% "domain"                 % domain,
     "uk.gov.hmrc" %% "play-scheduling"        % scheduling,
-    "uk.gov.hmrc" %% "mongo-lock"             % mongoLock
+    "uk.gov.hmrc" %% "mongo-lock"             % mongoLock,
+    "uk.gov.hmrc" %% "auth-client"            % authClientVersion
   )
 }
 
 trait CommonTestDependencies {
-  val hmrcTestVersion       = "2.3.0"
+  val hmrcTestVersion       = "3.0.0"
   val scalaTestPlusVersion  = "2.0.1"
-  val mockitoCore           = "2.12.0"
-  val reactiveMongo         = "2.0.0"
+  val mockitoCore           = "2.13.0"
+  val reactiveMongo         = "3.1.0"
+  val wireMockVersion       = "2.9.0"
 
   val scope: Configuration
   val dependencies : Seq[ModuleID]
@@ -65,7 +68,8 @@ object IntegrationTestDependencies extends CommonTestDependencies {
   override val dependencies = Seq(
     "uk.gov.hmrc"             %% "hmrctest"           % hmrcTestVersion       % scope,
     "org.scalatestplus.play"  %% "scalatestplus-play" % scalaTestPlusVersion  % scope,
-    "uk.gov.hmrc"             %% "reactivemongo-test" % reactiveMongo         % scope
+    "uk.gov.hmrc"             %% "reactivemongo-test" % reactiveMongo         % scope,
+    "com.github.tomakehurst"  %  "wiremock"           % wireMockVersion       % scope
   )
 
   def apply(): Seq[ModuleID] = dependencies

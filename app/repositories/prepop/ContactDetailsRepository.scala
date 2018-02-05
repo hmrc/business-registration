@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import repositories.CollectionsNames.CONTACTDETAILS
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.collection.Seq
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
-@Singleton
 class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent, configuration: Configuration) {
   val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db, configuration)
 }
@@ -79,10 +79,10 @@ class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
   private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     val selector = BSONDocument("_id" -> registrationID)
     collection.find(selector).one[JsObject]
-
   }
 
   def getContactDetailsUnVerifiedUser(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
+
     getContactDetailsWithJustRegID(registrationID).map {
       case Some(s) if ((s \ "InternalID").get.as[String] != intID) =>
      throw PermissionDenied(registrationID, intID)

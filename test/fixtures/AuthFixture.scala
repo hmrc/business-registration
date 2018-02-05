@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package fixtures
 
-import models.{UserIds, Authority}
+import models.UserIds
 
 trait AuthFixture {
 
-  val validAuthority = Authority(
-    "test.uri", "test.userDetailsLink", UserIds("tiid","teid")
-  )
+  val validUserIds = UserIds("internal-id","regId")
 }

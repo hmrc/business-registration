@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,36 +17,34 @@
 package controllers.prePop
 
 import akka.actor.ActorSystem
-import akka.stream.{Materializer, ActorMaterializer}
+import akka.stream.{ActorMaterializer, Materializer}
 import auth.AuthorisationResource
-import connectors.AuthConnector
-import helpers.{AuthMocks, AddressHelper}
+import helpers.{AddressHelper, AuthMocks, SCRSSpec}
+import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import play.api.libs.json.{JsValue, JsObject, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Results
+import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import repositories.prepop.AddressRepository
 import services.prepop.AddressService
+import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
-import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import play.api.mvc.Results.Ok
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.http.HeaderCarrier
 
-class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelper with AuthMocks {
+class AddressControllerSpec extends SCRSSpec with MockitoSugar with AddressHelper with AuthMocks {
 
   val mockAddressService = mock[AddressService]
-  implicit val mockAuthConnector = mock[AuthConnector]
   val mockAddressRepository = mock[AddressRepository]
 
   class Setup {
     val controller = new AddressController {
       override val service: AddressService = mockAddressService
-      override val authConnector: AuthConnector = mockAuthConnector
-      override val resourceConn: AuthorisationResource[String] = mockAddressRepository
+      override val resourceConn: AuthorisationResource = mockAddressRepository
+      val authConnector: AuthConnector = mockAuthConnector
     }
 
     def mockGetInternalIds(internalIds: String*) = when(mockAddressRepository.getInternalIds(any())(any())).thenReturn(Future.successful(internalIds))
@@ -56,32 +54,27 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
 
   val regId = "reg-12345"
 
-  implicit val act: ActorSystem = ActorSystem()
-  implicit val mat: Materializer = ActorMaterializer()
-
-  implicit val hc = HeaderCarrier()
-
   "fetchAddresses" should {
 
     val fetchedAddress = buildFetchedAddressJson(Seq(FetchOptions(regId)))
 
     "return a 200 and the fetched address as the json body if the user is authorised" in new Setup {
-      mockSuccessfulAuthorisation(mockAddressRepository, regId, validAuthority)
+      mockSuccessfulAuthorisation(mockAddressRepository, regId)
       mockFetchAddress(Some(fetchedAddress))
 
-      val result = await(controller.fetchAddresses(regId)(FakeRequest()))
+      val result = controller.fetchAddresses(regId)(FakeRequest())
 
-      status(result) shouldBe 200
-      jsonBodyOf(result) shouldBe fetchedAddress
+      status(result) mustBe 200
+      bodyAsJson(result) mustBe fetchedAddress
     }
 
     "return a 404 when no address can be found for the provided registration id" in new Setup {
-      mockSuccessfulAuthorisation(mockAddressRepository, regId, validAuthority)
+      mockSuccessfulAuthorisation(mockAddressRepository, regId)
       mockFetchAddress(None)
 
-      val result = await(controller.fetchAddresses(regId)(FakeRequest()))
+      val result = controller.fetchAddresses(regId)(FakeRequest())
 
-      status(result) shouldBe 404
+      status(result) mustBe 404
     }
   }
 
@@ -91,26 +84,26 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
       val jsonBody = buildAddressJson(regId, withOid = false)
       val request = FakeRequest().withBody[JsValue](jsonBody)
 
-      mockGetCurrentAuthority(Some(validAuthority))
-      mockGetInternalIds(validAuthority.ids.internalId)
+      mockSuccessfulAuthentication
+      mockGetInternalIds(validUserIds.internalId)
       mockUpdateAddress(succeeded = true)
 
-      val result = await(controller.updateAddress(regId)(request))
+      val result = controller.updateAddress(regId)(request)
 
-      status(result) shouldBe 200
+      status(result) mustBe 200
     }
 
     "return a 500 if there was a problem updating teh address" in new Setup {
       val jsonBody = buildAddressJson(regId, withOid = false)
       val request = FakeRequest().withBody[JsValue](jsonBody)
 
-      mockGetCurrentAuthority(Some(validAuthority))
-      mockGetInternalIds(validAuthority.ids.internalId)
+      mockSuccessfulAuthentication
+      mockGetInternalIds(validUserIds.internalId)
       mockUpdateAddress(succeeded = false)
 
-      val result = await(controller.updateAddress(regId)(request))
+      val result = controller.updateAddress(regId)(request)
 
-      status(result) shouldBe 500
+      status(result) mustBe 500
     }
   }
 
@@ -120,27 +113,27 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
       val address = buildAddressJson(regId, withOid = false)
       val body = (_: JsObject) => Future.successful(Ok)
 
-      mockGetCurrentAuthority(Some(validAuthority))
-      mockGetInternalIds(validAuthority.ids.internalId)
+      mockSuccessfulAuthentication
+      mockGetInternalIds(validUserIds.internalId)
 
       val result = controller.authenticatedToUpdate(regId, address)(body)
 
-      status(result) shouldBe 200
+      status(result) mustBe 200
     }
 
     "Append the internal ID to the supplied address json on successful authentication" in new Setup {
       val address = buildAddressJson(regId, withOid = false)
       val body = (_: JsObject) => Future.successful(Ok)
 
-      val internalIdJson = Json.obj("internal_id" -> validAuthority.ids.internalId)
+      val internalIdJson = Json.obj("internal_id" -> validUserIds.internalId)
       val regIdJson = Json.obj("registration_id" -> regId)
 
-      mockGetCurrentAuthority(Some(validAuthority))
-      mockGetInternalIds(validAuthority.ids.internalId)
+      mockSuccessfulAuthentication
+      mockGetInternalIds(validUserIds.internalId)
 
       await(controller.authenticatedToUpdate(regId, address){
         addressJson =>
-          addressJson shouldBe (address ++ internalIdJson ++ regIdJson)
+          addressJson mustBe (address ++ internalIdJson ++ regIdJson)
           body(addressJson)
       })
     }
@@ -149,24 +142,24 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
       val address = buildAddressJson(regId, withOid = false)
       val body = (_: JsObject) => Future.successful(Ok)
 
-      mockGetCurrentAuthority(Some(validAuthority))
+      mockSuccessfulAuthentication
       mockGetInternalIds("unmatchedInternalID")
 
       val result = controller.authenticatedToUpdate(regId, address)(body)
 
-      status(result) shouldBe 403
+      status(result) mustBe 403
     }
 
     "execute the body when there are no documents associated with the registration ID" in new Setup {
       val address = buildAddressJson(regId, withOid = false)
       val body = (_: JsObject) => Future.successful(Ok)
 
-      mockGetCurrentAuthority(Some(validAuthority))
+      mockSuccessfulAuthentication
       mockGetInternalIds()
 
       val result = controller.authenticatedToUpdate(regId, address)(body)
 
-      status(result) shouldBe 200
+      status(result) mustBe 200
     }
   }
 
@@ -176,24 +169,24 @@ class AddressControllerSpec extends UnitSpec with MockitoSugar with AddressHelpe
       val address = buildAddressJson(regId, withOid = false)
       val body = Future.successful(Results.Ok)
 
-      val result = await(controller.ifAddressValid(address)(body))
-      status(result) shouldBe 200
+      val result = controller.ifAddressValid(address)(body)
+      status(result) mustBe 200
     }
 
     "return a 400 if the supplied Address is invalid" in new Setup {
       val address = buildAddressJson(regId, withOid = false, invalid = true)
       val body = Future.successful(Results.Ok)
 
-      val result = await(controller.ifAddressValid(address)(body))
-      status(result) shouldBe 400
+      val result = controller.ifAddressValid(address)(body)
+      status(result) mustBe 400
     }
 
     "return a 400 if the supplied json can't be marshaled into the Address case class" in new Setup {
       val address = Json.parse("""{"will-not":"marshal"}""")
       val body = Future.successful(Results.Ok)
 
-      val result = await(controller.ifAddressValid(address)(body))
-      status(result) shouldBe 400
+      val result = controller.ifAddressValid(address)(body)
+      status(result) mustBe 400
     }
   }
 }

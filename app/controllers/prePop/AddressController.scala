@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,41 +16,44 @@
 
 package controllers.prePop
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
 import auth.{Authenticated, Authorisation}
-import connectors.AuthConnector
+import config.AuthClientConnector
+import controllers.helper.AuthControllerHelpers
 import models.prepop.Address
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Result}
 import repositories.prepop.AddressRepositoryImpl
 import services.prepop.AddressService
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-@Singleton
 class AddressControllerImpl @Inject()(val service: AddressService,
-                                      val authConnector: AuthConnector,
                                       addressRepository: AddressRepositoryImpl) extends AddressController {
+
+  override lazy val authConnector = AuthClientConnector
   val resourceConn = addressRepository.repository
 }
 
-trait AddressController extends BaseController with Authorisation[String] with Authenticated {
+trait AddressController extends BaseController with Authorisation with AuthControllerHelpers {
 
   val service: AddressService
 
   def fetchAddresses(registrationId: String) = Action.async {
     implicit request =>
-      authorisedFor(registrationId,methodName = "fetchAddresses") { _ =>
+      isAuthorised(registrationId)(
+        failure = authorisationResultHandler("fetchAddresses"),
+        success = {
         service.fetchAddresses(registrationId) map {
           case Some(addresses) => Ok(addresses)
           case None => NotFound
         }
-      }
+      })
   }
 
   def updateAddress(registrationId: String) = Action.async(BodyParsers.parse.json) {
@@ -68,8 +71,9 @@ trait AddressController extends BaseController with Authorisation[String] with A
 
   private[controllers] def authenticatedToUpdate(regId: String, address: JsObject)(body: JsObject => Future[Result])
                                                 (implicit hc: HeaderCarrier): Future[Result] = {
-    authenticatedFor { authority =>
-      val internalId = authority.ids.internalId
+    isAuthenticated(
+      failure = authenticationResultHandler("authenticatedToUpdate"),
+      success = { internalId =>
       resourceConn.getInternalIds(regId) flatMap { ids =>
         if (!ids.exists(_ != internalId)) {
           body(appendIDs(regId, internalId, address))
@@ -77,7 +81,7 @@ trait AddressController extends BaseController with Authorisation[String] with A
           Future.successful(Forbidden)
         }
       }
-    }
+    })
   }
 
   private[controllers] def appendIDs(registrationId: String, internalId: String, address: JsObject): JsObject = {
