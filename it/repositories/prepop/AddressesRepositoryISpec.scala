@@ -368,7 +368,7 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
       repo.awaitInsert(buildAddressJson(regId) ++ Json.parse("""{"internal_id":"testInternalId"}"""))
       val internalIdResponse = await(repo.getInternalId(regId))
       internalIdResponse shouldBe defined
-      internalIdResponse shouldBe Some(regId,"testInternalId")
+      internalIdResponse shouldBe Some("testInternalId")
     }
 
     "none if not present" in new Setup {

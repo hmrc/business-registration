@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package helpers
 
-import connectors.AuthConnector
-import models.Authority
 import models.{Metadata, MetadataResponse}
 import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
 import org.mockito.stubbing.OngoingStubbing
@@ -28,14 +26,12 @@ import services.MetadataService
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.http.HeaderCarrier
 
 trait SCRSMocks {
   this: MockitoSugar =>
 
   lazy val mockMetadataService = mock[MetadataService]
   lazy val mockMetadataRepository = mock[MetadataRepository]
-  lazy val mockAuthConnector = mock[AuthConnector]
   lazy val mockSequenceRepository = mock[SequenceRepository]
 
   def matchExact(toMatch: String) = s"""\b$toMatch\b"""
@@ -62,6 +58,7 @@ trait SCRSMocks {
       when(mockMetadataService.retrieveMetadataRecord(eqTo(regId)))
         .thenReturn(Future.successful(result))
     }
+
     def removeMetadataRecord(regId: String, result: Boolean): OngoingStubbing[Future[Boolean]] = {
       when(mockMetadataService.removeMetadata(eqTo(regId)))
         .thenReturn(Future.successful(result))
@@ -85,40 +82,4 @@ trait SCRSMocks {
     }
   }
 
-  object AuthenticationMocks {
-    def getCurrentAuthority(authority: Option[Authority]): OngoingStubbing[Future[Option[Authority]]] = {
-      when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
-        .thenReturn(Future.successful(authority))
-    }
-  }
-
-  object AuthorisationMock {
-    def mockSuccessfulAuthorisation(registrationId: String, authority: Authority) = {
-      when(mockMetadataRepository.getInternalId(eqTo(registrationId))).
-        thenReturn(Future.successful(Some((registrationId, authority.ids.internalId))))
-      when(mockAuthConnector.getCurrentAuthority()(any()))
-        .thenReturn(Future.successful(Some(authority)))
-    }
-
-    def mockNotLoggedIn = {
-      when(mockAuthConnector.getCurrentAuthority()(any[HeaderCarrier]()))
-        .thenReturn(Future.successful(None))
-      when(mockMetadataRepository.getInternalId(any())).
-        thenReturn(Future.successful(None))
-    }
-
-    def mockNotAuthorised(registrationId: String, authority: Authority) = {
-      when(mockAuthConnector.getCurrentAuthority()(any()))
-        .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getInternalId(eqTo(registrationId))).
-        thenReturn(Future.successful(Some((registrationId, authority.ids.internalId + "xxx"))))
-    }
-
-    def mockAuthResourceNotFound(authority: Authority) = {
-      when(mockAuthConnector.getCurrentAuthority()(any()))
-        .thenReturn(Future.successful(Some(authority)))
-      when(mockMetadataRepository.getInternalId(any())).
-        thenReturn(Future.successful(None))
-    }
-  }
 }

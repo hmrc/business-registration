@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@ package auth
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait AuthorisationResource[I] {
+trait AuthorisationResource {
 
   /**
     * @param id - The registration id of the logged in user
     * @return I - The registration id of the logged in user
     *         String - The internal ID of the logged in user
     */
-  def getInternalId(id:I)(implicit ec: ExecutionContext) : Future[Option[(I,String)]]
+  def getInternalId(id: String)(implicit ec: ExecutionContext) : Future[Option[String]]
 
   def getInternalIds(registrationId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq.empty)
 }
-
-

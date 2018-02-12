@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package auth
 
-import connectors.AuthConnector
 import helpers.SCRSSpec
-import models.{UserIds, Authority}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.mvc.Results
-import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
 
 class AuthenticationSpec extends SCRSSpec {
 
@@ -37,6 +35,8 @@ class AuthenticationSpec extends SCRSSpec {
     val authConnector = mockAuth
   }
 
+  def failureCase(authResult: AuthenticationResult) = Future.successful(Results.Forbidden)
+
 //  before {
 //    reset(mockAuth)
 //  }
@@ -45,32 +45,33 @@ class AuthenticationSpec extends SCRSSpec {
 
     "provided a logged in auth result when there is a valid bearer token" in {
 
-      val a = Authority("x", "z", UserIds("tiid","teid"))
+      val internalId = "internalId"
 
-      when(mockAuth.getCurrentAuthority()(any())).
-        thenReturn(Future.successful(Some(a)))
+      when(mockAuth.authorise[Option[String]](any(),any())(any(),any())).
+        thenReturn(Future.successful(Some(internalId)))
 
-      val result = Authenticated.authenticated { authResult => {
-          authResult shouldBe LoggedIn(a)
+      val result = Authenticated.isAuthenticated(
+        failure = failureCase,
+        success = { x =>
           Future.successful(Results.Ok)
-        }
-      }
+      })
+
       val response = await(result)
-      response.header.status shouldBe OK
+      response.header.status mustBe OK
     }
 
     "indicate there's no logged in user where there isn't a valid bearer token" in {
 
-      when(mockAuth.getCurrentAuthority()(any())).
+      when(mockAuth.authorise[Option[String]](any(),any())(any(),any())).
         thenReturn(Future.successful(None))
 
-      val result = Authenticated.authenticated { authResult => {
-          authResult shouldBe NotLoggedIn
-          Future.successful(Results.Forbidden)
-        }
-      }
+      val result = Authenticated.isAuthenticated(failure = failureCase,
+        success =  { x =>
+        Future.successful(Results.Ok)
+      })
+
       val response = await(result)
-      response.header.status shouldBe FORBIDDEN
+      response.header.status mustBe FORBIDDEN
     }
   }
 }

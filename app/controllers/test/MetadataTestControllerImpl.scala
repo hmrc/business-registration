@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-@Singleton
-class MetadataTestController @Inject()(metaDataRepo: MetadataMongo) extends BaseController with BRMongoTestControllerT{
+class MetadataTestControllerImpl @Inject()(metaDataRepo: MetadataMongo) extends BRMongoTestController {
   val repo = metaDataRepo.repository
 }
 
-trait BRMongoTestControllerT extends BaseController {
+trait BRMongoTestController extends BaseController {
   val repo: MetadataRepository
 
   def dropMetadataCollection = Action.async {

@@ -95,7 +95,7 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
       val auth = getInternalId()
 
       auth shouldBe defined
-      auth shouldBe Some((randomRegid, randomIntId))
+      auth shouldBe Some(randomIntId)
     }
 
     "return None for the authorisation call when there's no document" in new Setup {

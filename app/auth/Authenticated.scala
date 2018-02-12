@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,33 @@
 
 package auth
 
-import connectors.AuthConnector
-import models.Authority
+import play.api.Logger
 import play.api.mvc.Result
-import play.api.mvc.Results.Forbidden
+import uk.gov.hmrc.auth.core.retrieve.Retrievals._
+import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.Future
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-sealed trait AuthenticationResult {}
+import scala.concurrent.Future
+
+sealed trait AuthenticationResult
 case object NotLoggedIn extends AuthenticationResult
-final case class LoggedIn(authContext: Authority) extends AuthenticationResult
+final case class LoggedIn(id: String) extends AuthenticationResult
 
-trait Authenticated {
+trait Authenticated extends AuthorisedFunctions {
 
-  val authConnector: AuthConnector
-
-  def authenticatedFor(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
-    (for {
-      authority <- authConnector.getCurrentAuthority()
-      result = mapToAuthResult(authority)
-    } yield {
-      result
-    }) flatMap {
-      case NotLoggedIn => Future.successful(Forbidden)
-      case LoggedIn(authContext) => f(authContext)
+  def isAuthenticated(failure: AuthenticationResult => Future[Result], success: String => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+    authorised().retrieve(internalId)(id => mapToAuthResult(id) match {
+      case LoggedIn(intId)  => success(intId)
+      case result           => failure(result)
+    }).recoverWith {
+      case _: AuthorisationException => failure(NotLoggedIn)
+      case err => Logger.error(s"[Authenticated][isAuthenticated] an error occured with message: ${err.getMessage()}")
+        throw err
     }
   }
 
-  def authenticated(f: => AuthenticationResult => Future[Result])(implicit hc: HeaderCarrier) = {
-    for {
-      authority <- authConnector.getCurrentAuthority()
-      result <- f(mapToAuthResult(authority))
-    } yield {
-      result
-    }
-  }
-
-  private def mapToAuthResult(authContext: Option[Authority]) : AuthenticationResult = {
-    authContext match {
-      case None => NotLoggedIn
-      case Some(context) => LoggedIn(context)
-    }
+  private def mapToAuthResult(internalId: Option[String]) : AuthenticationResult = {
+    internalId.fold[AuthenticationResult](NotLoggedIn)(LoggedIn)
   }
 }

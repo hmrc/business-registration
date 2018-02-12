@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class MetadataMongo @Inject()(mongo: ReactiveMongoComponent) {
   val repository = new MetadataRepositoryMongo(mongo.mongoConnector.db)
 }
 
-trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource[String]{
+trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource {
   def createMetadata(metadata: Metadata)(implicit ec: ExecutionContext): Future[Metadata]
   def searchMetadata(internalID: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
   def retrieveMetadata(regI: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
@@ -48,7 +48,7 @@ trait MetadataRepository extends Repository[Metadata, BSONObjectID] with Authori
 }
 
 class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metadata, BSONObjectID](METADATA, mongo, Metadata.formats)
-  with MetadataRepository{
+  with MetadataRepository {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = Future.sequence(
     Seq(collection.indexesManager.ensure(Index(Seq("internalId" -> IndexType.Ascending), name = Some("internalIdIndex"), unique = true)),
@@ -95,11 +95,11 @@ class MetadataRepositoryMongo (mongo: () => DB) extends ReactiveRepository[Metad
     }
   }
 
-  def getInternalId(id: String)(implicit ec: ExecutionContext): Future[Option[(String, String)]] = {
+  def getInternalId(id: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
     // TODO : this can be made more efficient by performing an index scan rather than document lookup
     retrieveMetadata(id) map {
       case None => None
-      case Some(m) => Some((m.registrationID, m.internalId))
+      case Some(m) => Some(m.internalId)
     }
   }
 

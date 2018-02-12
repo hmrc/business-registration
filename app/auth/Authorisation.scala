@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,68 +16,45 @@
 
 package auth
 
-import connectors.AuthConnector
-import models.Authority
 import play.api.Logger
 import play.api.mvc.Result
-import play.api.mvc.Results._
+import uk.gov.hmrc.auth.core.retrieve.Retrievals.internalId
+import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 sealed trait AuthorisationResult
 case object NotLoggedInOrAuthorised extends AuthorisationResult
-final case class NotAuthorised(authContext: Authority) extends AuthorisationResult
-final case class Authorised(authContext: Authority) extends AuthorisationResult
-final case class AuthResourceNotFound(authContext: Authority) extends AuthorisationResult
+final case class NotAuthorised(inId: String) extends AuthorisationResult
+final case class Authorised(intId: String) extends AuthorisationResult
+final case class AuthResourceNotFound(intId: String) extends AuthorisationResult
 
-trait Authorisation[I] {
+trait Authorisation extends AuthorisedFunctions {
+  val resourceConn: AuthorisationResource
 
-  val authConnector: AuthConnector
-  val resourceConn : AuthorisationResource[I]
-
-  def authorised(id:I)(f: => AuthorisationResult => Future[Result])(implicit hc: HeaderCarrier) = {
-    for {
-      authority <- authConnector.getCurrentAuthority()
-      resource <- resourceConn.getInternalId(id)
-      result <- f(mapToAuthResult(authority, resource))
-    } yield {
-      result
+  def isAuthorised(id: String)(failure: (String, AuthorisationResult) => Future[Result], success: => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+    authorised().retrieve(internalId)( intId => resourceConn.getInternalId(id) flatMap (
+      resource => mapToAuthResult(intId, resource) match {
+        case Authorised(_)  => success
+        case result         => failure(id, result)
+      })).recoverWith {
+        case _: AuthorisationException => failure(id, NotLoggedInOrAuthorised)
+        case err => Logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
+          throw err
     }
   }
 
-  def authorisedFor(registrationId: I,methodName:String)(f: Authority => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
-    (for {
-        authority <- authConnector.getCurrentAuthority()
-        resource <- resourceConn.getInternalId(registrationId)
-      } yield {
-        mapToAuthResult(authority, resource)
-      }
-    ) flatMap {
-    case Authorised(a) => f(a)
-    case NotLoggedInOrAuthorised =>
-      Logger.info(s"[Authorisation] [${methodName}] User not logged in")
-      Future.successful(Forbidden)
-    case NotAuthorised(_) =>
-      Logger.info(s"[Authorisation] [${methodName}] User logged in but not authorised for resource $registrationId")
-      Future.successful(Forbidden)
-    case AuthResourceNotFound(_) =>
-      Logger.info(s"[Authorisation] [${methodName}] Could not match an Auth resource to registration id $registrationId")
-      Future.successful(NotFound)
-    }
-  }
-
-  private[auth] def mapToAuthResult(authContext: Option[Authority], resource: Option[(I,String)] ) : AuthorisationResult = {
-    authContext match {
+  private[auth] def mapToAuthResult(internalId: Option[String], resource: Option[String]) : AuthorisationResult = {
+    internalId match {
       case None => NotLoggedInOrAuthorised
-      case Some(context) => {
+      case Some(intId) =>
         resource match {
-          case None => AuthResourceNotFound(context)
-          case Some((_, context.ids.internalId))  => Authorised (context)
-          case Some((_, _)) => NotAuthorised (context)
+          case None => AuthResourceNotFound(intId)
+          case Some(`intId`)  => Authorised (intId)
+          case _ => NotAuthorised (intId)
         }
-      }
     }
   }
 }

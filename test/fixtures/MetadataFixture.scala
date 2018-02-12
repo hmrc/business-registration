@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,9 @@ trait MetadataFixture {
     )
   }
 
-  def buildSelfLinkJsObj(regId: String = REG_ID) = Json.obj("links" ->Links(Some(s"/business-registration/business-tax-registration/$regId")))
+//  def buildSelfLinkJsObj2(regId: String = REG_ID) = Json.obj("links" ->Links(Some(s"/business-registration/business-tax-registration/$regId")))
+
+  def buildSelfLinkJsObj(regId: String = REG_ID) = Json.obj("links" ->Links(Some(controllers.routes.MetadataController.retrieveMetadata(regId).url)))
 
   lazy val metadataResponseJsObj = Json.toJson(buildMetadataResponse()).as[JsObject] ++ buildSelfLinkJsObj()
 
