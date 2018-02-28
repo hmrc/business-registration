@@ -18,7 +18,7 @@ package controllers.admin
 
 import fixtures.MetadataFixture
 import helpers.SCRSSpec
-import models.ErrorResponse
+import models.{ErrorResponse, MetadataResponse}
 import services.MetadataService
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
@@ -64,6 +64,33 @@ class AdminControllerSpec extends SCRSSpec with MetadataFixture {
       val result = controller.retrieveBusinessRegistration("12345")(FakeRequest())
 
       intercept[IllegalStateException](await(result))
+    }
+  }
+
+  "remove metadata" should {
+    "return an Ok" when {
+      "when metadata was successfully deleted" in new Setup {
+        when(mockMetadataService.removeMetadata(any())(any()))
+          .thenReturn(Future.successful(true))
+
+        status(controller.removeMetadata("12345")(FakeRequest())) mustBe OK
+      }
+    }
+    "return NotFound" when {
+      "no metadata is found" in new Setup {
+        when(mockMetadataService.removeMetadata(any())(any()))
+          .thenReturn(Future.successful(false))
+
+        status(controller.removeMetadata("12345")(FakeRequest())) mustBe NOT_FOUND
+      }
+      "throw an exception" when {
+        "an exception occurs in retrieving the metadata" in new Setup {
+          when(mockMetadataService.removeMetadata(any())(any()))
+            .thenReturn(Future.failed(new IllegalStateException()))
+
+          intercept[IllegalStateException](await(controller.removeMetadata("12345")(FakeRequest())))
+        }
+      }
     }
   }
 }

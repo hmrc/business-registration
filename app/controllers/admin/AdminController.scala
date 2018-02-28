@@ -34,4 +34,11 @@ class AdminController @Inject()(val metadataService: MetadataService) extends Ba
         case None => NotFound(ErrorResponse.MetadataNotFound)
       }
   }
+
+  def removeMetadata(registrationID: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      metadataService.removeMetadata(registrationID) map (
+        if (_) Ok else NotFound
+      )
+  }
 }
