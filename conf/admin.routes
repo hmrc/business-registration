@@ -1,2 +1,3 @@
 
 GET        /business-tax-registration/:registrationID                       @controllers.admin.AdminController.retrieveBusinessRegistration(registrationID)
+GET        /business-tax-registration/remove/:registrationID                @controllers.admin.AdminController.removeMetadata(registrationID)
