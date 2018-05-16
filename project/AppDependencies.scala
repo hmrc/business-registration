@@ -22,12 +22,12 @@ object AppDependencies {
 
 object MainDependencies {
   private val playReactiveMongo = "6.2.0"
-  private val bootstrap         = "6.15.0"
+  private val bootstrap         = "6.17.0"
   private val urlBinders        = "2.1.0"
   private val domain            = "5.1.0"
   private val scheduling        = "4.1.0"
   private val mongoLock         = "5.1.0"
-  private val authClientVersion = "2.5.0"
+  private val authClientVersion = "2.6.0"
 
   def apply(): Seq[ModuleID] = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo"     % playReactiveMongo,
