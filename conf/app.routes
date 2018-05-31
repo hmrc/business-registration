@@ -15,3 +15,6 @@ POST     /:registrationID/contact-details                                   @con
 
 GET      /:registrationID/addresses                                         @controllers.prePop.AddressController.fetchAddresses(registrationID)
 POST     /:registrationID/addresses                                         @controllers.prePop.AddressController.updateAddress(registrationID)
+
+GET      /:registrationID/trading-name                                      @controllers.prePop.TradingNameController.getTradingName(registrationID)
+POST     /:registrationID/trading-name                                      @controllers.prePop.TradingNameController.upsertTradingName(registrationID)

@@ -18,10 +18,10 @@ package config
 
 import com.google.inject.AbstractModule
 import controllers.admin.AdminController
-import controllers.prePop.{AddressController, AddressControllerImpl, ContactDetailsController, ContactDetailsControllerImpl}
+import controllers.prePop._
 import controllers.test.{BRMongoTestController, MetadataTestControllerImpl}
 import controllers.{MetadataController, MetadataControllerImpl}
-import repositories.prepop.ContactDetailsMongo
+import repositories.prepop.{ContactDetailsMongo, TradingNameMongo}
 import repositories.{MetadataMongo, SequenceRepository, SequenceRepositoryImpl}
 import services.prepop.{AddressService, AddressServiceImpl}
 import services.{MetricsService, MetricsServiceImp}
@@ -40,6 +40,7 @@ class DIModule extends AbstractModule {
     bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl]).asEagerSingleton()
     bind(classOf[MetadataController]).to(classOf[MetadataControllerImpl]).asEagerSingleton()
     bind(classOf[BRMongoTestController]).to(classOf[MetadataTestControllerImpl]).asEagerSingleton()
+    bind(classOf[TradingNameController]).to(classOf[TradingNameControllerImpl]).asEagerSingleton()
     bind(classOf[AdminController]).asEagerSingleton()
   }
 
@@ -57,5 +58,6 @@ class DIModule extends AbstractModule {
     bind(classOf[MetadataMongo]).asEagerSingleton()
     bind(classOf[SequenceRepository]).to(classOf[SequenceRepositoryImpl]).asEagerSingleton()
     bind(classOf[ContactDetailsMongo]).asEagerSingleton()
+    bind(classOf[TradingNameMongo]).asEagerSingleton()
   }
 }

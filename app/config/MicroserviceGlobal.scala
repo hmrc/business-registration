@@ -20,7 +20,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration, Logger, Play}
 import reactivemongo.api.indexes.Index
-import repositories.prepop.ContactDetailsMongo
+import repositories.prepop.{ContactDetailsMongo, TradingNameMongo}
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
@@ -65,13 +65,13 @@ abstract class MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode
     super.onStart(app)
     val repoIndexEnsurer = RepositoryIndexEnsurer(app)
     repoIndexEnsurer.ensureIndexes()
-    repoIndexEnsurer.deleteIndexes("uniqueIntID")
   }
 }
 
 case class RepositoryIndexEnsurer(app: Application) {
   def ensureIndexes(): Future[Unit] = {
     ensureIndexes(app.injector.instanceOf[ContactDetailsMongo].repository)
+    ensureIndexes(app.injector.instanceOf[TradingNameMongo].repository)
   }
 
   def deleteIndexes(index: String): Future[Unit] = {
@@ -94,9 +94,18 @@ case class RepositoryIndexEnsurer(app: Application) {
     val collectionName = repo.collection.name
     repo.collection.indexesManager.list() map { indexes =>
       indexes.map{ index =>
-        val indexName = index.eventualName
         val indexOptions = index.options.elements.toString()
-        Logger.info(s"[EnsuringIndexes] collection : $collectionName - index : $indexName - options : $indexOptions")
+        Logger.info(s"[EnsuringIndexes] Collection : $collectionName \n" +
+          s"Index : ${index.eventualName} \n" +
+          s"""keys : ${index.key match {
+            case Seq(s @ _*) => s"$s\n"
+            case Nil => "None\n"}}""" +
+          s"Is Unique? : ${index.unique}\n" +
+          s"In Background? : ${index.background}\n" +
+          s"Is sparse? : ${index.sparse}\n" +
+          s"version : ${index.version}\n" +
+          s"partialFilter : ${index.partialFilter.map(_.values)}\n" +
+          s"Options : $indexOptions")
         index
       }
     }
