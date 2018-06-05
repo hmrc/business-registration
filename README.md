@@ -4,6 +4,78 @@
 
 Prepop
 ------
+| Path                                                             | Supported Methods | Description  |
+| -----------------------------------------------------------------| ------------------| ------------ |
+|```/business-registration/:RegistrationID/trading-name```      |        GET        | Retrieves the trading name for a given users' registrationID |
+
+    Responds with:
+    
+| Status        | Message       |
+|:--------------|:--------------|
+| 200           | OK            |
+| 204           | No Content    |
+| 403           | Forbidden     |
+
+**Example of usage**
+```
+GET /business-registration/12345/trading-name
+
+Header:
+    Authorization Bearer fNAao9C4kTby8cqa6g75emw1DZIyA5B72nr9oKHHetE=
+```
+
+A ```200``` success response:
+
+```json
+{
+   "tradingName":"yourTradingName" 
+}
+```
+
+#
+
+| Path                                                             | Supported Methods | Description  |
+| -----------------------------------------------------------------| ------------------| ------------ |
+|```/business-registration/:RegistrationID/trading-name```      |        POST       | Inserts / updates a trading name for a given users' registrationID |
+
+    Responds with:
+    
+| Status        | Message       |
+|:--------------|:--------------|
+| 200           | OK            |
+| 403           | Forbidden     |
+| 500           | Internal Server Error    |
+
+**Request body**
+
+```json
+{
+   "tradingName": "yourTradingName"
+}
+```
+
+
+**Example of usage**
+```
+POST /business-registration/12345/trading-name
+
+Header:
+    Authorization Bearer fNAao9C4kTby8cqa6g75emw1DZIyA5B72nr9oKHHetE=
+    
+Request body:
+    {
+       "tradingName": "yourTradingName"
+    }
+```
+
+A ```200``` success response:
+```json
+{
+    "tradingName": "yourTradingName"
+}
+```
+
+#
 
 | Path                                                             | Supported Methods | Description  |
 | -----------------------------------------------------------------| ------------------| ------------ |
