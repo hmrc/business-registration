@@ -109,4 +109,11 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
     }
     Future.sequence(regIds.map(check))
   }
+
+  def updateCompletionCapacity(regId: String)(implicit ec: ExecutionContext): Future[Boolean] = {
+  metadataRepository.updateCompletionCapacity(regId, "director") map {
+    result => Logger("StartUpUpdateCompletionCapacity").info(s"updated completion capacity for regId: $regId - $result")
+      true
+  }
+  }
 }

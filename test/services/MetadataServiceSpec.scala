@@ -174,4 +174,14 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       await(service.checkCompletionCapacity(regIds)) shouldBe Seq(false, true)
     }
   }
+
+  "updateCompletionCapacity" should {
+    val service = setupService
+    "update if regid exists" in {
+      val regId = "123456"
+      when(mockMetadataRepository.updateCompletionCapacity(any(),any())(any()))
+        .thenReturn(Future.successful("director"))
+      await(service.updateCompletionCapacity(regId)) shouldBe true
+    }
+  }
 }
