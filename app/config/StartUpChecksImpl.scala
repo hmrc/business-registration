@@ -29,19 +29,16 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 class StartUpChecksImpl @Inject()(val metadataService: MetadataService, val config: Configuration) extends StartUpChecks {
   lazy val regIdConf = config.getString("registrationList").getOrElse("")
-  lazy val regId = config.getString("regIdToUpdateCC").getOrElse("")
 }
 
 trait StartUpChecks {
   val metadataService: MetadataService
   val config: Configuration
   val regIdConf: String
-  val regId: String
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
   lazy val regIdList = new String(Base64.getDecoder.decode(regIdConf), "UTF-8")
-  lazy val regIdCC = new String(Base64.getDecoder.decode(regId), "UTF-8")
 
   metadataService.checkCompletionCapacity(regIdList.split(","))
-  metadataService.updateCompletionCapacity(regIdCC)
+
 }
