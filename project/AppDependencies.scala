@@ -24,7 +24,7 @@ object MainDependencies {
   private val playReactiveMongo = "6.2.0"
   private val bootstrap         = "6.18.0"
   private val urlBinders        = "2.1.0"
-  private val domain            = "5.1.0"
+  private val domain            = "5.2.0"
   private val scheduling        = "4.1.0"
   private val mongoLock         = "5.1.0"
   private val authClientVersion = "2.6.0"
