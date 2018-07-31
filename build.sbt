@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import TestPhases.oneForkedJvmPerTest
-import uk.gov.hmrc.DefaultBuildSettings.{addTestReportOption, defaultSettings, scalaSettings}
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import scoverage.ScoverageKeys
+import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, integrationTestSettings, scalaSettings}
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "business-registration"
 
@@ -29,13 +29,14 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin) : _*)
+  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory) : _*)
   .settings(scoverageSettings : _*)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
   .settings(defaultSettings(): _*)
   .configs(IntegrationTest)
-  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
+  .settings(integrationTestSettings())
+  .settings( majorVersion := 1 )
   .settings(
     libraryDependencies                           ++= AppDependencies(),
     retrieveManaged                               :=  true,
@@ -43,10 +44,6 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator                               :=  InjectedRoutesGenerator,
     scalaVersion                                  :=  "2.11.11",
     Keys.fork in Test                             :=  true,
-    Keys.fork in IntegrationTest                  :=  false,
-    unmanagedSourceDirectories in IntegrationTest :=  (baseDirectory in IntegrationTest)(base => Seq(base / "it")).value,
-    addTestReportOption(IntegrationTest, "int-test-reports"),
-    testGrouping in IntegrationTest               :=  oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    parallelExecution in IntegrationTest          :=  false,
-    resolvers                                     ++= Seq(Resolver.bintrayRepo("hmrc", "releases"), Resolver.jcenterRepo)
+    resolvers                                     ++= Seq(Resolver.bintrayRepo("hmrc", "releases"), Resolver.jcenterRepo
+    )
   )
