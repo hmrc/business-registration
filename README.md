@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/hmrc/business-registration.svg)](https://travis-ci.org/hmrc/business-registration) [ ![Download](https://api.bintray.com/packages/hmrc/releases/business-registration/images/download.svg) ](https://bintray.com/hmrc/releases/business-registration/_latestVersion)
 
-Prepop
+Prepop.
 ------
 | Path                                                             | Supported Methods | Description  |
 | -----------------------------------------------------------------| ------------------| ------------ |
