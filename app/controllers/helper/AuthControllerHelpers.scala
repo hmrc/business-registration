@@ -20,6 +20,7 @@ import auth._
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.mvc.Results._
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
@@ -29,9 +30,10 @@ trait AuthControllerHelpers extends Authenticated {
       Future.successful(Forbidden)
   }
 
-  def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] = authResult match {
+  def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult)(implicit hc: HeaderCarrier): Future[Result] = authResult match {
     case NotLoggedInOrAuthorised =>
       Logger.info(s"[Authorisation] [$methodName] User not logged in")
+      Logger.info(s"[Authorisation] [$methodName] [HC] : $hc")
       Future.successful(Forbidden)
     case NotAuthorised(_) =>
       Logger.info(s"[Authorisation] [$methodName] User logged in but not authorised for resource $regId")
