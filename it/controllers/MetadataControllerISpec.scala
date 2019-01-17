@@ -1,39 +1,40 @@
 
 package controllers
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
+import auth.AuthorisationResource
 import fixtures.MetadataFixtures
-import itutil.{IntegrationSpecBase, WiremockHelper}
-import models.{Metadata, MetadataResponse}
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
+import itutil.IntegrationSpecBase
+import models.Metadata
+import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
+import reactivemongo.play.json._
 import repositories.MetadataMongo
 import services.{MetadataService, MetricsService}
-import play.api.http.Status._
-import reactivemongo.play.json._
+import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures {
 
   class Setup {
-    lazy val metadataService = app.injector.instanceOf[MetadataService]
-    lazy val metricsService = app.injector.instanceOf[MetricsService]
+    lazy val metService = app.injector.instanceOf[MetadataService]
+    lazy val metrService = app.injector.instanceOf[MetricsService]
     lazy val metadataMongo = app.injector.instanceOf[MetadataMongo]
+    lazy val authCon = app.injector.instanceOf[AuthConnector]
 
-    val controller = new MetadataControllerImpl(metadataService, metricsService, metadataMongo)
+    val controller = new MetadataController {
+      override val metadataService = metService
+      override val metricsService = metrService
+      override val resourceConn: AuthorisationResource = metadataMongo.repository
+      override val authConnector: AuthConnector = authCon
+    }
 
     def dropMetadata(internalId: String = testInternalId) = await(metadataMongo.repository.collection.remove(Json.obj("internalId" -> internalId)))
     def insertMetadata(metadata: Metadata = buildMetadata()) = await(metadataMongo.repository.createMetadata(metadata))
     def getMetadata(regId: String = testRegistrationId) = await(metadataMongo.repository.retrieveMetadata(regId))
     dropMetadata()
   }
-
-
 
   "calling createMetadata" should {
 

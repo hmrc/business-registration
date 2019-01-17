@@ -1,16 +1,15 @@
 
 package controllers.prePop
 
-import fixtures.MetadataFixtures
+import auth.AuthorisationResource
 import itutil.IntegrationSpecBase
-import models.prepop.ContactDetails
+import play.api.http.Status._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.FakeRequest
-import play.api.http.Status._
-import repositories.MetadataMongo
-import repositories.prepop.{AddressRepositoryImpl, ContactDetailsMongo}
 import reactivemongo.play.json._
+import repositories.prepop.AddressRepositoryImpl
 import services.prepop.{AddressService, AddressServiceImpl}
+import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -19,9 +18,13 @@ class AddressControllerISpec extends IntegrationSpecBase {
   class Setup {
     lazy val addressService  = app.injector.instanceOf[AddressServiceImpl]
     lazy val addressMongo        = app.injector.instanceOf[AddressRepositoryImpl]
+    lazy val authCon = app.injector.instanceOf[AuthConnector]
 
-    val controller = new AddressControllerImpl(addressService, addressMongo)
-
+    val controller = new AddressController {
+      override val service: AddressService = addressService
+      override val authConnector: AuthConnector = authCon
+      override val resourceConn: AuthorisationResource = addressMongo.repository
+    }
 
     def dropAddress(regId: String = testRegistrationId) =
       await(addressMongo.repository.collection.remove(Json.obj("registration_id" -> regId)))

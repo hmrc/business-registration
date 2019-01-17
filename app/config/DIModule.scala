@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import controllers.admin.AdminController
 import controllers.prePop._
 import controllers.test.{BRMongoTestController, MetadataTestControllerImpl}
 import controllers.{MetadataController, MetadataControllerImpl}
-import repositories.prepop.{ContactDetailsMongo, TradingNameMongo}
+import repositories.prepop.{ContactDetailsMongo, ContactDetailsMongoImpl, TradingNameMongo, TradingNameMongoImpl}
 import repositories.{MetadataMongo, SequenceRepository, SequenceRepositoryImpl}
 import services.prepop.{AddressService, AddressServiceImpl}
 import services.{MetricsService, MetricsServiceImp}
+import uk.gov.hmrc.play.config.ServicesConfig
 
 class DIModule extends AbstractModule {
 
@@ -34,7 +35,6 @@ class DIModule extends AbstractModule {
     configureServices()
     configureRepositories()
   }
-
   def configureControllers(): Unit = {
     bind(classOf[AddressController]).to(classOf[AddressControllerImpl]).asEagerSingleton()
     bind(classOf[ContactDetailsController]).to(classOf[ContactDetailsControllerImpl]).asEagerSingleton()
@@ -45,7 +45,8 @@ class DIModule extends AbstractModule {
   }
 
   def configureConfig(): Unit = {
-    bind(classOf[StartUpChecks]).to(classOf[StartUpChecksImpl]).asEagerSingleton()
+    bind(classOf[ServicesConfig]).to(classOf[ServicesConfigImpl]).asEagerSingleton()
+    bind(classOf[WSHttp]).to(classOf[WSHttpImpl]).asEagerSingleton()
   }
 
   def configureServices(): Unit = {
@@ -53,11 +54,10 @@ class DIModule extends AbstractModule {
     bind(classOf[MetricsService]).to(classOf[MetricsServiceImp]).asEagerSingleton()
   }
 
-
   def configureRepositories(): Unit = {
     bind(classOf[MetadataMongo]).asEagerSingleton()
     bind(classOf[SequenceRepository]).to(classOf[SequenceRepositoryImpl]).asEagerSingleton()
-    bind(classOf[ContactDetailsMongo]).asEagerSingleton()
-    bind(classOf[TradingNameMongo]).asEagerSingleton()
+    bind(classOf[ContactDetailsMongo]).to(classOf[ContactDetailsMongoImpl]).asEagerSingleton()
+    bind(classOf[TradingNameMongo]).to(classOf[TradingNameMongoImpl]).asEagerSingleton()
   }
 }

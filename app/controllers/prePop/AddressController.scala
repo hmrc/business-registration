@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,33 @@
 
 package controllers.prePop
 
-import javax.inject.Inject
-
-import auth.{Authenticated, Authorisation}
-import config.AuthClientConnector
+import auth.Authorisation
 import controllers.helper.AuthControllerHelpers
+import javax.inject.Inject
 import models.prepop.Address
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, Result}
 import repositories.prepop.AddressRepositoryImpl
 import services.prepop.AddressService
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 class AddressControllerImpl @Inject()(val service: AddressService,
-                                      addressRepository: AddressRepositoryImpl) extends AddressController {
+                                      addressRepository: AddressRepositoryImpl,
+                                      val authConnector: AuthConnector) extends AddressController {
 
-  override lazy val authConnector = AuthClientConnector
   val resourceConn = addressRepository.repository
 }
 
 trait AddressController extends BaseController with Authorisation with AuthControllerHelpers {
 
   val service: AddressService
+  val authConnector: AuthConnector
 
   def fetchAddresses(registrationId: String) = Action.async {
     implicit request =>

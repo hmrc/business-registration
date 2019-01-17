@@ -9,8 +9,9 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.http.Status._
 import repositories.MetadataMongo
-import repositories.prepop.ContactDetailsMongo
+import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepository}
 import reactivemongo.play.json._
+import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -19,9 +20,12 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
   class Setup {
     lazy val contactDetailsMongo  = app.injector.instanceOf[ContactDetailsMongo]
     lazy val metadataMongo        = app.injector.instanceOf[MetadataMongo]
+    lazy val authCon = app.injector.instanceOf[AuthConnector]
 
-    val controller = new ContactDetailsControllerImpl(metadataMongo, contactDetailsMongo)
-
+    val controller = new ContactDetailsController {
+      override val cdRepository: ContactDetailsRepository = contactDetailsMongo.repository
+      override def authConnector: AuthConnector = authCon
+    }
 
     def dropContactDetails(internalId: String = testInternalId, regId: String = testRegistrationId) =
       await(contactDetailsMongo.repository.collection.remove(Json.obj("_id" -> regId, "InternalID" -> internalId)))

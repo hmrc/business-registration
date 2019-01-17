@@ -32,7 +32,10 @@ class TradingNameRepositoryISpec extends UnitSpec with MongoSpecSupport with Bef
   class Setup {
     private val config    = fakeApplication.injector.instanceOf(classOf[Configuration])
     private val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository: TradingNameRepoMongo = new TradingNameMongo(mongoComp, config).repository
+    val repository: TradingNameRepoMongo = new TradingNameMongo {
+      override val mongo: ReactiveMongoComponent = mongoComp
+      override val configuration: Configuration = config
+    }.repository
     await(repository.drop)
     await(repository.ensureIndexes)
 

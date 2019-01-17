@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@
 
 package controllers.prePop
 
-import config.AuthClientConnector
 import controllers.helper.AuthControllerHelpers
 import javax.inject.Inject
 import models.prepop.{PermissionDenied, TradingName}
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, Result}
 import repositories.prepop.{TradingNameMongo, TradingNameRepository}
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class TradingNameControllerImpl @Inject()(tradingNameMongo: TradingNameMongo) extends TradingNameController {
-  val authConnector = AuthClientConnector
+class TradingNameControllerImpl @Inject()(tradingNameMongo: TradingNameMongo,
+                                          val authConnector:AuthConnector) extends TradingNameController {
+
   val tradingNameRepo: TradingNameRepository = tradingNameMongo.repository
 }
 trait TradingNameController extends BaseController with AuthControllerHelpers {

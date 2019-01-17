@@ -31,7 +31,6 @@ import scala.language.postfixOps
 
 class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with WithFakeApplication {
 
-  //implicit val app = new GuiceApplicationBuilder().build()
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {

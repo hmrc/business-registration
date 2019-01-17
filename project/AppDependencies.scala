@@ -22,15 +22,15 @@ object AppDependencies {
 
 object MainDependencies {
   private val playReactiveMongo = "6.2.0"
-  private val bootstrap         = "6.18.0"
-  private val domain            = "5.2.0"
-  private val scheduling        = "4.1.0"
+  private val bootstrap         = "4.3.0"
+  private val domain            = "5.3.0"
+  private val scheduling        = "5.4.0"
   private val mongoLock         = "5.1.0"
   private val authClientVersion = "2.6.0"
 
   def apply(): Seq[ModuleID] = Seq(
     "uk.gov.hmrc" %% "play-reactivemongo"     % playReactiveMongo,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % bootstrap,
+    "uk.gov.hmrc" %% "bootstrap-play-25" % bootstrap,
     "uk.gov.hmrc" %% "domain"                 % domain,
     "uk.gov.hmrc" %% "play-scheduling"        % scheduling,
     "uk.gov.hmrc" %% "mongo-lock"             % mongoLock,
@@ -39,7 +39,7 @@ object MainDependencies {
 }
 
 trait CommonTestDependencies {
-  val hmrcTestVersion       = "3.0.0"
+  val hmrcTestVersion       = "3.3.0"
   val scalaTestPlusVersion  = "2.0.1"
   val mockitoCore           = "2.13.0"
   val reactiveMongo         = "3.1.0"
