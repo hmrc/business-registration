@@ -50,7 +50,10 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
   class Setup {
     private val config    = fakeApplication.injector.instanceOf(classOf[Configuration])
     private val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo(mongoComp, config).repository
+    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo {
+      override val mongo: ReactiveMongoComponent = mongoComp
+      override val configuration: Configuration = config
+    }.repository
     await(repository.drop)
     await(repository.ensureIndexes)
 

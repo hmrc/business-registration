@@ -7,19 +7,24 @@ import models.prepop.TradingName
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import repositories.MetadataMongo
-import repositories.prepop.TradingNameMongo
+import repositories.prepop.{TradingNameMongo, TradingNameRepository}
 import play.api.http.Status._
 import reactivemongo.play.json._
+import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtures {
   class Setup {
-    lazy val tradingNameMongo  = app.injector.instanceOf[TradingNameMongo]
+    lazy val tradingNameMongo     = app.injector.instanceOf[TradingNameMongo]
     lazy val metadataMongo        = app.injector.instanceOf[MetadataMongo]
+    lazy val authCon              = app.injector.instanceOf[AuthConnector]
 
-    val controller = new TradingNameControllerImpl(tradingNameMongo)
+    val controller = new TradingNameController {
+      override val tradingNameRepo: TradingNameRepository = tradingNameMongo.repository
 
+      override def authConnector: AuthConnector = authCon
+    }
 
     def dropTradingName(intId: String = testInternalId, regId: String = testRegistrationId) =
       await(tradingNameMongo.repository.collection.remove(Json.obj("_id" -> regId)))

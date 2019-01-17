@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,29 @@
 
 package repositories.prepop
 
-import javax.inject.{Inject, Singleton}
-
+import javax.inject.Inject
 import models.prepop.{ContactDetails, PermissionDenied}
-import play.api.Configuration
 import play.api.libs.json.JsObject
+import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.DB
+import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
+import repositories.CollectionsNames
 import repositories.CollectionsNames.CONTACTDETAILS
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.collection.Seq
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
-class ContactDetailsMongo  @Inject()(mongo: ReactiveMongoComponent, configuration: Configuration) {
-  val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db, configuration)
+class ContactDetailsMongoImpl  @Inject()(val mongo: ReactiveMongoComponent, val configuration: Configuration) extends ContactDetailsMongo
+
+trait ContactDetailsMongo {
+  val mongo: ReactiveMongoComponent
+  val configuration: Configuration
+  lazy val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db, configuration)
 }
 
 trait ContactDetailsRepository{
@@ -51,10 +56,34 @@ class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
     for{
       ttlIndexes <- ensureTTLIndexes
       indexes    <- super.ensureIndexes
+      _          <- fetchLatestIndexes
     } yield {
       indexes ++ ttlIndexes
     }
   }
+  private def fetchLatestIndexes: Future[List[Index]] = {
+    collection.indexesManager.list() map { indexes =>
+      indexes.map { index =>
+        val indexOptions = index.options.elements.toString()
+        Logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.CONTACTDETAILS} \n" +
+          s"Index : ${index.eventualName} \n" +
+          s"""keys : ${
+            index.key match {
+              case Seq(s@_*) => s"$s\n"
+              case Nil => "None\n"
+            }
+          }""" +
+          s"Is Unique? : ${index.unique}\n" +
+          s"In Background? : ${index.background}\n" +
+          s"Is sparse? : ${index.sparse}\n" +
+          s"version : ${index.version}\n" +
+          s"partialFilter : ${index.partialFilter.map(_.values)}\n" +
+          s"Options : $indexOptions")
+        index
+      }
+    }
+  }
+
 
   def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
     val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)

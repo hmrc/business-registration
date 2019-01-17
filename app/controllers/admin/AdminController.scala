@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package controllers.admin
 
-import javax.inject.{Inject, Singleton}
-
+import javax.inject.Inject
 import models.ErrorResponse
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, AnyContent}
 import services.MetadataService
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AdminController @Inject()(val metadataService: MetadataService) extends BaseController {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import play.api.libs.json.{JsObject, Json}
 import repositories._
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: SequenceRepository) {

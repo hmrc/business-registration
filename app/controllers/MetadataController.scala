@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,24 @@
 
 package controllers
 
-import javax.inject.Inject
-
 import auth._
-import config.AuthClientConnector
 import controllers.helper.AuthControllerHelpers
+import javax.inject.Inject
 import models._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.Action
 import repositories.MetadataMongo
 import services.{MetadataService, MetricsService}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
-
-import scala.concurrent.Future
+import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetadataControllerImpl @Inject()(val metadataService: MetadataService,
                                        val metricsService: MetricsService,
-                                       metadataRepo: MetadataMongo)
+                                       metadataRepo: MetadataMongo,
+                                       val authConnector:AuthConnector)
   extends MetadataController {
-  lazy val authConnector = AuthClientConnector
   val resourceConn = metadataRepo.repository
 }
 
@@ -44,6 +41,7 @@ trait MetadataController extends BaseController with Authorisation with AuthCont
 
   val metadataService: MetadataService
   val metricsService: MetricsService
+  val authConnector: AuthConnector
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>
