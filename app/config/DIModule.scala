@@ -46,7 +46,6 @@ class DIModule extends AbstractModule {
 
   def configureConfig(): Unit = {
     bind(classOf[ServicesConfig]).to(classOf[ServicesConfigImpl]).asEagerSingleton()
-    bind(classOf[WSHttp]).to(classOf[WSHttpImpl]).asEagerSingleton()
   }
 
   def configureServices(): Unit = {

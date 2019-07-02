@@ -18,10 +18,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures {
 
   class Setup {
-    lazy val metService = app.injector.instanceOf[MetadataService]
-    lazy val metrService = app.injector.instanceOf[MetricsService]
-    lazy val metadataMongo = app.injector.instanceOf[MetadataMongo]
-    lazy val authCon = app.injector.instanceOf[AuthConnector]
+    lazy val metService     = app.injector.instanceOf[MetadataService]
+    lazy val metrService    = app.injector.instanceOf[MetricsService]
+    lazy val metadataMongo  = app.injector.instanceOf[MetadataMongo]
+    lazy val authCon        = app.injector.instanceOf[AuthConnector]
 
     val controller = new MetadataController {
       override val metadataService = metService

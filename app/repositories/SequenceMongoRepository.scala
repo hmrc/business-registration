@@ -16,9 +16,8 @@
 
 package repositories
 
-import javax.inject.{Inject, Singleton}
-
 import com.google.inject.ImplementedBy
+import javax.inject.{Inject, Singleton}
 import models.Metadata
 import play.api.Application
 import play.api.libs.json.{Format, JsValue}
@@ -27,13 +26,13 @@ import reactivemongo.bson._
 import reactivemongo.play.json._
 import repositories.CollectionsNames.SEQUENCE
 import repositories.InjectDB.injectDB
-import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
+import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 @ImplementedBy(classOf[SequenceRepositoryImpl])
-trait SequenceRepository extends Repository[Metadata, BSONObjectID]{
+trait SequenceRepository {
   def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int]
 }
 

@@ -18,9 +18,9 @@ package repositories
 
 import helpers.MongoSpec
 import org.scalatest.concurrent.Eventually
-import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Format, Json}
+import play.api.{Application, Configuration}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONElement, BSONLong, BSONObjectID}
 import repositories.prepop.TTLIndexing

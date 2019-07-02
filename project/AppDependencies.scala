@@ -21,28 +21,28 @@ object AppDependencies {
 }
 
 object MainDependencies {
-  private val playReactiveMongo = "6.2.0"
-  private val bootstrap         = "4.3.0"
-  private val domain            = "5.3.0"
-  private val scheduling        = "5.4.0"
-  private val mongoLock         = "5.1.0"
-  private val authClientVersion = "2.6.0"
+  private val simpleReactive    = "7.20.0-play-25"
+  private val bootstrap         = "4.13.0"
+  private val domain            = "5.6.0-play-25"
+  private val scheduling        = "6.0.0"
+  private val mongoLock         = "6.12.0-play-25"
+  private val authClientVersion = "2.22.0-play-25"
 
   def apply(): Seq[ModuleID] = Seq(
-    "uk.gov.hmrc" %% "play-reactivemongo"     % playReactiveMongo,
-    "uk.gov.hmrc" %% "bootstrap-play-25" % bootstrap,
-    "uk.gov.hmrc" %% "domain"                 % domain,
-    "uk.gov.hmrc" %% "play-scheduling"        % scheduling,
-    "uk.gov.hmrc" %% "mongo-lock"             % mongoLock,
-    "uk.gov.hmrc" %% "auth-client"            % authClientVersion
+    "uk.gov.hmrc" %% "simple-reactivemongo"     % simpleReactive,
+    "uk.gov.hmrc" %% "bootstrap-play-25"        % bootstrap,
+    "uk.gov.hmrc" %% "domain"                   % domain,
+    "uk.gov.hmrc" %% "play-scheduling"          % scheduling,
+    "uk.gov.hmrc" %% "mongo-lock"               % mongoLock,
+    "uk.gov.hmrc" %% "auth-client"              % authClientVersion
   )
 }
 
 trait CommonTestDependencies {
-  val hmrcTestVersion       = "3.3.0"
+  val hmrcTestVersion       = "3.9.0-play-25"
   val scalaTestPlusVersion  = "2.0.1"
   val mockitoCore           = "2.13.0"
-  val reactiveMongo         = "3.1.0"
+  val reactiveMongo         = "4.15.0-play-25"
   val wireMockVersion       = "2.9.0"
 
   val scope: Configuration

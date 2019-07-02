@@ -16,9 +16,8 @@
 
 package repositories
 
-import javax.inject.{Inject, Singleton}
-
 import auth.AuthorisationResource
+import javax.inject.{Inject, Singleton}
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
 import play.api.Logger
@@ -28,16 +27,16 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
 import reactivemongo.play.json._
 import repositories.CollectionsNames.METADATA
-import uk.gov.hmrc.mongo.{ReactiveRepository, Repository}
+import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MetadataMongo @Inject()(mongo: ReactiveMongoComponent) {
-  val repository = new MetadataRepositoryMongo(mongo.mongoConnector.db)
+   val repository = new MetadataRepositoryMongo(mongo.mongoConnector.db)
 }
 
-trait MetadataRepository extends Repository[Metadata, BSONObjectID] with AuthorisationResource {
+trait MetadataRepository extends AuthorisationResource {
   def createMetadata(metadata: Metadata)(implicit ec: ExecutionContext): Future[Metadata]
   def searchMetadata(internalID: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
   def retrieveMetadata(regI: String)(implicit ec: ExecutionContext): Future[Option[Metadata]]
