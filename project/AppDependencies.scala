@@ -22,7 +22,7 @@ object AppDependencies {
 
 object MainDependencies {
   private val playReactiveMongo = "6.2.0"
-  private val bootstrap         = "4.3.0"
+  private val bootstrap         = "4.13.0"
   private val domain            = "5.3.0"
   private val scheduling        = "5.4.0"
   private val mongoLock         = "5.1.0"

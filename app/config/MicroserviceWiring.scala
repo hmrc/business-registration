@@ -16,32 +16,12 @@
 
 package config
 
-import com.typesafe.config.Config
 import javax.inject.Inject
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.http._
-import uk.gov.hmrc.http.hooks.{HttpHook, HttpHooks}
-import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
-import uk.gov.hmrc.play.http.ws._
-
-trait WSHttp extends
-  HttpGet with WSGet with
-  HttpPut with WSPut with
-  HttpPatch with WSPatch with
-  HttpPost with WSPost with
-  HttpDelete with WSDelete with
-  HttpHooks with AppName
+import uk.gov.hmrc.play.config.ServicesConfig
 
 class ServicesConfigImpl @Inject()(val environment: Environment, conf: Configuration ) extends ServicesConfig {
   override protected def mode: Mode = environment.mode
   override protected def runModeConfiguration: Configuration = conf
-}
-
-class WSHttpImpl @Inject()(val appNameConfiguration: Configuration,val microserviceAuditConnector: AuditConnector) extends WSHttp with HttpAuditing {
-  override def configuration: Option[Config] = Option(appNameConfiguration.underlying)
-  override val hooks: Seq[HttpHook] = Seq(AuditingHook)
-  override def auditConnector = microserviceAuditConnector
 }
