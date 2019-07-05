@@ -20,7 +20,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
   class Setup {
     lazy val contactDetailsMongo  = app.injector.instanceOf[ContactDetailsMongo]
     lazy val metadataMongo        = app.injector.instanceOf[MetadataMongo]
-    lazy val authCon = app.injector.instanceOf[AuthConnector]
+    lazy val authCon              = app.injector.instanceOf[AuthConnector]
 
     val controller = new ContactDetailsController {
       override val cdRepository: ContactDetailsRepository = contactDetailsMongo.repository

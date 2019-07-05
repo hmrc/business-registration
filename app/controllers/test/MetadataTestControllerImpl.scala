@@ -28,11 +28,11 @@ class MetadataTestControllerImpl @Inject()(metaDataRepo: MetadataMongo) extends 
 }
 
 trait BRMongoTestController extends BaseController {
-  val repo: MetadataRepository
+  val repo: MetadataRepositoryMongo
 
   def dropMetadataCollection = Action.async {
     implicit request =>
-      repo.drop map {
+      repo.drop.map {
         case true => Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
         case false => Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
       }

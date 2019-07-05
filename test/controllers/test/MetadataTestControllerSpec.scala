@@ -21,7 +21,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
-import repositories.{MetadataMongo, MetadataRepository, MetadataRepositoryMongo}
+import repositories.{MetadataMongo, MetadataRepositoryMongo}
 
 import scala.concurrent.Future
 
@@ -33,7 +33,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
   class Setup {
     val controller = new BRMongoTestController {
-      override val repo: MetadataRepository = mockrepo
+      override val repo: MetadataRepositoryMongo = mockrepo
     }
   }
 

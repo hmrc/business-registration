@@ -34,8 +34,8 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {
-    val mongoComp       = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository      = new MetadataMongo(mongoComp).repository
+
+    val repository      = fakeApplication.injector.instanceOf[MetadataMongo].repository
     val randomIntId     = UUID.randomUUID().toString
     val randomRegid     = UUID.randomUUID().toString
     val metadata        = Metadata(randomIntId, randomRegid, "", "ENG", None, None, false)
@@ -50,12 +50,12 @@ class MetadataMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
     def updateLastSignin(regId: String = randomRegid, timeNow: DateTime)      = await(repository.updateLastSignedIn(regId, timeNow))
     def count                                                                 = await(repository.count)
 
-    await(repository.drop)
+    await(repository.removeAll())
     await(repository.ensureIndexes)
   }
 
   override def afterAll() = new Setup {
-    await(repository.drop)
+    await(repository.removeAll())
   }
 
   "MetadataRepository" should {

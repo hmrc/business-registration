@@ -30,12 +30,12 @@ class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
 
   class Setup {
     val repository = new SequenceRepositoryImpl()(fakeApplication)
-    await(repository.drop)
+    await(repository.removeAll())
     await(repository.ensureIndexes)
   }
 
   override def afterAll() = new Setup {
-    await(repository.drop)
+    await(repository.removeAll())
   }
 
   val testSequence = "testSequence"

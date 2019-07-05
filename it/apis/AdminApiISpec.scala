@@ -16,17 +16,13 @@
 
 package apis
 
-import helpers.MongoSpec
 import models.Metadata
 import org.joda.time.DateTime
 import org.scalatestplus.play.OneServerPerSuite
-import play.api.Play
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-import play.modules.reactivemongo.{MongoDbConnection, ReactiveMongoComponent}
-import reactivemongo.api.DefaultDB
 import reactivemongo.api.commands.WriteResult
-import repositories.MetadataRepositoryMongo
+import repositories.MetadataMongo
 import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -34,12 +30,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AdminApiISpec extends UnitSpec with MongoSpecSupport with OneServerPerSuite {
 
-  val db: () => DefaultDB = app.injector.instanceOf[ReactiveMongoComponent].mongoConnector.db
-
   trait Setup {
-    val repo = new MetadataRepositoryMongo(db)
-
-    await(repo.drop)
+    val repo = app.injector.instanceOf[MetadataMongo].repository
+    await(repo.removeAll())
     await(repo.ensureIndexes)
 
     def count: Int = await(repo.count)
