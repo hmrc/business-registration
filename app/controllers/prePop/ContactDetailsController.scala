@@ -32,8 +32,8 @@ class ContactDetailsControllerImpl @Inject()(val repo: MetadataMongo,
                                              val authConnector: AuthConnector
                                             ) extends ContactDetailsController {
 
-  val resourceConn = repo.repository
-  val cdRepository = contactDetailsrepo.repository
+  lazy val resourceConn = repo.repository
+  lazy val cdRepository = contactDetailsrepo.repository
 }
 
 trait ContactDetailsController extends BaseController with AuthControllerHelpers {

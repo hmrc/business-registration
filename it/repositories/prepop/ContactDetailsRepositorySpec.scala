@@ -48,13 +48,8 @@ class ContactDetailsRepositorySpec extends UnitSpec with MongoSpecSupport with B
   val contactDetailsUpdated = ContactDetails(Some("name2"),Some("name"),Some("sName"), Some("email"), Some("num"), Some("foo"))
 
   class Setup {
-    private val config    = fakeApplication.injector.instanceOf(classOf[Configuration])
-    private val mongoComp = fakeApplication.injector.instanceOf[ReactiveMongoComponent]
-    val repository: ContactDetailsRepoMongo = new ContactDetailsMongo {
-      override val mongo: ReactiveMongoComponent = mongoComp
-      override val configuration: Configuration = config
-    }.repository
-    await(repository.drop)
+    val repository: ContactDetailsRepoMongo = app.injector.instanceOf[ContactDetailsMongo].repository
+    await(repository.removeAll())
     await(repository.ensureIndexes)
 
     def indexCount: Int = await(repository.collection.indexesManager.list).size

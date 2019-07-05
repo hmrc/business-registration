@@ -16,9 +16,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AddressControllerISpec extends IntegrationSpecBase {
 
   class Setup {
-    lazy val addressService  = app.injector.instanceOf[AddressServiceImpl]
+    lazy val addressService      = app.injector.instanceOf[AddressServiceImpl]
     lazy val addressMongo        = app.injector.instanceOf[AddressRepositoryImpl]
-    lazy val authCon = app.injector.instanceOf[AuthConnector]
+    lazy val authCon             = app.injector.instanceOf[AuthConnector]
 
     val controller = new AddressController {
       override val service: AddressService = addressService

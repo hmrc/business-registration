@@ -29,7 +29,7 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
   class Setup {
     val repo = fakeApplication.injector.instanceOf(classOf[AddressRepositoryImpl]).repository
 
-    repo.awaitDrop
+    await(repo.removeAll())
     await(repo.ensureIndexes)
     repo.awaitCount shouldBe 0
   }
