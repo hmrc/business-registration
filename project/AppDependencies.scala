@@ -32,7 +32,7 @@ object MainDependencies {
   private val bootstrap         = "4.13.0"
   private val domain            = "5.6.0-play-25"
   private val scheduling        = "6.0.0"
-  private val mongoLock         = "6.12.0-play-25"
+  private val mongoLock         = "6.15.0-play-25"
   private val authClientVersion = "2.22.0-play-25"
 
   def apply(): Seq[ModuleID] = Seq(
