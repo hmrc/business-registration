@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ object AppDependencies {
 
 object MainDependencies {
 
-  private val simpleReactive    = "7.20.0-play-25"
-  private val bootstrap         = "4.13.0"
+  private val simpleReactive    = "7.22.0-play-25"
+  private val bootstrap         = "5.1.0"
   private val domain            = "5.6.0-play-25"
-  private val scheduling        = "6.0.0"
+  private val scheduling        = "7.1.0-play-25"
   private val mongoLock         = "6.15.0-play-25"
-  private val authClientVersion = "2.22.0-play-25"
+  private val authClientVersion = "2.32.0-play-25"
 
   def apply(): Seq[ModuleID] = Seq(
     "uk.gov.hmrc" %% "simple-reactivemongo"     % simpleReactive,
