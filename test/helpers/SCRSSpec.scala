@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.util.Timeout
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.http.{HeaderNames, Status}
 import play.api.libs.json.JsValue
@@ -30,7 +30,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SCRSSpec extends PlaySpec with MockitoSugar with BeforeAndAfterEach with FutureAwaits with DefaultAwaitTimeout with ResultExtractors with HeaderNames with Status {
+trait SCRSSpec extends PlaySpec
+  with MockitoSugar
+  with BeforeAndAfterEach
+  with FutureAwaits
+  with DefaultAwaitTimeout
+  with ResultExtractors
+  with HeaderNames
+  with Status {
 
   implicit val defaultHC: HeaderCarrier = HeaderCarrier()
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()

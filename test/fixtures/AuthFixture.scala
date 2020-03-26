@@ -20,5 +20,6 @@ import models.UserIds
 
 trait AuthFixture {
 
-  val validUserIds = UserIds("internal-id","regId")
+  val validUserIds: UserIds = UserIds("internal-id","regId")
+
 }

@@ -16,27 +16,27 @@
 
 package models
 
+import org.scalatest.Assertion
 import org.scalatestplus.play.PlaySpec
-import play.api.data.validation.ValidationError
 import play.api.libs.json._
 
 trait JsonFormatValidation {
   this: PlaySpec =>
 
-  def mustBeSuccess[T](expected: T, result: JsResult[T]) = {
+  def mustBeSuccess[T](expected: T, result: JsResult[T]): Assertion = {
     result match {
-      case JsSuccess(v, path) => v mustBe expected
+      case JsSuccess(v, _) => v mustBe expected
       case JsError(errors) => fail(s"Test produced errors - $errors")
     }
   }
 
-  def mustHaveErrors[T](result: JsResult[T], errorPath: JsPath, expectedErrors: Seq[ValidationError]): Unit = {
+  def mustHaveErrors[T](result: JsResult[T], errorPath: JsPath, expectedErrors: Seq[JsonValidationError]): Unit = {
     mustHaveErrors[T](result, Map(errorPath -> expectedErrors))
   }
 
-  def mustHaveErrors[T](result: JsResult[T], expectedErrors: Map[JsPath, Seq[ValidationError]]): Unit = {
+  def mustHaveErrors[T](result: JsResult[T], expectedErrors: Map[JsPath, Seq[JsonValidationError]]): Unit = {
     result match {
-      case JsSuccess(v, path) => fail(s"read should have failed and didn't - produced $v")
+      case JsSuccess(v, _) => fail(s"read should have failed and didn't - produced $v")
       case JsError(errors) => {
         errors.length mustBe expectedErrors.keySet.toSeq.length
 

@@ -16,7 +16,6 @@
 
 package models
 
-import play.api.data.validation.ValidationError
 import play.api.libs.json.Reads.pattern
 import play.api.libs.json._
 
@@ -24,7 +23,7 @@ object Validation {
 
   def readToFmt(rds: Reads[String])(implicit wts: Writes[String]): Format[String] = Format(rds, wts)
 
-  def withFilter[A](fmt: Format[A], error: ValidationError)(f: (A) => Boolean): Format[A] = {
+  def withFilter[A](fmt: Format[A], error: JsonValidationError)(f: (A) => Boolean): Format[A] = {
     Format(fmt.filter(error)(f), fmt)
   }
 }
@@ -33,7 +32,7 @@ trait MetadataValidator {
 
   import Validation.readToFmt
 
-  val languageValidator = readToFmt(pattern("""^(ENG|CYM)$""".r, "Language must either be 'ENG' or 'CYM'"))
+  val languageValidator: Format[String] = readToFmt(pattern("""^(ENG|CYM)$""".r, "Language must either be 'ENG' or 'CYM'"))
 
-  val completionCapacityValidator = readToFmt(pattern("""^[A-Za-z0-9 '\\-]{1,100}$""".r, "Invalid completion capacity"))
+  val completionCapacityValidator: Format[String] = readToFmt(pattern("""^[A-Za-z0-9 '\\-]{1,100}$""".r, "Invalid completion capacity"))
 }

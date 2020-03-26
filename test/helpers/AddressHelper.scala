@@ -32,7 +32,7 @@ trait AddressHelper {
 
   def buildAddressJson(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false): JsObject = {
 
-    val rId = if(different) generateOID.take(3) else regId
+    val rId = if (different) generateOID.take(3) else regId
 
     val addressJson = Json.parse(
       s"""
@@ -45,9 +45,9 @@ trait AddressHelper {
          |  "country" : "testCountry-$rId"
          |}
     """.stripMargin).as[JsObject] ++
-      (if(withOid) Json.parse(s"""{"_id" : {"$$oid" : "$generateOID"}}""") else Json.obj())
+      (if (withOid) Json.parse(s"""{"_id" : {"$$oid" : "$generateOID"}}""") else Json.obj())
 
-    if(invalid) addressJson.-("postcode").-("country") else addressJson
+    if (invalid) addressJson.-("postcode").-("country") else addressJson
   }
 
   case class FetchOptions(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false)

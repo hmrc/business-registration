@@ -18,50 +18,45 @@ package controllers.prePop
 
 import auth.Authorisation
 import controllers.helper.AuthControllerHelpers
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models.prepop.Address
 import play.api.libs.json._
-import play.api.mvc.{Action, BodyParsers, Result}
-import repositories.prepop.AddressRepositoryImpl
+import play.api.mvc._
+import repositories.prepop.AddressRepository
 import services.prepop.AddressService
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class AddressControllerImpl @Inject()(val service: AddressService,
-                                      addressRepository: AddressRepositoryImpl,
-                                      val authConnector: AuthConnector) extends AddressController {
+@Singleton
+class AddressController @Inject()(addressService: AddressService,
+                                  val resourceConn: AddressRepository,
+                                  val authConnector: AuthConnector,
+                                  controllerComponents: ControllerComponents
+                                 ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers {
 
-  val resourceConn = addressRepository.repository
-}
-
-trait AddressController extends BaseController with Authorisation with AuthControllerHelpers {
-
-  val service: AddressService
-  val authConnector: AuthConnector
-
-  def fetchAddresses(registrationId: String) = Action.async {
+  def fetchAddresses(registrationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationId)(
         failure = authorisationResultHandler("fetchAddresses"),
         success = {
-        service.fetchAddresses(registrationId) map {
-          case Some(addresses) => Ok(addresses)
-          case None => NotFound
-        }
-      })
+          addressService.fetchAddresses(registrationId) map {
+            case Some(addresses) => Ok(addresses)
+            case None => NotFound
+          }
+        })
   }
 
-  def updateAddress(registrationId: String) = Action.async(BodyParsers.parse.json) {
+  def updateAddress(registrationId: String): Action[JsValue] = Action.async(BodyParsers.parse.json) {
     implicit request =>
-      withJsonBody[JsObject]{
-        authenticatedToUpdate(registrationId, _){ address =>
+      withJsonBody[JsObject] {
+        authenticatedToUpdate(registrationId, _) { address =>
           ifAddressValid(address) {
-            service.updateAddress(registrationId, address) map {
+            addressService.updateAddress(registrationId, address) map {
               if (_) Ok else InternalServerError
             }
           }
@@ -74,14 +69,14 @@ trait AddressController extends BaseController with Authorisation with AuthContr
     isAuthenticated(
       failure = authenticationResultHandler("authenticatedToUpdate"),
       success = { internalId =>
-      resourceConn.getInternalIds(regId) flatMap { ids =>
-        if (!ids.exists(_ != internalId)) {
-          body(appendIDs(regId, internalId, address))
-        } else {
-          Future.successful(Forbidden)
+        resourceConn.getInternalIds(regId) flatMap { ids =>
+          if (!ids.exists(_ != internalId)) {
+            body(appendIDs(regId, internalId, address))
+          } else {
+            Future.successful(Forbidden)
+          }
         }
-      }
-    })
+      })
   }
 
   private[controllers] def appendIDs(registrationId: String, internalId: String, address: JsObject): JsObject = {
@@ -91,9 +86,9 @@ trait AddressController extends BaseController with Authorisation with AuthContr
 
   private[controllers] def ifAddressValid(address: JsObject)(body: => Future[Result]): Future[Result] = {
     Try(address.validate(Address.addressReads)) match {
-      case Success(JsSuccess(a, _)) => if(a.isValid) body else Future.successful(BadRequest)
-      case Success(JsError(errs)) => Future.successful(BadRequest)
-      case Failure(ex: JsResultException) => Future.successful(BadRequest)
+      case Success(JsSuccess(a, _)) => if (a.isValid) body else Future.successful(BadRequest)
+      case Success(JsError(_)) => Future.successful(BadRequest)
+      case Failure(_: JsResultException) => Future.successful(BadRequest)
     }
   }
 }

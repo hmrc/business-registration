@@ -26,24 +26,23 @@ import scala.concurrent.Future
 
 class AuthorisationSpec extends SCRSSpec {
 
-  val mockAuthConnector = mock[AuthConnector]
-  val mockResource      = mock[AuthorisationResource]
+  val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  val mockResource: AuthorisationResource = mock[AuthorisationResource]
 
   object Authorisation extends Authorisation {
-    val authConnector = mockAuthConnector
-    val resourceConn  = mockResource
+    val authConnector: AuthConnector = mockAuthConnector
+    val resourceConn: AuthorisationResource = mockResource
   }
 
-  def resultHandler(id: String, authResult: AuthorisationResult): Future[Result] = authResult match{
+  def resultHandler(id: String, authResult: AuthorisationResult): Future[Result] = authResult match {
     case AuthResourceNotFound(_) => Future.successful(Results.NotFound)
     case _ => Future.successful(Results.Forbidden)
   }
 
   "The authorisation helper" should {
-
     "indicate there's no logged in user where there isn't a valid bearer token" in {
 
-      when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any())).thenReturn(Future.failed(MissingBearerToken()))
+      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future.failed(MissingBearerToken()))
 
       when(mockResource.getInternalId(any())(any())).thenReturn(Future.successful(None))
 
@@ -51,9 +50,10 @@ class AuthorisationSpec extends SCRSSpec {
         failure = resultHandler,
         success = {
           Future.successful(Results.Ok)
-      })
+        })
 
       val response = await(result)
+
       response.header.status mustBe FORBIDDEN
     }
 
@@ -62,7 +62,7 @@ class AuthorisationSpec extends SCRSSpec {
       val regId = "xxx"
       val intId = "internal-id"
 
-      when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any())).thenReturn(Future.successful(Some(intId)))
+      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future.successful(Some(intId)))
       when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some(intId)))
 
       val result = Authorisation.isAuthorised("xxx")(
@@ -72,6 +72,7 @@ class AuthorisationSpec extends SCRSSpec {
         })
 
       val response = await(result)
+
       response.header.status mustBe OK
     }
 
@@ -80,7 +81,7 @@ class AuthorisationSpec extends SCRSSpec {
       val regId = "xxx"
       val intId = "internal-id"
 
-      when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any())).thenReturn(Future.successful(Some(intId)))
+      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future.successful(Some(intId)))
       when(mockResource.getInternalId(eqTo(regId))(any())).thenReturn(Future.successful(Some(intId + "xxx")))
 
       val result = Authorisation.isAuthorised("xxx")(
@@ -90,6 +91,7 @@ class AuthorisationSpec extends SCRSSpec {
         })
 
       val response = await(result)
+
       response.header.status mustBe FORBIDDEN
     }
 
@@ -97,7 +99,7 @@ class AuthorisationSpec extends SCRSSpec {
 
       val intId = "internal-id"
 
-      when(mockAuthConnector.authorise[Option[String]](any(),any())(any(),any())).thenReturn(Future.successful(Some(intId)))
+      when(mockAuthConnector.authorise[Option[String]](any(), any())(any(), any())).thenReturn(Future.successful(Some(intId)))
       when(mockResource.getInternalId(any())(any())).thenReturn(Future.successful(None))
 
       val result = Authorisation.isAuthorised("xxx")(
@@ -107,27 +109,32 @@ class AuthorisationSpec extends SCRSSpec {
         })
 
       val response = await(result)
+
       response.header.status mustBe NOT_FOUND
     }
   }
+
   "mapToAuthResult" should {
     "return Authorised when context int id and resource int id match" in {
       val intId = Some("internal-id")
       val resource = Some("internal-id")
-      Authorisation.mapToAuthResult(intId,resource) mustBe Authorised(intId.get)
+      Authorisation.mapToAuthResult(intId, resource) mustBe Authorised(intId.get)
     }
+
     "return NotLoggedInOrAuthorised when context is not passed in" in {
       val resource = Some("foo1")
-      Authorisation.mapToAuthResult(None,resource) mustBe NotLoggedInOrAuthorised
+      Authorisation.mapToAuthResult(None, resource) mustBe NotLoggedInOrAuthorised
     }
+
     "return AuthResourceNotFound when context is passed in, but resource is not passed in" in {
       val intId = Some("internal-id")
-      Authorisation.mapToAuthResult(intId,None) mustBe AuthResourceNotFound(intId.get)
+      Authorisation.mapToAuthResult(intId, None) mustBe AuthResourceNotFound(intId.get)
     }
+
     "return NotAuthorised when int ids dont match" in {
       val intId = Some("internal-id")
       val resource = Some("foo2")
-      Authorisation.mapToAuthResult(intId,resource) mustBe NotAuthorised(intId.get)
+      Authorisation.mapToAuthResult(intId, resource) mustBe NotAuthorised(intId.get)
     }
   }
 }

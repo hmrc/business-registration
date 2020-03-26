@@ -20,35 +20,37 @@ import helpers.SCRSSpec
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
-import repositories.{MetadataMongo, MetadataRepositoryMongo}
+import play.api.test.Helpers.stubControllerComponents
+import repositories.MetadataMongoRepository
 
 import scala.concurrent.Future
 
 class MetadataTestControllerSpec extends SCRSSpec {
 
-  val mockMetadataRepository = mock[MetadataMongo]
-  val mockrepo = mock[MetadataRepositoryMongo]
-
+  val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
 
   class Setup {
-    val controller = new BRMongoTestController {
-      override val repo: MetadataRepositoryMongo = mockrepo
-    }
+    val controller = new MetadataTestController(mockMetadataRepository, stubControllerComponents())
   }
 
   "dropMetadataCollection" should {
 
     "return a 200 with a success message" in new Setup {
-      when(mockrepo.drop(any())).thenReturn(Future.successful(true))
-      val result = controller.dropMetadataCollection(FakeRequest())
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
+
+      val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
+
       status(result) mustBe OK
       bodyAsJson(result).toString() mustBe """{"message":"Metadata collection dropped successfully"}"""
     }
 
     "return a 200 with an error message if the collection could not be dropped" in new Setup {
-      when(mockrepo.drop(any())).thenReturn(Future.successful(false))
-      val result = controller.dropMetadataCollection(FakeRequest())
+      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
+
+      val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
+
       status(result) mustBe OK
       bodyAsJson(result).toString() mustBe """{"message":"An error occurred. Metadata collection could not be dropped"}"""
     }
@@ -56,10 +58,11 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
   "updateCC" should {
     "return a 200" in new Setup {
-      when(mockrepo.updateCompletionCapacity(any(), any())(any()))
+      when(mockMetadataRepository.updateCompletionCapacity(any(), any())(any()))
         .thenReturn(Future.successful("director"))
 
       val result = controller.updateCompletionCapacity("1234")(FakeRequest().withBody[JsValue](Json.parse("""{"completionCapacity" : "director"}""")))
+
       status(result) mustBe OK
     }
   }

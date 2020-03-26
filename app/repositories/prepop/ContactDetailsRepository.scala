@@ -16,12 +16,11 @@
 
 package repositories.prepop
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models.prepop.{ContactDetails, PermissionDenied}
 import play.api.libs.json.JsObject
 import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.DB
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
@@ -33,34 +32,24 @@ import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class ContactDetailsMongoImpl  @Inject()(val mongo: ReactiveMongoComponent, val configuration: Configuration) extends ContactDetailsMongo
-
-trait ContactDetailsMongo {
-  val mongo: ReactiveMongoComponent
-  val configuration: Configuration
-  lazy val repository = new ContactDetailsRepoMongo(mongo.mongoConnector.db, configuration)
-}
-
-trait ContactDetailsRepository{
-  def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]]
-  def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]]
-  private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext):Future[Option[JsObject]]
-  def getContactDetailsUnVerifiedUser(RegistrationID:String, InternalID:String)(implicit ec: ExecutionContext):Future[Option[ContactDetails]]
-}
-
-class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
-  extends ReactiveRepository[ContactDetails, BSONObjectID](collectionName = CONTACTDETAILS, mongo, ContactDetails.formats)
-  with ContactDetailsRepository with TTLIndexing[ContactDetails, BSONObjectID] {
+@Singleton
+class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: Configuration) extends
+  ReactiveRepository[ContactDetails, BSONObjectID](
+    collectionName = CONTACTDETAILS,
+    mongo.mongoConnector.db,
+    ContactDetails.formats
+  ) with TTLIndexing[ContactDetails, BSONObjectID] {
 
   override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
-    for{
+    for {
       ttlIndexes <- ensureTTLIndexes
-      indexes    <- super.ensureIndexes
-      _          <- fetchLatestIndexes
+      indexes <- super.ensureIndexes
+      _ <- fetchLatestIndexes
     } yield {
       indexes ++ ttlIndexes
     }
   }
+
   private def fetchLatestIndexes: Future[List[Index]] = {
     collection.indexesManager.list() map { indexes =>
       indexes.map { index =>
@@ -87,14 +76,13 @@ class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
 
   def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
     val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
-    getContactDetailsUnVerifiedUser(registrationID, intID) .flatMap{ res =>
-        val js = ContactDetails.mongoWrites(registrationID, internalID = intID,originalContactDetails = res).writes(contactDetails)
-        collection.findAndUpdate(selector, js, upsert = true, fetchNewObject = true) map {
-          s => s.result[ContactDetails](ContactDetails.mongoReads)
-        }
+    getContactDetailsUnVerifiedUser(registrationID, intID).flatMap { res =>
+      val js = ContactDetails.mongoWrites(registrationID, internalID = intID, originalContactDetails = res).writes(contactDetails)
+      collection.findAndUpdate(selector, js, upsert = true, fetchNewObject = true) map {
+        s => s.result[ContactDetails](ContactDetails.mongoReads)
       }
     }
-
+  }
 
 
   def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
@@ -114,7 +102,7 @@ class ContactDetailsRepoMongo(mongo: () => DB, val configuration: Configuration)
 
     getContactDetailsWithJustRegID(registrationID).map {
       case Some(s) if ((s \ "InternalID").get.as[String] != intID) =>
-     throw PermissionDenied(registrationID, intID)
+        throw PermissionDenied(registrationID, intID)
       case Some(s) => Some(s.as[ContactDetails](ContactDetails.mongoReads))
       case _ => None
     }

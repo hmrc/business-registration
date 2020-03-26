@@ -16,34 +16,35 @@
 
 package repositories.prepop
 
-import helpers.{MongoSpec, RichReactiveRepository}
+import helpers.MongoSpec
 import models.prepop.Address
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json, Reads}
+import play.api.libs.json.{JsObject, JsValue, Json, Reads}
+import play.api.test.Helpers._
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
+class AddressesRepositoryISpec extends MongoSpec {
 
   class Setup {
-    val repo = fakeApplication.injector.instanceOf(classOf[AddressRepositoryImpl]).repository
+    val repo: AddressRepository = app.injector.instanceOf(classOf[AddressRepository])
 
     await(repo.removeAll())
     await(repo.ensureIndexes)
-    repo.awaitCount shouldBe 0
+    repo.awaitCount mustBe 0
   }
 
   val regId = "reg-12345"
   val regId1 = "regId1"
   val regId2 = "regId2"
 
-  val dateTime = DateTime.parse("2017-06-15T10:06:28.434Z")
-  val now = Json.toJson(dateTime)(ReactiveMongoFormats.dateTimeWrite)
+  val dateTime: DateTime = DateTime.parse("2017-06-15T10:06:28.434Z")
+  val now: JsValue = Json.toJson(dateTime)(ReactiveMongoFormats.dateTimeWrite)
 
   def buildAddressJson(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false): JsObject = {
 
-    val rId = if(different) generateOID.take(3) else regId
+    val rId = if (different) generateOID.take(3) else regId
 
     val addressJson = Json.parse(
       s"""
@@ -58,9 +59,9 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
          |  "lastUpdated" : $now
          |}
     """.stripMargin).as[JsObject] ++
-      (if(withOid) Json.parse(s"""{"_id" : {"$$oid" : "$generateOID"}}""") else Json.obj())
+      (if (withOid) Json.parse(s"""{"_id" : {"$$oid" : "$generateOID"}}""") else Json.obj())
 
-    if(invalid) addressJson.-("postcode").-("country") else addressJson
+    if (invalid) addressJson.-("postcode").-("country") else addressJson
   }
 
   case class FetchOptions(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false)
@@ -76,124 +77,118 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
 
     "return a single address" in new Setup {
 
-      val expectedJson = Json.parse(
+      val expectedJson: JsObject = Json.parse(
         s"""
-          |{
-          |  "addresses" : [
-          |    {
-          |      "registration_id" : "regId1",
-          |      "addressLine1" : "testAddressLine1-regId1",
-          |      "addressLine2" : "testAddressLine2-regId1",
-          |      "addressLine3" : "testAddressLine3-regId1",
-          |      "addressLine4" : "testAddressLine4-regId1",
-          |      "postcode" : "testPostcode-regId1",
-          |      "country" : "testCountry-regId1",
-          |      "lastUpdated" : $now
-          |    }
-          |  ]
-          |}
+           |{
+           |  "addresses" : [
+           |    {
+           |      "registration_id" : "regId1",
+           |      "addressLine1" : "testAddressLine1-regId1",
+           |      "addressLine2" : "testAddressLine2-regId1",
+           |      "addressLine3" : "testAddressLine3-regId1",
+           |      "addressLine4" : "testAddressLine4-regId1",
+           |      "postcode" : "testPostcode-regId1",
+           |      "country" : "testCountry-regId1",
+           |      "lastUpdated" : $now
+           |    }
+           |  ]
+           |}
         """.stripMargin).as[JsObject]
 
       repo.awaitInsert(buildAddressJson(regId1))
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val result = await(repo.fetchAddresses(regId1))
-      result.get shouldBe expectedJson
+      val result: Option[JsObject] = await(repo.fetchAddresses(regId1))
+      result.get mustBe expectedJson
     }
 
     "return multiple addresses with the same regId" in new Setup {
 
-      val expectedJson = Json.parse(
-        s"""
-          |{
-          |  "addresses" : [
-          |    {
-          |      "registration_id" : "regId1",
-          |      "addressLine1" : "testAddressLine1-regId1",
-          |      "addressLine2" : "testAddressLine2-regId1",
-          |      "addressLine3" : "testAddressLine3-regId1",
-          |      "addressLine4" : "testAddressLine4-regId1",
-          |      "postcode" : "testPostcode-regId1",
-          |      "country" : "testCountry-regId1",
-          |      "lastUpdated" : $now
-          |    },
-          |    {
-          |      "registration_id" : "regId1",
-          |      "addressLine1" : "testAddressLine1-regId12",
-          |      "addressLine2" : "testAddressLine2-regId12",
-          |      "addressLine3" : "testAddressLine3-regId12",
-          |      "addressLine4" : "testAddressLine4-regId12",
-          |      "postcode" : "testPostcode-regId12",
-          |      "country" : "testCountry-regId12",
-          |      "lastUpdated" : $now
-          |    }
-          |  ]
-          |}
-        """.stripMargin).as[JsObject]
+      val expectedJson: JsObject =
+        Json.obj("addresses" -> Json.arr(
+          Json.obj("registration_id" -> "regId1",
+            "addressLine1" -> "testAddressLine1-regId1",
+            "addressLine2" -> "testAddressLine2-regId1",
+            "addressLine3" -> "testAddressLine3-regId1",
+            "addressLine4" -> "testAddressLine4-regId1",
+            "postcode" -> "testPostcode-regId1",
+            "country" -> "testCountry-regId1",
+            "lastUpdated" -> now
+          ), Json.obj(
+            "registration_id" -> "regId1",
+            "addressLine1" -> "testAddressLine1-regId12",
+            "addressLine2" -> "testAddressLine2-regId12",
+            "addressLine3" -> "testAddressLine3-regId12",
+            "addressLine4" -> "testAddressLine4-regId12",
+            "postcode" -> "testPostcode-regId12",
+            "country" -> "testCountry-regId12",
+            "lastUpdated" -> now
+          )
+        ))
 
       repo.awaitInsert(buildAddressJson(regId1))
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
       repo.awaitInsert(Json.parse(
         s"""
-          |{
-          |  "registration_id" : "regId1",
-          |  "addressLine1" : "testAddressLine1-regId12",
-          |  "addressLine2" : "testAddressLine2-regId12",
-          |  "addressLine3" : "testAddressLine3-regId12",
-          |  "addressLine4" : "testAddressLine4-regId12",
-          |  "postcode" : "testPostcode-regId12",
-          |  "country" : "testCountry-regId12",
-          |  "lastUpdated" : $now
-          |}
+           |{
+           |  "registration_id" : "regId1",
+           |  "addressLine1" : "testAddressLine1-regId12",
+           |  "addressLine2" : "testAddressLine2-regId12",
+           |  "addressLine3" : "testAddressLine3-regId12",
+           |  "addressLine4" : "testAddressLine4-regId12",
+           |  "postcode" : "testPostcode-regId12",
+           |  "country" : "testCountry-regId12",
+           |  "lastUpdated" : $now
+           |}
         """.stripMargin))
 
-      repo.awaitCount shouldBe 2
+      repo.awaitCount mustBe 2
 
-      val result = await(repo.fetchAddresses(regId1))
-      result.get.pretty shouldBe expectedJson.pretty
+      val result: Option[JsObject] = await(repo.fetchAddresses(regId1))
+      result.get mustBe expectedJson
     }
 
     "return 1 address when multiple exist but only 1 is associated with the supplied regId" in new Setup {
-      val expectedJson = Json.parse(
+      val expectedJson: JsValue = Json.parse(
         s"""
-          |{
-          |  "addresses" : [
-          |    {
-          |      "registration_id" : "regId1",
-          |      "addressLine1" : "testAddressLine1-regId1",
-          |      "addressLine2" : "testAddressLine2-regId1",
-          |      "addressLine3" : "testAddressLine3-regId1",
-          |      "addressLine4" : "testAddressLine4-regId1",
-          |      "postcode" : "testPostcode-regId1",
-          |      "country" : "testCountry-regId1",
-          |      "lastUpdated" : $now
-          |    }
-          |  ]
-          |}
+           |{
+           |  "addresses" : [
+           |    {
+           |      "registration_id" : "regId1",
+           |      "addressLine1" : "testAddressLine1-regId1",
+           |      "addressLine2" : "testAddressLine2-regId1",
+           |      "addressLine3" : "testAddressLine3-regId1",
+           |      "addressLine4" : "testAddressLine4-regId1",
+           |      "postcode" : "testPostcode-regId1",
+           |      "country" : "testCountry-regId1",
+           |      "lastUpdated" : $now
+           |    }
+           |  ]
+           |}
         """.stripMargin)
 
 
       repo.awaitInsert(buildAddressJson(regId1))
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
       repo.awaitInsert(buildAddressJson("2"))
-      repo.awaitCount shouldBe 2
+      repo.awaitCount mustBe 2
 
-      val result = await(repo.fetchAddresses(regId1))
-      result shouldBe Some(expectedJson)
+      val result: Option[JsObject] = await(repo.fetchAddresses(regId1))
+      result mustBe Some(expectedJson)
     }
 
     "return no addresses when multiple exist but none are associated with the supplied regId" in new Setup {
 
       repo.awaitInsert(buildAddressJson("2"))
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
       repo.awaitInsert(buildAddressJson("3"))
-      repo.awaitCount shouldBe 2
+      repo.awaitCount mustBe 2
 
-      val result = await(repo.fetchAddresses(regId1))
-      result shouldBe None
+      val result: Option[JsObject] = await(repo.fetchAddresses(regId1))
+      result mustBe None
     }
   }
 
@@ -201,19 +196,19 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
 
     "insert an address" in new Setup {
 
-      val result = await(repo.insertAddress(regId1, buildAddressJson(regId1)))
-      result shouldBe true
+      val result: Boolean = await(repo.insertAddress(regId1, buildAddressJson(regId1)))
+      result mustBe true
 
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
     }
 
     "throw a DatabaseException when inserting a duplicate Address" in new Setup {
       await(repo.insertAddress(regId1, buildAddressJson(regId1, withOid = false)))
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val ex = intercept[DatabaseException](await(repo.insertAddress(regId1, buildAddressJson(regId1, withOid = false))))
+      val ex: DatabaseException = intercept[DatabaseException](await(repo.insertAddress(regId1, buildAddressJson(regId1, withOid = false))))
 
-      ex.code shouldBe Some(11000)
+      ex.code mustBe Some(11000)
 
     }
   }
@@ -223,104 +218,60 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
 
     implicit class addressImp(o: JsObject) {
       def withoutTTL: JsObject = o - "lastUpdated"
+
       def withoutObjectID: JsObject = o - "_id"
+
       def getAddressesAsList: Seq[JsObject] = (o \ "addresses").as[Seq[JsObject]](Reads.seq(Address.reads))
+
       def getTTL: DateTime = (o \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
     }
 
     "update the lastUpdated ttl value when the supplied address exactly matches an existing address for the regId" in new Setup {
-      val existingAddress = buildAddressJson(regId)
-      val suppliedAddress = buildAddressJson(regId, withOid = false)
+      val existingAddress: JsObject = buildAddressJson(regId)
+      val suppliedAddress: JsObject = buildAddressJson(regId, withOid = false)
 
-      val originalTTL = (existingAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
-      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val originalTTL: DateTime = (existingAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
+      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
 
       repo.awaitInsert(existingAddress)
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val result = await(repo.updateAddress(regId, suppliedAddress))
+      val result: Boolean = await(repo.updateAddress(regId, suppliedAddress))
 
-      result shouldBe true
-      repo.awaitCount shouldBe 1
+      result mustBe true
+      repo.awaitCount mustBe 1
 
       val updatedAddress: JsObject = await(repo.findById(oid)).get
-      val updatedTTL = (updatedAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
+      val updatedTTL: DateTime = (updatedAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
 
-      updatedAddress - "lastUpdated" - "_id" shouldBe suppliedAddress - "lastUpdated"
+      updatedAddress - "lastUpdated" - "_id" mustBe suppliedAddress - "lastUpdated"
 
-      updatedTTL isAfter originalTTL shouldBe true
+      updatedTTL isAfter originalTTL mustBe true
     }
 
     "update an existing addresses fields if the supplied address is equal but non-equality checked fields have changed" in new Setup {
-      val existingAddress = buildAddressJson(regId)
-      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val existingAddress: JsObject = buildAddressJson(regId)
+      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
       val newAddressLine2 = "newAddressLine2"
-      val suppliedAddressWithNewAddressLine2 = buildAddressJson(regId, withOid = false) + ("addressLine2" -> Json.toJson(newAddressLine2))
+      val suppliedAddressWithNewAddressLine2: JsObject = buildAddressJson(regId, withOid = false) + ("addressLine2" -> Json.toJson(newAddressLine2))
 
       repo.awaitInsert(existingAddress)
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val result = await(repo.updateAddress(regId, suppliedAddressWithNewAddressLine2))
+      val result: Boolean = await(repo.updateAddress(regId, suppliedAddressWithNewAddressLine2))
 
-      result shouldBe true
-      repo.awaitCount shouldBe 1
+      result mustBe true
+      repo.awaitCount mustBe 1
 
-      val updatedAddress = await(repo.findById(oid)).get
+      val updatedAddress: JsObject = await(repo.findById(oid)).get
 
-      updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddressWithNewAddressLine2.withoutTTL
+      updatedAddress.withoutTTL.withoutObjectID mustBe suppliedAddressWithNewAddressLine2.withoutTTL
     }
 
     "update an existing addresses fields if the supplied address is equal but the cases are different" in new Setup {
-      val dateTimeNow = now
+      val dateTimeNow: JsValue = now
 
-      val existingAddress = Json.parse(
-        s"""{
-            |  "_id" : {"$$oid" : "$generateOID"},
-            |  "registration_id" : "$regId",
-            |  "addressLine1" : "testAddressLine1",
-            |  "addressLine2" : "testAddressLine2",
-            |  "addressLine3" : "testAddressLine3",
-            |  "addressLine4" : "testAddressLine4",
-            |  "postcode" : "testPostcode",
-            |  "country" : "testCountry",
-            |  "lastUpdated" : $dateTimeNow
-            |}
-            |""".stripMargin).as[JsObject]
-
-      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
-
-      val suppliedAddress = Json.parse(
-        s"""{
-            |  "registration_id" : "$regId",
-            |  "addressLine1" : "TESTADDRESSLINE1",
-            |  "addressLine2" : "testAddressLine2",
-            |  "addressLine3" : "testAddressLine3",
-            |  "addressLine4" : "testAddressLine4",
-            |  "postcode" : "TESTPOSTCODE",
-            |  "country" : "TESTCOUNTRY"
-            |}
-            |""".stripMargin).as[JsObject]
-
-      repo.awaitInsert(existingAddress)
-      repo.awaitCount shouldBe 1
-
-      val result = await(repo.updateAddress(regId, suppliedAddress))
-
-      result shouldBe true
-
-      repo.awaitCount shouldBe 1
-
-      val updatedAddress = await(repo.findById(oid)).get
-
-      existingAddress.getTTL isBefore updatedAddress.getTTL shouldBe true
-
-      updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddress.withoutTTL
-    }
-
-    "update with country and postcode missing" in new Setup {
-      val dateTimeNow = now
-
-      val existingAddress = Json.parse(
+      val existingAddress: JsObject = Json.parse(
         s"""{
            |  "_id" : {"$$oid" : "$generateOID"},
            |  "registration_id" : "$regId",
@@ -334,9 +285,56 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
            |}
            |""".stripMargin).as[JsObject]
 
-      val oid = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
 
-      val suppliedAddress = Json.parse(
+      val suppliedAddress: JsObject = Json.parse(
+        s"""{
+           |  "registration_id" : "$regId",
+           |  "addressLine1" : "TESTADDRESSLINE1",
+           |  "addressLine2" : "testAddressLine2",
+           |  "addressLine3" : "testAddressLine3",
+           |  "addressLine4" : "testAddressLine4",
+           |  "postcode" : "TESTPOSTCODE",
+           |  "country" : "TESTCOUNTRY"
+           |}
+           |""".stripMargin).as[JsObject]
+
+      repo.awaitInsert(existingAddress)
+      repo.awaitCount mustBe 1
+
+      val result: Boolean = await(repo.updateAddress(regId, suppliedAddress))
+
+      result mustBe true
+
+      repo.awaitCount mustBe 1
+
+      val updatedAddress: JsObject = await(repo.findById(oid)).get
+
+      existingAddress.getTTL isBefore updatedAddress.getTTL mustBe true
+
+      updatedAddress.withoutTTL.withoutObjectID mustBe suppliedAddress.withoutTTL
+    }
+
+    "update with country and postcode missing" in new Setup {
+      val dateTimeNow: JsValue = now
+
+      val existingAddress: JsObject = Json.parse(
+        s"""{
+           |  "_id" : {"$$oid" : "$generateOID"},
+           |  "registration_id" : "$regId",
+           |  "addressLine1" : "testAddressLine1",
+           |  "addressLine2" : "testAddressLine2",
+           |  "addressLine3" : "testAddressLine3",
+           |  "addressLine4" : "testAddressLine4",
+           |  "postcode" : "testPostcode",
+           |  "country" : "testCountry",
+           |  "lastUpdated" : $dateTimeNow
+           |}
+           |""".stripMargin).as[JsObject]
+
+      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+
+      val suppliedAddress: JsObject = Json.parse(
         s"""{
            |  "registration_id" : "$regId",
            |  "addressLine1" : "TESTADDRESSLINE1",
@@ -347,44 +345,44 @@ class AddressesRepositoryISpec extends MongoSpec with RichReactiveRepository {
            |""".stripMargin).as[JsObject]
 
       repo.awaitInsert(existingAddress)
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val result = await(repo.updateAddress(regId, suppliedAddress))
+      val result: Boolean = await(repo.updateAddress(regId, suppliedAddress))
 
-      result shouldBe true
+      result mustBe true
 
-      repo.awaitCount shouldBe 1
+      repo.awaitCount mustBe 1
 
-      val updatedAddress = await(repo.findById(oid)).get
+      val updatedAddress: JsObject = await(repo.findById(oid)).get
 
-      existingAddress.getTTL isBefore updatedAddress.getTTL shouldBe true
+      existingAddress.getTTL isBefore updatedAddress.getTTL mustBe true
 
-      updatedAddress.withoutTTL.withoutObjectID shouldBe suppliedAddress.withoutTTL
+      updatedAddress.withoutTTL.withoutObjectID mustBe suppliedAddress.withoutTTL
     }
   }
 
   "getInternalId" should {
     "return a single internalId if present" in new Setup {
       repo.awaitInsert(buildAddressJson(regId) ++ Json.parse("""{"internal_id":"testInternalId"}"""))
-      val internalIdResponse = await(repo.getInternalId(regId))
-      internalIdResponse shouldBe defined
-      internalIdResponse shouldBe Some("testInternalId")
+      val internalIdResponse: Option[String] = await(repo.getInternalId(regId))
+      internalIdResponse mustBe defined
+      internalIdResponse mustBe Some("testInternalId")
     }
 
     "none if not present" in new Setup {
-      await(repo.getInternalId(regId)) shouldBe None
+      await(repo.getInternalId(regId)) mustBe None
     }
   }
 
   "getInternalIds" should {
     "return a single internalId if present" in new Setup {
       repo.awaitInsert(buildAddressJson(regId) ++ Json.parse("""{"internal_id":"testInternalId"}"""))
-      val internalIdResponse = await(repo.getInternalIds(regId))
-      internalIdResponse shouldBe Seq("testInternalId")
+      val internalIdResponse: Seq[String] = await(repo.getInternalIds(regId))
+      internalIdResponse mustBe Seq("testInternalId")
     }
 
     "none if not present" in new Setup {
-      await(repo.getInternalIds(regId)) shouldBe Seq()
+      await(repo.getInternalIds(regId)) mustBe Seq()
     }
   }
 }

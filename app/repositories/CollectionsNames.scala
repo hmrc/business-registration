@@ -16,10 +16,10 @@
 
 package repositories
 
-object CollectionsNames  {
-  final val METADATA: String        = "registration-information"
-  final val USER_DATA: String       = "scrs-beta-users"
-  final val SEQUENCE: String        = "sequence"
-  final val CONTACTDETAILS: String  = "prepop-contact-details"
-  final val TRADING_NAME: String    = "prepop-trading-name"
+object CollectionsNames {
+  final val METADATA: String = "registration-information"
+  final val USER_DATA: String = "scrs-beta-users"
+  final val SEQUENCE: String = "sequence"
+  final val CONTACTDETAILS: String = "prepop-contact-details"
+  final val TRADING_NAME: String = "prepop-trading-name"
 }

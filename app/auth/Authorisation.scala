@@ -26,34 +26,38 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import scala.concurrent.Future
 
 sealed trait AuthorisationResult
+
 case object NotLoggedInOrAuthorised extends AuthorisationResult
+
 final case class NotAuthorised(inId: String) extends AuthorisationResult
+
 final case class Authorised(intId: String) extends AuthorisationResult
+
 final case class AuthResourceNotFound(intId: String) extends AuthorisationResult
 
 trait Authorisation extends AuthorisedFunctions {
   val resourceConn: AuthorisationResource
 
   def isAuthorised(id: String)(failure: (String, AuthorisationResult) => Future[Result], success: => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
-    authorised().retrieve(internalId)( intId => resourceConn.getInternalId(id) flatMap (
+    authorised().retrieve(internalId)(intId => resourceConn.getInternalId(id) flatMap (
       resource => mapToAuthResult(intId, resource) match {
-        case Authorised(_)  => success
-        case result         => failure(id, result)
+        case Authorised(_) => success
+        case result => failure(id, result)
       })).recoverWith {
-        case _: AuthorisationException => failure(id, NotLoggedInOrAuthorised)
-        case err => Logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
-          throw err
+      case _: AuthorisationException => failure(id, NotLoggedInOrAuthorised)
+      case err => Logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
+        throw err
     }
   }
 
-  private[auth] def mapToAuthResult(internalId: Option[String], resource: Option[String]) : AuthorisationResult = {
+  private[auth] def mapToAuthResult(internalId: Option[String], resource: Option[String]): AuthorisationResult = {
     internalId match {
       case None => NotLoggedInOrAuthorised
       case Some(intId) =>
         resource match {
           case None => AuthResourceNotFound(intId)
-          case Some(`intId`)  => Authorised (intId)
-          case _ => NotAuthorised (intId)
+          case Some(`intId`) => Authorised(intId)
+          case _ => NotAuthorised(intId)
         }
     }
   }

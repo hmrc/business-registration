@@ -16,250 +16,228 @@
 
 package controllers
 
-import auth.AuthorisationResource
 import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
 import models.Metadata
-import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
-import reactivemongo.play.json._
-import repositories.MetadataMongo
+import play.api.test.Helpers._
+import reactivemongo.api.commands.WriteResult
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures {
 
   class Setup {
-    lazy val metService     = app.injector.instanceOf[MetadataService]
-    lazy val metrService    = app.injector.instanceOf[MetricsService]
-    lazy val metadataMongo  = app.injector.instanceOf[MetadataMongo]
-    lazy val authCon        = app.injector.instanceOf[AuthConnector]
+    lazy val metadataService: MetadataService = app.injector.instanceOf[MetadataService]
+    lazy val metricsService: MetricsService = app.injector.instanceOf[MetricsService]
+    lazy val metadataMongoRepository: MetadataMongoRepository = app.injector.instanceOf[MetadataMongoRepository]
+    lazy val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
 
-    val controller = new MetadataController {
-      override val metadataService = metService
-      override val metricsService = metrService
-      override val resourceConn: AuthorisationResource = metadataMongo.repository
-      override val authConnector: AuthConnector = authCon
-    }
+    val controller = new MetadataController(metadataService, metricsService, metadataMongoRepository, authConnector, stubControllerComponents())
 
-    def dropMetadata(internalId: String = testInternalId) = await(metadataMongo.repository.collection.remove(Json.obj("internalId" -> internalId)))
-    def insertMetadata(metadata: Metadata = buildMetadata()) = await(metadataMongo.repository.createMetadata(metadata))
-    def getMetadata(regId: String = testRegistrationId) = await(metadataMongo.repository.retrieveMetadata(regId))
+    def dropMetadata(internalId: String = testInternalId): WriteResult =
+      await(metadataMongoRepository.collection.remove(Json.obj("internalId" -> internalId)))
+
+    def insertMetadata(metadata: Metadata = buildMetadata()): Future[Metadata] =
+      metadataMongoRepository.createMetadata(metadata)
+
+    def getMetadata(regId: String = testRegistrationId): Future[Option[Metadata]] =
+      metadataMongoRepository.retrieveMetadata(regId)
+
     dropMetadata()
   }
 
   "calling createMetadata" should {
-
     "return a 201" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson()))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson()))
 
-      val result = await(getResponse)
-      status(result) shouldBe CREATED
+      status(result) mustBe CREATED
     }
 
     "return a 400 with an invalid Json" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.createMetadata()(FakeRequest().withBody[JsValue](Json.parse("""{}""")))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](Json.parse("""{}""")))
 
-      val result = await(getResponse)
-      status(result) shouldBe BAD_REQUEST
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson("unmatchedInternalId")))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson("unmatchedInternalId")))
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
       dropMetadata("unmatchedInternalId")
     }
   }
 
   "calling searchMetadata" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.searchMetadata(FakeRequest())
-
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      val result: Future[Result] = controller.searchMetadata(FakeRequest())
+      status(result) mustBe NOT_FOUND
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.searchMetadata()(FakeRequest())
+      val result: Future[Result] = controller.searchMetadata()(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
+      status(result) mustBe OK
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.searchMetadata()(FakeRequest())
+      val result: Future[Result] = controller.searchMetadata()(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 
   "calling retrieveMetadata" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
+      status(result) mustBe OK
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 
   "calling removeMetadata" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.removeMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.removeMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
+      status(result) mustBe OK
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.removeMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
+
   "calling updateMetadata" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson()))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson()))
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a BadRequest if an invalid json is supplied" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateJson))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateJson))
 
-      val result = await(getResponse)
-      status(result) shouldBe BAD_REQUEST
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
-      val json = getMetadata()
-      json.isEmpty shouldBe false
-      json.get.completionCapacity shouldBe Some("Guardian")
+      status(result) mustBe OK
+      val json: Option[Metadata] = await(getMetadata())
+      json.isEmpty mustBe false
+      json.get.completionCapacity mustBe Some("Guardian")
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
-  "calling updateLastSignedIn" should {
 
+  "calling updateLastSignedIn" should {
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "2010-05-12"}""")))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "2010-05-12"}""")))
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a BadRequest if an invalid json is supplied" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "ACE12"}""")))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "ACE12"}""")))
 
-      val result = await(getResponse)
-      status(result) shouldBe BAD_REQUEST
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
+      await(insertMetadata())
 
-      insertMetadata()
-      def getResponse = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
-      val json = getMetadata()
-      json.isEmpty shouldBe false
-      json.get.lastSignedIn.toDateTime.dayOfMonth().get() shouldBe validNewDateTime.getDayOfMonth
-      json.get.lastSignedIn.toDateTime.monthOfYear().get() shouldBe validNewDateTime.getMonthValue
-      json.get.lastSignedIn.toDateTime.year().get() shouldBe validNewDateTime.getYear
+      status(result) mustBe OK
+      val json: Option[Metadata] = await(getMetadata())
+      json.isEmpty mustBe false
+      json.get.lastSignedIn.toDateTime.dayOfMonth().get() mustBe validNewDateTime.getDayOfMonth
+      json.get.lastSignedIn.toDateTime.monthOfYear().get() mustBe validNewDateTime.getMonthValue
+      json.get.lastSignedIn.toDateTime.year().get() mustBe validNewDateTime.getYear
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 }

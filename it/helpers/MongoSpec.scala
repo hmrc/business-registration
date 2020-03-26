@@ -16,18 +16,20 @@
 
 package helpers
 
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.test.Helpers._
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.indexes.Index
 import repositories.prepop.TTLIndexing
 import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Random
 
-trait MongoSpec extends UnitSpec with MongoSpecSupport with WithFakeApplication with RichReactiveRepository {
-  implicit val executionContext = scala.concurrent.ExecutionContext.Implicits.global
+trait MongoSpec extends PlaySpec with MongoSpecSupport with GuiceOneAppPerSuite with RichReactiveRepository {
+  implicit val executionContext: ExecutionContextExecutor = scala.concurrent.ExecutionContext.Implicits.global
 
   def generateOID: String = {
     val alpha = "abcdef123456789"
@@ -36,19 +38,25 @@ trait MongoSpec extends UnitSpec with MongoSpecSupport with WithFakeApplication 
 }
 
 trait RichReactiveRepository {
-  self: UnitSpec =>
+  self: PlaySpec =>
 
   import scala.language.implicitConversions
 
   implicit class MongoTTLOps[T](repo: ReactiveRepository[T, _] with TTLIndexing[T, _])(implicit ec: ExecutionContext) {
-    def awaitCount: Int = repo.count
-    def awaitInsert(e: T): WriteResult = repo.insert(e)
-    def awaitDrop: Boolean = repo.drop
-    def awaitEnsureIndexes: Seq[Boolean] = repo.ensureIndexes
+    def awaitCount: Int = await(repo.count)
 
-    def createIndex(index: Index): WriteResult = repo.collection.indexesManager.create(index)
-    def listIndexes: List[Index] = repo.collection.indexesManager.list()
-    def dropIndexes: Int = repo.collection.indexesManager.dropAll()
+    def awaitInsert(e: T): WriteResult = await(repo.insert(e))
+
+    def awaitDrop: Boolean = await(repo.drop)
+
+    def awaitEnsureIndexes: Seq[Boolean] = await(repo.ensureIndexes)
+
+    def createIndex(index: Index): WriteResult = await(repo.collection.indexesManager.create(index))
+
+    def listIndexes: List[Index] = await(repo.collection.indexesManager.list())
+
+    def dropIndexes: Int = await(repo.collection.indexesManager.dropAll())
+
     def findIndex(indexName: String): Option[Index] = listIndexes.find(_.eventualName == indexName)
   }
 
@@ -57,5 +65,6 @@ trait RichReactiveRepository {
   }
 
   implicit def impJsObjectHelpers(o: JsObject): JsObjectHelpers = new JsObjectHelpers(o)
+
   implicit def toJsObject(v: JsValue): JsObject = v.as[JsObject]
 }

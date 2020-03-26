@@ -17,97 +17,98 @@
 package services.prepop
 
 import helpers.AddressHelper
-import org.scalatest.mockito.MockitoSugar
-import play.api.libs.json.{JsObject, Json}
-import repositories.prepop.AddressMongoRepository
-import uk.gov.hmrc.play.test.UnitSpec
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.mockito.ArgumentMatchers.{any}
+import org.mockito.stubbing.OngoingStubbing
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.test.Helpers._
+import repositories.prepop.AddressRepository
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
+class AddressServiceSpec extends PlaySpec with MockitoSugar with AddressHelper {
 
-  val mockAddressesRepository = mock[AddressMongoRepository]
+  val mockAddressesRepository: AddressRepository = mock[AddressRepository]
 
   class Setup {
-    val service = new AddressService {
-      override val repository = mockAddressesRepository
-    }
+    val service = new AddressService(mockAddressesRepository)
 
-    def mockFetchAddresses(toReturn: Option[JsObject]) = when(mockAddressesRepository.fetchAddresses(any())(any())).thenReturn(Future.successful(toReturn))
-    def mockUpdateAddress(successful: Boolean) = when(mockAddressesRepository.insertAddress(any(), any())(any())).thenReturn(Future.successful(successful))
-    def mockUpdateTTL(successful: Boolean) = when(mockAddressesRepository.updateAddress(any(), any())(any())).thenReturn(Future.successful(successful))
+    def mockFetchAddresses(toReturn: Option[JsObject]): OngoingStubbing[Future[Option[JsObject]]] =
+      when(mockAddressesRepository.fetchAddresses(any())(any())).thenReturn(Future.successful(toReturn))
+
+    def mockUpdateAddress(successful: Boolean): OngoingStubbing[Future[Boolean]] =
+      when(mockAddressesRepository.insertAddress(any(), any())(any())).thenReturn(Future.successful(successful))
+
+    def mockUpdateTTL(successful: Boolean): OngoingStubbing[Future[Boolean]] =
+      when(mockAddressesRepository.updateAddress(any(), any())(any())).thenReturn(Future.successful(successful))
   }
 
   val regId = "reg-12345"
 
   "fetchAddresses" should {
-
     "return whatever is fetched from the repository" in new Setup {
-      val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId, withOid = false)))
+      val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId, withOid = false)))
 
       mockFetchAddresses(Some(returnedAddressJson))
 
-      val result = await(service.fetchAddresses(regId))
+      val result: Option[JsObject] = await(service.fetchAddresses(regId))
 
-      result shouldBe Some(returnedAddressJson)
+      result mustBe Some(returnedAddressJson)
     }
   }
 
   "updateAddress" should {
-
     "return true if the address doesn't already exist and the update is successful" in new Setup {
-      val suppliedAddressJson = buildAddressJson(regId, withOid = false)
+      val suppliedAddressJson: JsObject = buildAddressJson(regId, withOid = false)
 
       mockFetchAddresses(None)
       mockUpdateAddress(successful = true)
 
-      val result = await(service.updateAddress(regId, suppliedAddressJson))
+      val result: Boolean = await(service.updateAddress(regId, suppliedAddressJson))
 
-      result shouldBe true
+      result mustBe true
     }
 
     "return false if the address doesn't already exist but the update was unsuccessful" in new Setup {
-      val suppliedAddressJson = buildAddressJson(regId, withOid = false)
+      val suppliedAddressJson: JsObject = buildAddressJson(regId, withOid = false)
 
       mockFetchAddresses(None)
       mockUpdateAddress(successful = false)
 
-      val result = await(service.updateAddress(regId, suppliedAddressJson))
+      val result: Boolean = await(service.updateAddress(regId, suppliedAddressJson))
 
-      result shouldBe false
+      result mustBe false
     }
 
     "return true if the address already exists" in new Setup {
-      val suppliedAddressJson = buildAddressJson(regId, withOid = false)
-      val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId)))
+      val suppliedAddressJson: JsObject = buildAddressJson(regId, withOid = false)
+      val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId)))
 
       mockFetchAddresses(Some(returnedAddressJson))
       mockUpdateTTL(successful = true)
 
-      val result = await(service.updateAddress(regId, suppliedAddressJson))
+      val result: Boolean = await(service.updateAddress(regId, suppliedAddressJson))
 
-      result shouldBe true
+      result mustBe true
     }
   }
 
   "addressExists" should {
-
     "return true" when {
-
       "the returned address array contains the supplied address when only 1 address is returned" in new Setup {
-        val suppliedAddressJson = buildAddressJson(regId)
-        val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId)))
+        val suppliedAddressJson: JsObject = buildAddressJson(regId)
+        val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId)))
 
         mockFetchAddresses(Some(returnedAddressJson))
 
-        await(service.addressExists(regId, suppliedAddressJson)) shouldBe true
+        await(service.addressExists(regId, suppliedAddressJson)) mustBe true
       }
 
       "the returned address array contains the same supplied address but contains different cases" in new Setup {
-        val suppliedAddressJson = Json.parse(
+        val suppliedAddressJson: JsValue = Json.parse(
           s"""{
              |  "addressLine1" : "testAddressLine1",
              |  "addressLine2" : "testAddressLine2",
@@ -118,7 +119,7 @@ class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
              |}
              |""".stripMargin)
 
-        val returnedAddressJson = Json.parse(
+        val returnedAddressJson: JsValue = Json.parse(
           s"""{
              |"addresses" : [
              |  {
@@ -134,37 +135,36 @@ class AddressServiceSpec extends UnitSpec with MockitoSugar with AddressHelper {
 
         mockFetchAddresses(Some(returnedAddressJson))
 
-        await(service.addressExists(regId, suppliedAddressJson)) shouldBe true
+        await(service.addressExists(regId, suppliedAddressJson)) mustBe true
       }
 
       "the returned address array contains the supplied address when multiple addresses are returned" in new Setup {
-        val suppliedAddressJson = buildAddressJson(regId, withOid = false)
-        val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId), FetchOptions(regId, different = true)))
+        val suppliedAddressJson: JsObject = buildAddressJson(regId, withOid = false)
+        val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId), FetchOptions(regId, different = true)))
 
         mockFetchAddresses(Some(returnedAddressJson))
 
-        await(service.addressExists(regId, suppliedAddressJson)) shouldBe true
+        await(service.addressExists(regId, suppliedAddressJson)) mustBe true
       }
     }
 
     "return false" when {
-
       "the returned address array does not match the supplied address when only 1 address is returned" in new Setup {
-        val suppliedAddressJson = buildAddressJson(regId)
-        val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId, different = true)))
+        val suppliedAddressJson: JsObject = buildAddressJson(regId)
+        val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId, different = true)))
 
         mockFetchAddresses(Some(returnedAddressJson))
 
-        await(service.addressExists(regId, suppliedAddressJson)) shouldBe false
+        await(service.addressExists(regId, suppliedAddressJson)) mustBe false
       }
 
       "the returned address array does not match the supplied address when many addresses are returned" in new Setup {
-        val suppliedAddressJson = buildAddressJson(regId)
-        val returnedAddressJson = buildFetchedAddressJson(Seq(FetchOptions(regId, different = true), FetchOptions(regId, different = true)))
+        val suppliedAddressJson: JsObject = buildAddressJson(regId)
+        val returnedAddressJson: JsObject = buildFetchedAddressJson(Seq(FetchOptions(regId, different = true), FetchOptions(regId, different = true)))
 
         mockFetchAddresses(Some(returnedAddressJson))
 
-        await(service.addressExists(regId, suppliedAddressJson)) shouldBe false
+        await(service.addressExists(regId, suppliedAddressJson)) mustBe false
       }
     }
   }

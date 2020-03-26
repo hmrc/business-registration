@@ -20,18 +20,16 @@ import org.scalatestplus.play.PlaySpec
 
 class AddressSpec extends PlaySpec {
 
-  val addressLine1 = "testAddressLine1"
-  val postcode = "testPostcode"
-  val country = "testCountry"
+  val addressLine1: String = "testAddressLine1"
+  val postcode: String = "testPostcode"
+  val country: String = "testCountry"
 
-  val address = Address(addressLine1, Some(postcode), Some(country))
-  val addressNoPostcode = Address(addressLine1, None, Some(country))
-  val addressNoPostcodeOrCountry = Address(addressLine1, None, None)
+  val address: Address = Address(addressLine1, Some(postcode), Some(country))
+  val addressNoPostcode: Address = Address(addressLine1, None, Some(country))
+  val addressNoPostcodeOrCountry: Address = Address(addressLine1, None, None)
 
   "sameAs" should {
-
     "return true" when {
-
       "address line 1 and postcode are the same" in {
         val otherAddress = Address(addressLine1, Some(postcode), None)
 
@@ -52,7 +50,6 @@ class AddressSpec extends PlaySpec {
     }
 
     "return false" when {
-
       "address line 1 is the same but country and postcode are not set in either address" in {
         val otherAddress = Address(addressLine1, None, None)
 

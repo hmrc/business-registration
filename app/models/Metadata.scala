@@ -18,6 +18,8 @@ package models
 
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.functional.syntax._
+import play.api.libs.json.JodaReads.DefaultJodaDateTimeReads
+import play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
 import play.api.libs.json.{Json, _}
 
 case class Metadata(internalId: String,
@@ -31,7 +33,7 @@ case class Metadata(internalId: String,
 
 object Metadata extends MetadataValidator {
 
-  def now = DateTime.now(DateTimeZone.UTC)
+  def now: DateTime = DateTime.now(DateTimeZone.UTC)
 
   val writes: OWrites[Metadata] = (
     (__ \ "internalId").write[String] and
@@ -41,7 +43,7 @@ object Metadata extends MetadataValidator {
       (__ \ "submissionResponseEmail").writeNullable[String] and
       (__ \ "completionCapacity").writeNullable[String](completionCapacityValidator) and
       (__ \ "declareAccurateAndComplete").write[Boolean] and
-      (__ \ "lastSignedIn").write[DateTime]
+      (__ \ "lastSignedIn").write[DateTime](JodaDateTimeNumberWrites)
     )(unlift(Metadata.unapply))
 
   val reads: Reads[Metadata] = (
@@ -52,19 +54,19 @@ object Metadata extends MetadataValidator {
       (__ \ "submissionResponseEmail").readNullable[String] and
       (__ \ "completionCapacity").readNullable[String](completionCapacityValidator) and
       (__ \ "declareAccurateAndComplete").read[Boolean] and
-      (__ \ "lastSignedIn").read[DateTime].orElse(Reads.pure(Metadata.now))
+      (__ \ "lastSignedIn").readWithDefault[DateTime](Metadata.now)
     )(Metadata.apply _)
 
-  implicit val formats = OFormat(reads, writes)
+  implicit val formats: OFormat[Metadata] = OFormat(reads, writes)
 }
 
 case class MetadataRequest(language: String)
 
 object MetadataRequest extends MetadataValidator {
 
-  implicit val formats =
+  implicit val formats: OFormat[MetadataRequest] =
     (__ \ "language").format[String](languageValidator).inmap(lang => MetadataRequest(lang), (mR: MetadataRequest) => mR.language)
-    (MetadataRequest.apply _, unlift(MetadataRequest.unapply))
+  (MetadataRequest.apply _, unlift(MetadataRequest.unapply))
 }
 
 
@@ -72,24 +74,24 @@ case class Links(self: Option[String],
                  registration: Option[String] = None)
 
 object Links {
-  implicit val formats = Json.format[Links]
+  implicit val formats: OFormat[Links] = Json.format[Links]
 }
 
 case class MetadataResponse(registrationID: String,
                             formCreationTimestamp: String,
                             language: String,
-                            completionCapacity : Option[String])
+                            completionCapacity: Option[String])
 
 object MetadataResponse extends MetadataValidator {
 
-  implicit val formats = (
+  implicit val formats: OFormat[MetadataResponse] = (
     (__ \ "registrationID").format[String] and
-    (__ \ "formCreationTimestamp").format[String] and
-    (__ \ "language").format[String](languageValidator) and
-    (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator)
-    )(MetadataResponse.apply, unlift(MetadataResponse.unapply))
+      (__ \ "formCreationTimestamp").format[String] and
+      (__ \ "language").format[String](languageValidator) and
+      (__ \ "completionCapacity").formatNullable[String](completionCapacityValidator)
+    ) (MetadataResponse.apply, unlift(MetadataResponse.unapply))
 
-  def toMetadataResponse(metadata: Metadata) : MetadataResponse = {
+  def toMetadataResponse(metadata: Metadata): MetadataResponse = {
     MetadataResponse(
       metadata.registrationID,
       metadata.formCreationTimestamp,

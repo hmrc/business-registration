@@ -16,6 +16,7 @@
 
 package fixtures
 
+import reactivemongo.api.DefaultDB
 import uk.gov.hmrc.mongo.MongoConnector
 
 trait MongoFixture {
@@ -23,5 +24,5 @@ trait MongoFixture {
   private lazy val mongoUri: String = s"mongodb://127.0.0.1:27017/scrs"
   private lazy val conn = new MongoConnector(mongoUri)
 
-  lazy val mongoDB = conn.db
+  lazy val mongoDB: () => DefaultDB = conn.db
 }

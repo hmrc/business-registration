@@ -16,27 +16,25 @@
 
 package controllers.prePop
 
-import auth.AuthorisationResource
-import helpers.{AuthMocks, SCRSSpec}
+import helpers.SCRSSpec
+import mocks.AuthMocks
 import models.prepop.PermissionDenied
 import org.mockito.ArgumentMatchers
-import play.api.libs.json.{JsObject, Json}
-import play.api.test.FakeRequest
-import repositories.prepop.TradingNameRepository
-import uk.gov.hmrc.auth.core.AuthConnector
 import org.mockito.Mockito._
+import play.api.libs.json.Json
+import play.api.mvc.Result
+import play.api.test.FakeRequest
+import play.api.test.Helpers.stubControllerComponents
+import repositories.prepop.TradingNameRepository
 
 import scala.concurrent.Future
 
 class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
 
-  val mockTradingNameRepository = mock[TradingNameRepository]
+  val mockTradingNameRepository: TradingNameRepository = mock[TradingNameRepository]
 
   class Setup {
-    val controller = new TradingNameController {
-      override def authConnector: AuthConnector = mockAuthConnector
-      override val tradingNameRepo: TradingNameRepository = mockTradingNameRepository
-    }
+    val controller = new TradingNameController(mockTradingNameRepository, mockAuthConnector, stubControllerComponents())
   }
 
   "calling getTradingName" should {
@@ -46,7 +44,7 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.getTradingName(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.getTradingName("regId")(FakeRequest())
+      val result: Future[Result] = controller.getTradingName("regId")(FakeRequest())
       status(result) mustBe NO_CONTENT
     }
 
@@ -56,7 +54,7 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.getTradingName(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.successful(Some("foo bar wizz")))
 
-      val result = controller.getTradingName("regId")(FakeRequest())
+      val result: Future[Result] = controller.getTradingName("regId")(FakeRequest())
       status(result) mustBe OK
       bodyAsJson(result) mustBe Json.obj("tradingName" -> "foo bar wizz")
     }
@@ -67,13 +65,13 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.getTradingName(ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.failed(PermissionDenied("regId", "intId")))
 
-      val result = controller.getTradingName("regId")(FakeRequest())
+      val result: Future[Result] = controller.getTradingName("regId")(FakeRequest())
       status(result) mustBe FORBIDDEN
     }
 
     "return a 403 if the user is not logged in" in new Setup {
       mockNotLoggedIn
-      val result = controller.getTradingName("regId")(FakeRequest())
+      val result: Future[Result] = controller.getTradingName("regId")(FakeRequest())
       status(result) mustBe FORBIDDEN
     }
   }
@@ -85,7 +83,7 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.upsertTradingName(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.successful(Some("new foo bar wizz")))
 
-      val result = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
       status(result) mustBe OK
       bodyAsJson(result) mustBe Json.obj("tradingName" -> "new foo bar wizz")
     }
@@ -96,7 +94,7 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.upsertTradingName(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")))
       status(result) mustBe BAD_REQUEST
     }
 
@@ -106,7 +104,7 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.upsertTradingName(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
@@ -116,13 +114,13 @@ class TradingNameControllerSpec extends SCRSSpec with AuthMocks {
       when(mockTradingNameRepository.upsertTradingName(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any()))
         .thenReturn(Future.failed(PermissionDenied("regId", "intId")))
 
-      val result = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
       status(result) mustBe FORBIDDEN
     }
 
     "return a 403 if the user is not logged in" in new Setup {
       mockNotLoggedIn
-      val result = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName("regId")(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
       status(result) mustBe FORBIDDEN
     }
   }

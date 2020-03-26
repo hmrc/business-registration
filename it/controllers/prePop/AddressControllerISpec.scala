@@ -16,52 +16,52 @@
 
 package controllers.prePop
 
-import auth.AuthorisationResource
 import itutil.IntegrationSpecBase
-import play.api.http.Status._
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json._
+import play.api.mvc.Result
 import play.api.test.FakeRequest
-import reactivemongo.play.json._
-import repositories.prepop.AddressRepositoryImpl
-import services.prepop.{AddressService, AddressServiceImpl}
+import play.api.test.Helpers._
+import reactivemongo.api.commands.WriteResult
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import repositories.prepop.AddressRepository
+import services.prepop.AddressService
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class AddressControllerISpec extends IntegrationSpecBase {
 
   class Setup {
-    lazy val addressService      = app.injector.instanceOf[AddressServiceImpl]
-    lazy val addressMongo        = app.injector.instanceOf[AddressRepositoryImpl]
-    lazy val authCon             = app.injector.instanceOf[AuthConnector]
+    lazy val addressService: AddressService = app.injector.instanceOf[AddressService]
+    lazy val addressRepository: AddressRepository = app.injector.instanceOf[AddressRepository]
+    lazy val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
 
-    val controller = new AddressController {
-      override val service: AddressService = addressService
-      override val authConnector: AuthConnector = authCon
-      override val resourceConn: AuthorisationResource = addressMongo.repository
-    }
+    val controller = new AddressController(addressService, addressRepository, authConnector, stubControllerComponents())
 
-    def dropAddress(regId: String = testRegistrationId) =
-      await(addressMongo.repository.collection.remove(Json.obj("registration_id" -> regId)))
-    def insertAddress(regId: String = testRegistrationId, address: JsObject = validAddressJson ++ validIdsJson) =
-      await(addressMongo.repository.insertAddress(regId, address))
-    def getAddresses(regId: String = testRegistrationId) = await(addressMongo.repository.fetchAddresses(regId))
+    def dropAddress(regId: String = testRegistrationId): WriteResult =
+      await(addressRepository.collection.remove(Json.obj("registration_id" -> regId)))
+
+    def insertAddress(regId: String = testRegistrationId, address: JsObject = validAddressJson ++ validIdsJson): Boolean =
+      await(addressRepository.insertAddress(regId, address))
+
+    def getAddresses(regId: String = testRegistrationId): Option[JsObject] = await(addressRepository.fetchAddresses(regId))
 
     dropAddress()
   }
 
-  val validAddressJson = Json.parse(
+  val validAddressJson: JsObject = Json.parse(
     s"""
-      |{
-      | "addressLine1": "woooop",
-      | "postcode": "weeee",
-      | "country" : "noon12"
-      |}
+       |{
+       | "addressLine1": "woooop",
+       | "postcode": "weeee",
+       | "country" : "noon12"
+       |}
     """.stripMargin).as[JsObject]
 
-  val validIdsJson = Json.obj("registration_id" -> testRegistrationId, "internal_id" -> testInternalId)
+  val validIdsJson: JsObject = Json.obj("registration_id" -> testRegistrationId, "internal_id" -> testInternalId)
 
-  val invalidAddressJson = Json.parse(
+  val invalidAddressJson: JsObject = Json.parse(
     """
       |{
       | "postcode": "weeee",
@@ -69,7 +69,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
       |}
     """.stripMargin).as[JsObject]
 
-  val validUpdateAddressJson = Json.parse(
+  val validUpdateAddressJson: JsValue = Json.parse(
     """
       |{
       | "addressLine1": "newLine1",
@@ -80,68 +80,59 @@ class AddressControllerISpec extends IntegrationSpecBase {
 
 
   "calling getAddressDetails" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
-
       insertAddress()
-      def getResponse = controller.fetchAddresses(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe OK
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 
   "calling updateAddress" should {
-
     "return a BadRequest if an invalid json is supplied" in new Setup {
       stubSuccessfulLogin
-
       insertAddress()
-      def getResponse = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](invalidAddressJson))
 
-      val result = await(getResponse)
-      status(result) shouldBe BAD_REQUEST
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](invalidAddressJson))
+
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
-
       insertAddress()
-      def getResponse = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
-      val json = getAddresses()
-      json.isEmpty shouldBe false
-      ((json.get \ "addresses").as[Seq[JsValue]].head \ "addressLine1").asOpt[String] shouldBe Some("newLine1")
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
+
+      status(result) mustBe OK
+      val json: Option[JsObject] = getAddresses()
+      json.isEmpty mustBe false
+      ((json.get \ "addresses").as[Seq[JsValue]].head \ "addressLine1").asOpt[String] mustBe Some("newLine1")
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
-
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
+      status(result) mustBe FORBIDDEN
     }
   }
 }

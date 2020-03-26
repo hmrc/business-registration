@@ -21,8 +21,8 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 
-object TradingName{
-  def now = DateTime.now(DateTimeZone.UTC)
+object TradingName {
+  def now: DateTime = DateTime.now(DateTimeZone.UTC)
 
   def format: Format[String] = new Format[String] {
     override def writes(str: String): JsValue = Json.obj(
@@ -32,7 +32,7 @@ object TradingName{
     override def reads(json: JsValue): JsResult[String] = json.\("tradingName").validate[String]
   }
 
-  def mongoWrites(registrationID: String, internalID: String, dateTime: DateTime = now) = new OWrites[String] {
+  def mongoWrites(registrationID: String, internalID: String, dateTime: DateTime = now): OWrites[String] = new OWrites[String] {
     override def writes(tradingName: String): JsObject = {
       Json.obj(
         "_id" -> registrationID,
@@ -43,13 +43,13 @@ object TradingName{
     }
   }
 
-  val mongoTradingNameReads = new Reads[String] {
+  val mongoTradingNameReads: Reads[String] = new Reads[String] {
     def reads(json: JsValue): JsResult[String] = {
       (json \ "tradingName").validate[String]
     }
   }
 
-  val mongoInternalIdReads = new Reads[String] {
+  val mongoInternalIdReads: Reads[String] = new Reads[String] {
     def reads(json: JsValue): JsResult[String] = {
       (json \ "internalId").validate[String]
     }

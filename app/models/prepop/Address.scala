@@ -24,17 +24,17 @@ import scala.util.{Failure, Success, Try}
 
 object Address {
 
-  val mongoWrites = new OWrites[JsObject] {
+  val mongoWrites: OWrites[JsObject] = new OWrites[JsObject] {
     override def writes(o: JsObject): JsObject = {
       o.deepMerge(Json.obj("lastUpdated" -> Json.toJson(DateTime.now(DateTimeZone.UTC))(ReactiveMongoFormats.dateTimeWrite)))
     }
   }
 
-  val writes = new OWrites[JsObject] {
+  val writes: OWrites[JsObject] = new OWrites[JsObject] {
     override def writes(o: JsObject): JsObject = o
   }
 
-  val reads = new Reads[JsObject] {
+  val reads: Reads[JsObject] = new Reads[JsObject] {
     override def reads(json: JsValue): JsResult[JsObject] = {
       Try(json.as[JsObject]) match {
         case Success(v) => JsSuccess(v)
@@ -43,9 +43,9 @@ object Address {
     }
   }
 
-  val format = Format(reads, writes)
+  val format: Format[JsObject] = Format(reads, writes)
 
-  val addressReads = new Reads[Address] {
+  val addressReads: Reads[Address] = new Reads[Address] {
     override def reads(json: JsValue): JsResult[Address] = {
       val addressLine1 = (json \ "addressLine1").as[String]
       val postcode = (json \ "postcode").asOpt[String]
@@ -55,7 +55,7 @@ object Address {
     }
   }
 
-  val listReads = new Reads[Seq[Address]] {
+  val listReads: Reads[Seq[Address]] = new Reads[Seq[Address]] {
     override def reads(json: JsValue): JsResult[Seq[Address]] = {
       JsSuccess((json \ "addresses").as[Seq[JsObject]].map(_.as[Address](Address.addressReads)))
     }

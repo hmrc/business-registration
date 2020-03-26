@@ -20,72 +20,78 @@ import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
 import models.prepop.TradingName
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
-import repositories.MetadataMongo
-import repositories.prepop.{TradingNameMongo, TradingNameRepository}
-import play.api.http.Status._
-import reactivemongo.play.json._
+import play.api.test.Helpers._
+import reactivemongo.api.commands.{UpdateWriteResult, WriteResult}
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import repositories.prepop.TradingNameRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtures {
+
   class Setup {
-    lazy val tradingNameMongo     = app.injector.instanceOf[TradingNameMongo]
-    lazy val metadataMongo        = app.injector.instanceOf[MetadataMongo]
-    lazy val authCon              = app.injector.instanceOf[AuthConnector]
+    lazy val tradingNameRepository: TradingNameRepository = app.injector.instanceOf[TradingNameRepository]
+    lazy val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
 
-    val controller = new TradingNameController {
-      override val tradingNameRepo: TradingNameRepository = tradingNameMongo.repository
+    val controller: TradingNameController = new TradingNameController(tradingNameRepository, authConnector, stubControllerComponents())
 
-      override def authConnector: AuthConnector = authCon
-    }
+    def dropTradingName(intId: String = testInternalId, regId: String = testRegistrationId): WriteResult =
+      await(tradingNameRepository.collection.remove(Json.obj("_id" -> regId)))
 
-    def dropTradingName(intId: String = testInternalId, regId: String = testRegistrationId) =
-      await(tradingNameMongo.repository.collection.remove(Json.obj("_id" -> regId)))
-    def insertTradingName(regId: String = testRegistrationId, intId: String = testInternalId, tradingName: String = "foo bar wizz") =
-      await(tradingNameMongo.repository.collection.update(
+    def insertTradingName(regId: String = testRegistrationId, intId: String = testInternalId, tradingName: String = "foo bar wizz"): UpdateWriteResult =
+      await(tradingNameRepository.collection.update(
         Json.obj("_id" -> regId, "internalId" -> intId), TradingName.mongoWrites(regId, intId).writes(tradingName), upsert = true)
       )
-    def getTradingName(regId: String = testRegistrationId, intId: String = testInternalId) =
-      await(tradingNameMongo.repository.collection.find(Json.obj("_id" -> regId, "internalId" -> intId)).one[JsObject].flatMap{
+
+    def getTradingName(regId: String = testRegistrationId, intId: String = testInternalId): String =
+      await(tradingNameRepository.collection.find(Json.obj("_id" -> regId, "internalId" -> intId)).one[JsObject].map {
         case Some(x) => x.as[String](TradingName.mongoTradingNameReads)
       })
 
     dropTradingName()
   }
 
-  val invalidTradingNameJson  = Json.obj("tracingName" -> "foo bar wizz")
-  val validTradingNameJson    = Json.obj("tradingName" -> "foo bar wizz")
+  val invalidTradingNameJson: JsObject = Json.obj("tracingName" -> "foo bar wizz")
+  val validTradingNameJson: JsObject = Json.obj("tradingName" -> "foo bar wizz")
 
   "calling getTradingName" should {
     "return a 204 if no trading name is found" in new Setup {
       stubSuccessfulLogin
-      val result = controller.getTradingName(testRegistrationId)(FakeRequest())
-      status(result) shouldBe NO_CONTENT
+
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe NO_CONTENT
     }
 
     "return a trading name if one is found" in new Setup {
       stubSuccessfulLogin
       insertTradingName()
-      val result = controller.getTradingName(testRegistrationId)(FakeRequest())
-      status(result) shouldBe OK
-      bodyAsJson(result) shouldBe Json.obj("tradingName" -> "foo bar wizz")
+
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe OK
+      bodyAsJson(result) mustBe Json.obj("tradingName" -> "foo bar wizz")
     }
 
     "return a 403 if the user is not authorised" in new Setup {
       stubSuccessfulLogin
-
       insertTradingName(intId = "SomethingWrong")
 
-      val result = controller.getTradingName(testRegistrationId)(FakeRequest())
-      status(result) shouldBe FORBIDDEN
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe FORBIDDEN
     }
 
     "return a 403 if the user is not logged in" in new Setup {
       stubNotLoggedIn
-      val result = controller.getTradingName(testRegistrationId)(FakeRequest())
-      status(result) shouldBe FORBIDDEN
+
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe FORBIDDEN
     }
   }
 
@@ -93,33 +99,36 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return the trading name that was passed in" in new Setup {
       stubSuccessfulLogin
 
-      val result = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
 
-      status(result) shouldBe OK
-      bodyAsJson(result) shouldBe Json.obj("tradingName" -> "new foo bar wizz")
-      getTradingName() shouldBe "new foo bar wizz"
+      status(result) mustBe OK
+      bodyAsJson(result) mustBe Json.obj("tradingName" -> "new foo bar wizz")
+      getTradingName() mustBe "new foo bar wizz"
     }
 
     "return a 400 for incorrect json passed in" in new Setup {
       stubSuccessfulLogin
 
-      val result = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")))
-      status(result) shouldBe BAD_REQUEST
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")))
+
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a 403 if the user is not authorised" in new Setup {
       stubSuccessfulLogin
-
       insertTradingName(intId = "oooooops")
 
-      val result = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
-      status(result) shouldBe FORBIDDEN
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+
+      status(result) mustBe FORBIDDEN
     }
 
     "return a 403 if the user is not logged in" in new Setup {
       stubNotLoggedIn
-      val result = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
-      status(result) shouldBe FORBIDDEN
+
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+
+      status(result) mustBe FORBIDDEN
     }
   }
 }

@@ -18,23 +18,26 @@ package repositories
 
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.test.Helpers._
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.play.test.{WithFakeApplication, UnitSpec}
 
 import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
-class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with WithFakeApplication {
+class SequenceMongoRepositoryISpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with GuiceOneAppPerSuite {
 
   implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
 
   class Setup {
-    val repository = new SequenceRepositoryImpl()(fakeApplication)
+    val repository = new SequenceMongoRepository(app.injector.instanceOf[ReactiveMongoComponent])
     await(repository.removeAll())
     await(repository.ensureIndexes)
   }
 
-  override def afterAll() = new Setup {
+  override def afterAll(): Unit = new Setup {
     await(repository.removeAll())
   }
 
@@ -42,14 +45,14 @@ class SequenceMongoRepositoryISpec extends UnitSpec with MongoSpecSupport with B
 
   "Sequence repository" should {
     "should be able to get a sequence ID" in new Setup {
-      val response = await(repository.getNext(testSequence))
-      response shouldBe 1
+      val response: Int = await(repository.getNext(testSequence))
+      response mustBe 1
     }
 
     "get sequences, one after another from 1 to the end" in new Setup {
-      val inputs = 1 to 25
-      val outputs = inputs map { _ => await(repository.getNext(testSequence)) }
-      outputs shouldBe inputs
+      val inputs: Seq[Int] = 1 to 25
+      val outputs: Seq[Int] = inputs map { _ => await(repository.getNext(testSequence)) }
+      outputs mustBe inputs
     }
   }
 }

@@ -46,7 +46,7 @@ trait MetadataFixtures {
     declareAccurateAndComplete = true
   )
 
-  def buildMetadataResponse(regId: String = testRegistrationId) = {
+  def buildMetadataResponse(regId: String = testRegistrationId): MetadataResponse = {
     MetadataResponse(
       registrationID = regId,
       formCreationTimestamp = "2001-12-31T12:00:00Z",
@@ -55,16 +55,18 @@ trait MetadataFixtures {
     )
   }
 
-  def buildMetadataResponseJson(regId: String = testRegistrationId, lang: String = "ENG", cc: String = "Director") =
-    Json.parse(s"""{
-                  |"registrationID": "$regId",
-                  |"formCreationTimestamp": "2001-12-31T12:00:00Z",
-                  |"language": "$lang",
-                  |"completionCapacity": "$cc"
-                  |}""".stripMargin)
+  def buildMetadataResponseJson(regId: String = testRegistrationId, lang: String = "ENG", cc: String = "Director"): JsValue =
+    Json.parse(
+      s"""{
+         |"registrationID": "$regId",
+         |"formCreationTimestamp": "2001-12-31T12:00:00Z",
+         |"language": "$lang",
+         |"completionCapacity": "$cc"
+         |}""".stripMargin)
 
-  val invalidUpdateJson =
-    Json.parse(s"""{
-                  |"completionCapacity": "Fake"
-                  |}""".stripMargin)
+  val invalidUpdateJson: JsValue =
+    Json.parse(
+      s"""{
+         |"completionCapacity": "Fake"
+         |}""".stripMargin)
 }

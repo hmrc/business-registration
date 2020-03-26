@@ -17,55 +17,51 @@
 package controllers.prePop
 
 import controllers.helper.AuthControllerHelpers
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models.prepop.{ContactDetails, PermissionDenied}
-import play.api.libs.json.Json
-import play.api.mvc.{Action, Result}
-import repositories.MetadataMongo
-import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepository}
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import repositories.MetadataMongoRepository
+import repositories.prepop.ContactDetailsRepository
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ContactDetailsControllerImpl @Inject()(val repo: MetadataMongo,
-                                             val contactDetailsrepo: ContactDetailsMongo,
-                                             val authConnector: AuthConnector
-                                            ) extends ContactDetailsController {
+@Singleton
+class ContactDetailsController @Inject()(val resourceConn: MetadataMongoRepository,
+                                         contactDetailsRepository: ContactDetailsRepository,
+                                         val authConnector: AuthConnector,
+                                         controllerComponents: ControllerComponents
+                                        ) extends BackendController(controllerComponents) with AuthControllerHelpers {
 
-  lazy val resourceConn = repo.repository
-  lazy val cdRepository = contactDetailsrepo.repository
-}
-
-trait ContactDetailsController extends BaseController with AuthControllerHelpers {
-
-  val cdRepository: ContactDetailsRepository
-
-  def getContactDetails(registrationID : String)  = Action.async {
+  def getContactDetails(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthenticated(
         failure = authenticationResultHandler("getContactDetails"),
         success = { internalId =>
-        cdRepository.getContactDetails(registrationID, internalId) map (
+          contactDetailsRepository.getContactDetails(registrationID, internalId) map (
             _.fold[Result](NotFound)(s => Ok(Json.toJson(s)))
-          ) recover {
+            ) recover {
             case _: PermissionDenied => Forbidden
           }
         }
       )
   }
 
-  def insertUpdateContactDetails(registrationID: String) = Action.async(parse.json) {
+  def insertUpdateContactDetails(registrationID: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       isAuthenticated(
         failure = authenticationResultHandler("insertUpdateContactDetails"),
         success = { internalId =>
-        withJsonBody[ContactDetails] { js =>
-          cdRepository.upsertContactDetails(registrationID, internalId, js) map (
-            _.fold(NotFound)(x => Ok)
-          ) recover {
-            case _: PermissionDenied => Forbidden
+          withJsonBody[ContactDetails] { js =>
+            contactDetailsRepository.upsertContactDetails(registrationID, internalId, js) map (
+              _.fold(NotFound)(x => Ok)
+              ) recover {
+              case _: PermissionDenied => Forbidden
+            }
           }
         }
-      })
-    }
+      )
   }
+}

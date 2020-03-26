@@ -19,82 +19,81 @@ package repositories.prepop
 import models.prepop.PermissionDenied
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, Configuration}
-import play.modules.reactivemongo.ReactiveMongoComponent
+import play.api.test.Helpers._
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONElement, BSONLong}
 import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class TradingNameRepositoryISpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll
-  with ScalaFutures with Eventually with WithFakeApplication {
+class TradingNameRepositoryISpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterAll
+  with ScalaFutures with Eventually with GuiceOneAppPerSuite {
 
 
   val timeToExpire: Int = 9999
 
   val additionalConfig = Map("Test.microservice.services.prePop.ttl" -> s"$timeToExpire")
 
-  override lazy val fakeApplication: Application = new GuiceApplicationBuilder()
-    .bindings(bindModules:_*)
+  override lazy val app: Application = new GuiceApplicationBuilder()
     .configure(additionalConfig)
     .build()
 
-  implicit val app: Application = fakeApplication
-
   class Setup {
 
-    val repository: TradingNameRepoMongo = app.injector.instanceOf[TradingNameMongo].repository
+    val repository: TradingNameRepository = app.injector.instanceOf[TradingNameRepository]
     await(repository.removeAll())
     await(repository.ensureIndexes)
 
     def indexCount: Int = await(repository.collection.indexesManager.list).size
+
     def count: Int = await(repository.count)
   }
 
   "upsertTradingName" should {
     "add the trading name if none exists" in new Setup {
-      count shouldBe 0
+      count mustBe 0
       await(repository.upsertTradingName("regId", "intId", "my trading name"))
-      count shouldBe 1
+      count mustBe 1
     }
 
     "return Forbidden if user is not authorised" in new Setup {
-      count shouldBe 0
+      count mustBe 0
       await(repository.upsertTradingName("regId", "intId", "my trading name"))
-      count shouldBe 1
+      count mustBe 1
       intercept[PermissionDenied](await(repository.upsertTradingName("regId", "wrongIntId", "my trading name")))
     }
 
     "update trading name if it exists" in new Setup {
-      count shouldBe 0
+      count mustBe 0
       await(repository.upsertTradingName("regId", "intId", "my trading name"))
-      count shouldBe 1
-      val res = await(repository.upsertTradingName("regId", "intId", "my new trading name"))
-      count shouldBe 1
-      res shouldBe Some("my new trading name")
+      count mustBe 1
+      val res: Option[String] = await(repository.upsertTradingName("regId", "intId", "my new trading name"))
+      count mustBe 1
+      res mustBe Some("my new trading name")
     }
   }
 
   "getTradingName" should {
     "return none if nothing exists" in new Setup {
-      count shouldBe 0
-      await(repository.getTradingName("regId", "intId")) shouldBe None
+      count mustBe 0
+      await(repository.getTradingName("regId", "intId")) mustBe None
     }
 
     "return the trading name if one exists" in new Setup {
-      count shouldBe 0
+      count mustBe 0
       await(repository.upsertTradingName("regId", "intId", "my trading name"))
-      count shouldBe 1
-      await(repository.getTradingName("regId", "intId")) shouldBe Some("my trading name")
+      count mustBe 1
+      await(repository.getTradingName("regId", "intId")) mustBe Some("my trading name")
     }
 
     "return Forbidden if user is not authorised" in new Setup {
-      count shouldBe 0
+      count mustBe 0
       await(repository.upsertTradingName("regId", "intId", "my trading name"))
-      count shouldBe 1
+      count mustBe 1
       intercept[PermissionDenied](await(repository.getTradingName("regId", "wrongIntId")))
     }
   }
@@ -109,35 +108,35 @@ class TradingNameRepositoryISpec extends UnitSpec with MongoSpecSupport with Bef
 
       await(repository.collection.indexesManager.dropAll())
 
-      indexCount shouldBe 1 // default _id index
+      indexCount mustBe 1 // default _id index
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 2
+      indexCount mustBe 2
 
-      val indexes: List[Index] = repository.collection.indexesManager.list
+      val indexes: List[Index] = await(repository.collection.indexesManager.list)
 
-      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
+      indexes.exists(_.eventualName == "lastUpdatedIndex") mustBe true
+      getTTLIndex(repository).options.elements mustBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
 
     "overwrite the current ttl index with a new one from config" in new Setup {
 
       await(repository.collection.indexesManager.dropAll())
 
-      indexCount shouldBe 1 // default _id index
+      indexCount mustBe 1 // default _id index
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 2
+      indexCount mustBe 2
 
       await(repository.collection.indexesManager.drop("lastUpdatedIndex"))
 
-      indexCount shouldBe 1 // dropped ttl index
+      indexCount mustBe 1 // dropped ttl index
 
       val setupTTl: Int = 1
 
-      val setupTTLIndex = Index(
+      val setupTTLIndex: Index = Index(
         key = Seq("lastUpdated" -> IndexType.Ascending),
         name = Some("lastUpdatedIndex"),
         options = BSONDocument("expireAfterSeconds" -> BSONLong(setupTTl))
@@ -145,39 +144,39 @@ class TradingNameRepositoryISpec extends UnitSpec with MongoSpecSupport with Bef
 
       await(repository.collection.indexesManager.create(setupTTLIndex))
 
-      indexCount shouldBe 2 // created new ttl index
+      indexCount mustBe 2 // created new ttl index
 
-      val indexes: List[Index] = repository.collection.indexesManager.list
+      val indexes: List[Index] = await(repository.collection.indexesManager.list)
 
-      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(setupTTl)))
+      indexes.exists(_.eventualName == "lastUpdatedIndex") mustBe true
+      getTTLIndex(repository).options.elements mustBe Stream(BSONElement("expireAfterSeconds", BSONLong(setupTTl)))
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 2
+      indexCount mustBe 2
 
-      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
+      indexes.exists(_.eventualName == "lastUpdatedIndex") mustBe true
+      getTTLIndex(repository).options.elements mustBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
 
     "do nothing when ensuring the ttl index but one already exists and has the same expiration time" in new Setup {
       await(repository.collection.indexesManager.dropAll())
 
-      indexCount shouldBe 1 // default _id index
+      indexCount mustBe 1 // default _id index
 
       await(repository.ensureIndexes)
 
-      indexCount shouldBe 2
+      indexCount mustBe 2
 
-      val indexes: List[Index] = repository.collection.indexesManager.list
+      val indexes: List[Index] = await(repository.collection.indexesManager.list)
 
-      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
+      indexes.exists(_.eventualName == "lastUpdatedIndex") mustBe true
+      getTTLIndex(repository).options.elements mustBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
 
       await(repository.ensureIndexes)
 
-      indexes.exists(_.eventualName == "lastUpdatedIndex") shouldBe true
-      getTTLIndex(repository).options.elements shouldBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
+      indexes.exists(_.eventualName == "lastUpdatedIndex") mustBe true
+      getTTLIndex(repository).options.elements mustBe Stream(BSONElement("expireAfterSeconds", BSONLong(timeToExpire)))
     }
   }
 

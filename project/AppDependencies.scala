@@ -14,68 +14,47 @@
  * limitations under the License.
  */
 
+import play.sbt.PlayImport.ws
 import sbt._
 
 object AppDependencies {
 
-  def tmpMacWorkaround(): Seq[ModuleID] =
+  val tmpMacWorkaround: Seq[ModuleID] =
     if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac")))
       Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.17.1-osx-x86-64" % "runtime,test,it")
-    else Seq()
+    else
+      Seq()
 
-  def apply(): Seq[ModuleID] = MainDependencies() ++ UnitTestDependencies() ++ IntegrationTestDependencies() ++ tmpMacWorkaround()
-}
+  private val simpleReactive = "7.26.0-play-26"
+  private val bootstrap = "1.6.0"
+  private val domain = "5.6.0-play-26"
+  private val scheduling = "7.4.0-play-26"
+  private val mongoLock = "6.21.0-play-26"
+  private val authClientVersion = "2.35.0-play-26"
+  private val scalaTestPlusVersion = "3.1.3"
+  private val mockitoCore = "2.13.0"
+  private val reactiveMongo = "4.19.0-play-26"
+  private val wireMockVersion = "2.26.3"
+  private val playJsonVersion = "2.6.14"
 
-object MainDependencies {
-
-  private val simpleReactive    = "7.22.0-play-25"
-  private val bootstrap         = "5.1.0"
-  private val domain            = "5.6.0-play-25"
-  private val scheduling        = "7.1.0-play-25"
-  private val mongoLock         = "6.15.0-play-25"
-  private val authClientVersion = "2.32.0-play-25"
-
-  def apply(): Seq[ModuleID] = Seq(
-    "uk.gov.hmrc" %% "simple-reactivemongo"     % simpleReactive,
-    "uk.gov.hmrc" %% "bootstrap-play-25"        % bootstrap,
-    "uk.gov.hmrc" %% "domain"                   % domain,
-    "uk.gov.hmrc" %% "play-scheduling"          % scheduling,
-    "uk.gov.hmrc" %% "mongo-lock"               % mongoLock,
-    "uk.gov.hmrc" %% "auth-client"              % authClientVersion
-  )
-}
-
-trait CommonTestDependencies {
-  val hmrcTestVersion       = "3.9.0-play-25"
-  val scalaTestPlusVersion  = "2.0.1"
-  val mockitoCore           = "2.13.0"
-  val reactiveMongo         = "4.15.0-play-25"
-  val wireMockVersion       = "2.9.0"
-
-  val scope: Configuration
-  val dependencies : Seq[ModuleID]
-}
-
-object UnitTestDependencies extends CommonTestDependencies {
-  override val scope = Test
-  override val dependencies = Seq(
-    "uk.gov.hmrc"             %% "hmrctest"           % hmrcTestVersion       % scope,
-    "org.scalatestplus.play"  %% "scalatestplus-play" % scalaTestPlusVersion  % scope,
-    "uk.gov.hmrc"             %% "reactivemongo-test" % reactiveMongo         % scope,
-    "org.mockito"             %  "mockito-core"       % mockitoCore           % scope
+  val compile: Seq[ModuleID] = Seq(
+    "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
+    "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactive,
+    "uk.gov.hmrc" %% "bootstrap-play-26" % bootstrap,
+    "uk.gov.hmrc" %% "domain" % domain,
+    "uk.gov.hmrc" %% "play-scheduling" % scheduling,
+    "uk.gov.hmrc" %% "mongo-lock" % mongoLock,
+    "uk.gov.hmrc" %% "auth-client" % authClientVersion,
+    ws
   )
 
-  def apply() = dependencies
-}
-
-object IntegrationTestDependencies extends CommonTestDependencies {
-  override val scope = IntegrationTest
-  override val dependencies = Seq(
-    "uk.gov.hmrc"             %% "hmrctest"           % hmrcTestVersion       % scope,
-    "org.scalatestplus.play"  %% "scalatestplus-play" % scalaTestPlusVersion  % scope,
-    "uk.gov.hmrc"             %% "reactivemongo-test" % reactiveMongo         % scope,
-    "com.github.tomakehurst"  %  "wiremock"           % wireMockVersion       % scope
+  val test: Seq[ModuleID] = Seq(
+    "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusVersion % "test, it",
+    "uk.gov.hmrc" %% "reactivemongo-test" % reactiveMongo % "test, it",
+    "org.mockito" % "mockito-core" % mockitoCore % "test",
+    "com.github.tomakehurst" % "wiremock-jre8" % wireMockVersion % "it"
   )
 
-  def apply(): Seq[ModuleID] = dependencies
+  def apply(): Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
+
 }
