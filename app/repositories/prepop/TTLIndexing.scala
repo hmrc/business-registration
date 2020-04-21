@@ -19,7 +19,6 @@ package repositories.prepop
 import play.api.{Configuration, Logger}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONLong}
-
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +48,7 @@ trait TTLIndexing[A, ID] {
             doNothing
           case Some(index) =>
             Logger.info(s"[TTLIndex] document expiration value for collection : $colName has been changed. Updating ttl index to : $ttl")
-            deleteIndex(index) flatMap(_ => ensureLastUpdated)
+            deleteIndex(index) flatMap (_ => ensureLastUpdated)
           case _ =>
             Logger.info(s"[TTLIndex] TTL Index for collection : $colName does not exist. Creating TTL index")
             ensureLastUpdated
@@ -62,7 +61,7 @@ trait TTLIndexing[A, ID] {
 
   private def hasSameTTL(index: Index): Boolean = index.options.getAs[BSONLong](EXPIRE_AFTER_SECONDS).exists(_.as[Long] == ttl)
 
-  private def deleteIndex(index: Index)(implicit ec: ExecutionContext): Future[Int] = collection.indexesManager.drop(index.eventualName).map{ amountDropped =>
+  private def deleteIndex(index: Index)(implicit ec: ExecutionContext): Future[Int] = collection.indexesManager.drop(index.eventualName).map { amountDropped =>
     Logger.info(s"[deleteIndex] dropped $amountDropped for ${index.eventualName}")
     amountDropped
   }

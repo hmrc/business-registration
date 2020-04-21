@@ -18,25 +18,27 @@ package apis
 
 import models.Metadata
 import org.joda.time.DateTime
-import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
+import play.api.test.Helpers._
 import reactivemongo.api.commands.WriteResult
-import repositories.MetadataMongo
+import repositories.MetadataMongoRepository
 import uk.gov.hmrc.mongo.MongoSpecSupport
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AdminApiISpec extends UnitSpec with MongoSpecSupport with OneServerPerSuite {
+class AdminApiISpec extends PlaySpec with MongoSpecSupport with GuiceOneServerPerSuite {
 
   trait Setup {
-    val repo = app.injector.instanceOf[MetadataMongo].repository
-    await(repo.removeAll())
-    await(repo.ensureIndexes)
+    val metadataMongoRepository: MetadataMongoRepository = app.injector.instanceOf[MetadataMongoRepository]
+    await(metadataMongoRepository.removeAll())
+    await(metadataMongoRepository.ensureIndexes)
 
-    def count: Int = await(repo.count)
-    def insert(e: Metadata): WriteResult = await(repo.insert(e))
+    def count: Int = await(metadataMongoRepository.count)
+
+    def insert(e: Metadata): WriteResult = await(metadataMongoRepository.insert(e))
   }
 
   val regId = "reg-id-12345"
@@ -57,7 +59,7 @@ class AdminApiISpec extends UnitSpec with MongoSpecSupport with OneServerPerSuit
     "return a 200 and a business registration document as json when one is found for the supplied regId" in new Setup {
 
       insert(metadata)
-      count shouldBe 1
+      count mustBe 1
 
       val response: WSResponse = await(client(path).get())
 
@@ -74,17 +76,17 @@ class AdminApiISpec extends UnitSpec with MongoSpecSupport with OneServerPerSuit
            |}
       """.stripMargin)
 
-      response.status shouldBe 200
-      response.json shouldBe expected
+      response.status mustBe 200
+      response.json mustBe expected
     }
 
     "return a 404 when a business registration document is not found with the supplied regId" in new Setup {
 
-      count shouldBe 0
+      count mustBe 0
 
       val response: WSResponse = await(client(path).get())
 
-      response.status shouldBe 404
+      response.status mustBe 404
     }
   }
 }

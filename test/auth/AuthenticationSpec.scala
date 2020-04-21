@@ -19,6 +19,7 @@ package auth
 import helpers.SCRSSpec
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import play.api.mvc
 import play.api.mvc.Results
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderCarrier
@@ -27,22 +28,17 @@ import scala.concurrent.Future
 
 class AuthenticationSpec extends SCRSSpec {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val mockAuth = mock[AuthConnector]
+  val mockAuth: AuthConnector = mock[AuthConnector]
 
   object Authenticated extends Authenticated {
-    val authConnector = mockAuth
+    val authConnector: AuthConnector = mockAuth
   }
 
-  def failureCase(authResult: AuthenticationResult) = Future.successful(Results.Forbidden)
-
-//  before {
-//    reset(mockAuth)
-//  }
+  def failureCase(authResult: AuthenticationResult): Future[mvc.Results.Status] = Future.successful(Results.Forbidden)
 
   "The authentication helper" should {
-
     "provided a logged in auth result when there is a valid bearer token" in {
 
       val internalId = "internalId"
@@ -57,6 +53,7 @@ class AuthenticationSpec extends SCRSSpec {
       })
 
       val response = await(result)
+
       response.header.status mustBe OK
     }
 
@@ -71,6 +68,7 @@ class AuthenticationSpec extends SCRSSpec {
       })
 
       val response = await(result)
+
       response.header.status mustBe FORBIDDEN
     }
   }

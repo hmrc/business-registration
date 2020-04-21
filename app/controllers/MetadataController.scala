@@ -18,30 +18,27 @@ package controllers
 
 import auth._
 import controllers.helper.AuthControllerHelpers
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models._
 import org.joda.time.DateTime
+import play.api.libs.json.JodaReads._
+import play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.Action
-import repositories.MetadataMongo
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataControllerImpl @Inject()(val metadataService: MetadataService,
-                                       val metricsService: MetricsService,
-                                       metadataRepo: MetadataMongo,
-                                       val authConnector:AuthConnector)
-  extends MetadataController {
-  val resourceConn = metadataRepo.repository
-}
-
-trait MetadataController extends BaseController with Authorisation with AuthControllerHelpers {
-
-  val metadataService: MetadataService
-  val metricsService: MetricsService
-  val authConnector: AuthConnector
+@Singleton
+class MetadataController @Inject()(metadataService: MetadataService,
+                                   metricsService: MetricsService,
+                                   val resourceConn: MetadataMongoRepository,
+                                   val authConnector: AuthConnector,
+                                   controllerComponents: ControllerComponents
+                                  ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers {
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -49,37 +46,37 @@ trait MetadataController extends BaseController with Authorisation with AuthCont
       isAuthenticated(
         failure = authenticationResultHandler("createMetaData"),
         success = { internalId =>
-        val timer = metricsService.createMetadataTimer.time()
-        withJsonBody[MetadataRequest] {
-          req => {
-            metricsService.createFootprintCounter.inc()
-            metadataService.createMetadataRecord(internalId, req.language) map {
-              response => {
-                timer.stop()
-                Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
+          val timer = metricsService.createMetadataTimer.time()
+          withJsonBody[MetadataRequest] {
+            req => {
+              metricsService.createFootprintCounter.inc()
+              metadataService.createMetadataRecord(internalId, req.language) map {
+                response => {
+                  timer.stop()
+                  Created(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
+                }
               }
             }
           }
-        }
-      })
+        })
   }
 
-  def searchMetadata = Action.async {
+  def searchMetadata: Action[AnyContent] = Action.async {
     implicit request =>
       isAuthenticated(
         failure = authenticationResultHandler("searchMetaData"),
         success = { internalId =>
           val timer = metricsService.searchMetadataTimer.time()
           metadataService.searchMetadataRecord(internalId) map (
-            _.fold(NotFound(ErrorResponse.MetadataNotFound)){ response =>
+            _.fold(NotFound(ErrorResponse.MetadataNotFound)) { response =>
               timer.stop()
               Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(response.registrationID))
             }
-          )
-      })
+            )
+        })
   }
 
-  def retrieveMetadata(registrationID: String) = Action.async {
+  def retrieveMetadata(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationID)(
         failure = authorisationResultHandler("retrieveMetadata"),
@@ -87,30 +84,32 @@ trait MetadataController extends BaseController with Authorisation with AuthCont
           val timer = metricsService.retrieveMetadataTimer.time()
           metadataService.retrieveMetadataRecord(registrationID) map (
             _.fold(NotFound(ErrorResponse.MetadataNotFound)) {
-              response => timer.stop()
+              response =>
+                timer.stop()
                 Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
             }
-          )
-      })
+            )
+        })
   }
 
-  def removeMetadata(registrationID: String) = Action.async {
+  def removeMetadata(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationID)(
         failure = authorisationResultHandler("removeMetadata"),
         success = {
           val timer = metricsService.removeMetadataTimer.time()
           metadataService.removeMetadata(registrationID) map (
-            if (_){ timer.stop()
+            if (_) {
+              timer.stop()
               Ok
             } else {
               NotFound
             }
-          )
-      })
+            )
+        })
   }
 
-  def updateMetaData(registrationID : String) : Action[JsValue] = Action.async[JsValue](parse.json) {
+  def updateMetaData(registrationID: String): Action[JsValue] = Action.async[JsValue](parse.json) {
     implicit request =>
       isAuthorised(registrationID)(
         failure = authorisationResultHandler("updateMetadata"),
@@ -123,19 +122,19 @@ trait MetadataController extends BaseController with Authorisation with AuthCont
                   timer.stop()
                   Ok(Json.toJson(response).as[JsObject] ++ buildSelfLink(registrationID))
               }
-      }
-    })
+          }
+        })
   }
 
-  def updateLastSignedIn(registrationId: String) = Action.async(parse.json) {
+  def updateLastSignedIn(registrationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       isAuthorised(registrationId)(
         failure = authorisationResultHandler("updateLastSignedIn"),
         success = {
           withJsonBody[DateTime] { dT =>
-            metadataService.updateLastSignedIn(registrationId, dT) map { updatedDT => Ok(Json.toJson(updatedDT)) }
+            metadataService.updateLastSignedIn(registrationId, dT) map { updatedDT => Ok(Json.toJson(updatedDT)(JodaDateTimeNumberWrites)) }
           }
-      })
+        })
   }
 
   private[controllers] def buildSelfLink(registrationId: String): JsObject = {

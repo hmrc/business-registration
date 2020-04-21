@@ -17,44 +17,44 @@
 package controllers.prePop
 
 import controllers.helper.AuthControllerHelpers
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import models.prepop.{PermissionDenied, TradingName}
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, Result}
-import repositories.prepop.{TradingNameMongo, TradingNameRepository}
+import play.api.libs.json.{Format, JsValue, Json}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import repositories.prepop.TradingNameRepository
 import uk.gov.hmrc.auth.core.AuthConnector
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class TradingNameControllerImpl @Inject()(tradingNameMongo: TradingNameMongo,
-                                          val authConnector:AuthConnector) extends TradingNameController {
+@Singleton
+class TradingNameController @Inject()(tradingNameRepository: TradingNameRepository,
+                                      val authConnector: AuthConnector,
+                                      controllerComponents: ControllerComponents
+                                     ) extends BackendController(controllerComponents) with AuthControllerHelpers {
 
-  val tradingNameRepo: TradingNameRepository = tradingNameMongo.repository
-}
-trait TradingNameController extends BaseController with AuthControllerHelpers {
-  val tradingNameRepo: TradingNameRepository
-
-  def getTradingName(regId: String): Action[AnyContent] = Action.async{
-    implicit request => isAuthenticated(
-      failure = authenticationResultHandler("getTradingName"),
-      success = { internalId =>
-        tradingNameRepo.getTradingName(regId, internalId) map (
-          _.fold[Result](NoContent)(s => Ok(Json.toJson(s)(TradingName.format)))
-          ) recover {
-          case _: PermissionDenied => Forbidden
+  def getTradingName(regId: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      isAuthenticated(
+        failure = authenticationResultHandler("getTradingName"),
+        success = { internalId =>
+          tradingNameRepository.getTradingName(regId, internalId) map (
+            _.fold[Result](NoContent)(s => Ok(Json.toJson(s)(TradingName.format)))
+            ) recover {
+            case _: PermissionDenied => Forbidden
+          }
         }
-      }
-    )
+      )
   }
 
   def upsertTradingName(regId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      implicit val reads = TradingName.format
+      implicit val reads: Format[String] = TradingName.format
       isAuthenticated(
         failure = authenticationResultHandler("getTradingName"),
         success = { internalId =>
           withJsonBody[String] { tradingName =>
-            tradingNameRepo.upsertTradingName(regId, internalId, tradingName) map (
+            tradingNameRepository.upsertTradingName(regId, internalId, tradingName) map (
               _.fold[Result](InternalServerError)(s => Ok(Json.toJson(s)))
               ) recover {
               case _: PermissionDenied => Forbidden

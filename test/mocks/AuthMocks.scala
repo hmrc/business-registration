@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package helpers
+package mocks
 
 import auth.AuthorisationResource
 import fixtures.AuthFixture
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.Mockito._
+import org.mockito.Mockito.when
 import org.mockito.stubbing.OngoingStubbing
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.{AuthConnector, MissingBearerToken}
 
 import scala.concurrent.Future

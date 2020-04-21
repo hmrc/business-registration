@@ -18,20 +18,21 @@ package services
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
-import javax.inject.{Inject, Singleton}
 
 import akka.event.slf4j.Logger
+import javax.inject.{Inject, Singleton}
 import models.{Links, Metadata, MetadataResponse}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import repositories._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
+
 
 @Singleton
-class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: SequenceRepository) {
-  val metadataRepository = mongo.repository
+class MetadataService @Inject()(metadataRepository: MetadataMongoRepository, sequenceRepository: SequenceMongoRepository) {
+
   def createMetadataRecord(internalID: String, lang: String)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
     generateRegistrationId flatMap { regID =>
       val newMetadata = Metadata(
@@ -52,7 +53,7 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
     sequenceRepository.getNext("registrationID")
   }
 
-  private def generateTimestamp(timeStamp: DateTime) : String = {
+  private def generateTimestamp(timeStamp: DateTime): String = {
     val timeStampFormat = "yyyy-MM-dd'T'HH:mm:ssXXX"
     val UTC: TimeZone = TimeZone.getTimeZone("UTC")
     val format: SimpleDateFormat = new SimpleDateFormat(timeStampFormat)
@@ -61,20 +62,20 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
   }
 
   def searchMetadataRecord(internalID: String)(implicit ec: ExecutionContext): Future[Option[MetadataResponse]] = {
-    metadataRepository.searchMetadata(internalID).map{
+    metadataRepository.searchMetadata(internalID).map {
       case Some(data) => Some(MetadataResponse.toMetadataResponse(data))
       case None => None
     }
   }
 
   def retrieveMetadataRecord(registrationID: String)(implicit ec: ExecutionContext): Future[Option[MetadataResponse]] = {
-    metadataRepository.retrieveMetadata(registrationID).map{
+    metadataRepository.retrieveMetadata(registrationID).map {
       case Some(data) => Some(MetadataResponse.toMetadataResponse(data))
       case None => None
     }
   }
 
-  def updateMetaDataRecord(registrationID : String, newMetaData : MetadataResponse)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
+  def updateMetaDataRecord(registrationID: String, newMetaData: MetadataResponse)(implicit ec: ExecutionContext): Future[MetadataResponse] = {
     metadataRepository.updateMetaData(registrationID, newMetaData)
   }
 
@@ -92,6 +93,7 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
 
   def checkCompletionCapacity(regIds: Seq[String])(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
     val logger = "StartUp"
+
     def check(regId: String) = {
       metadataRepository.retrieveMetadata(regId) map {
         case Some(doc) =>
@@ -107,13 +109,15 @@ class MetadataService @Inject() (mongo: MetadataMongo, sequenceRepository: Seque
           false
       }
     }
+
     Future.sequence(regIds.map(check))
   }
 
   def updateCompletionCapacity(regId: String)(implicit ec: ExecutionContext): Future[Boolean] = {
-  metadataRepository.updateCompletionCapacity(regId, "director") map {
-    result => Logger("StartUpUpdateCompletionCapacity").info(s"updated completion capacity for regId: $regId - $result")
-      true
-  }
+    metadataRepository.updateCompletionCapacity(regId, "director") map {
+      result =>
+        Logger("StartUpUpdateCompletionCapacity").info(s"updated completion capacity for regId: $regId - $result")
+        true
+    }
   }
 }

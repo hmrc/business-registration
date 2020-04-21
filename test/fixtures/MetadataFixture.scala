@@ -29,7 +29,7 @@ trait MetadataFixture {
   private val COMPLETION_CAPACITY = Some("Director")
   private val DECLARE = true
 
-  def buildMetadataRequest(lang: String = LANG) = MetadataRequest(lang)
+  def buildMetadataRequest(lang: String = LANG): MetadataRequest = MetadataRequest(lang)
 
   def buildMetadata(internalId: String = INTERNAL_ID,
                     regId: String = REG_ID,
@@ -37,7 +37,7 @@ trait MetadataFixture {
                     lang: String = LANG,
                     subRespEmail: Option[String] = SUB_RESP_EMAIL,
                     completionCapacity: Option[String] = COMPLETION_CAPACITY,
-                    declare: Boolean = DECLARE) = {
+                    declare: Boolean = DECLARE): Metadata = {
     Metadata(
       internalId = internalId,
       registrationID = regId,
@@ -52,7 +52,7 @@ trait MetadataFixture {
   def buildMetadataResponse(regId: String = REG_ID,
                             timeStamp: String = TIMESTAMP,
                             lang: String = LANG,
-                            completionCapacity: Option[String] = COMPLETION_CAPACITY) = {
+                            completionCapacity: Option[String] = COMPLETION_CAPACITY): MetadataResponse = {
     MetadataResponse(
       registrationID = regId,
       formCreationTimestamp = timeStamp,
@@ -63,9 +63,9 @@ trait MetadataFixture {
 
 //  def buildSelfLinkJsObj2(regId: String = REG_ID) = Json.obj("links" ->Links(Some(s"/business-registration/business-tax-registration/$regId")))
 
-  def buildSelfLinkJsObj(regId: String = REG_ID) = Json.obj("links" ->Links(Some(controllers.routes.MetadataController.retrieveMetadata(regId).url)))
+  def buildSelfLinkJsObj(regId: String = REG_ID): JsObject = Json.obj("links" ->Links(Some(controllers.routes.MetadataController.retrieveMetadata(regId).url)))
 
-  lazy val metadataResponseJsObj = Json.toJson(buildMetadataResponse()).as[JsObject] ++ buildSelfLinkJsObj()
+  lazy val metadataResponseJsObj: JsObject = Json.toJson(buildMetadataResponse()).as[JsObject] ++ buildSelfLinkJsObj()
 
   lazy val validMetadataJson: JsValue = Json.toJson(buildMetadata())
 }

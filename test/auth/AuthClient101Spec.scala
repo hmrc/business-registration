@@ -16,29 +16,29 @@
 
 package auth
 
-import helpers.AuthMocks
+import mocks.AuthMocks
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
-import play.api.http.Status
-import play.api.mvc.{Action, Controller}
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import play.api.mvc.{Action, AnyContent}
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.retrieve.Retrievals._
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuthClient101Spec extends UnitSpec with MockitoSugar with AuthMocks {
+class AuthClient101Spec extends PlaySpec with MockitoSugar with AuthMocks {
 
-  implicit val hc = HeaderCarrier()
-
-  object TestController extends Controller with AuthorisedFunctions {
+  object TestController extends BackendController(stubControllerComponents()) with AuthorisedFunctions {
+    implicit val hc: HeaderCarrier = HeaderCarrier()
     val authConnector: AuthConnector = mockAuthConnector
 
-    def loginFunction = Action.async {
+    def loginFunction: Action[AnyContent] = Action.async {
       authorised() {
         Future.successful(Ok("dfs"))
       } recover {
@@ -46,7 +46,7 @@ class AuthClient101Spec extends UnitSpec with MockitoSugar with AuthMocks {
       }
     }
 
-    def getInternalId = Action.async {
+    def getInternalId: Action[AnyContent] = Action.async {
       authorised().retrieve(internalId) {
         x => Future.successful(x.fold(NotFound)(id => Ok))
       } recover {
@@ -60,29 +60,37 @@ class AuthClient101Spec extends UnitSpec with MockitoSugar with AuthMocks {
     "return a forbidden if user is not authorised" in {
       when(mockAuthConnector.authorise[Unit](ArgumentMatchers.any(),ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future(throw new Exception))
+
       val result = TestController.loginFunction(FakeRequest())
-      status(result) shouldBe Status.FORBIDDEN
+
+      status(result) mustBe FORBIDDEN
     }
+
     "return 200 if user is authorised" in {
       when(mockAuthConnector.authorise[Unit](ArgumentMatchers.any(),ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future())
 
       val result = TestController.loginFunction(FakeRequest())
-      status(result) shouldBe Status.OK
+
+      status(result) mustBe OK
     }
+
     "return not found if no internal id is present" in {
       when(mockAuthConnector.authorise[Option[String]](ArgumentMatchers.any(),ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future(None))
 
       val result = TestController.getInternalId(FakeRequest())
-      status(result) shouldBe Status.NOT_FOUND
+
+      status(result) mustBe NOT_FOUND
     }
+
     "return ok if internal id is present" in {
       when(mockAuthConnector.authorise[Option[String]](ArgumentMatchers.any(),ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
         .thenReturn(Future(Some("internalId")))
 
       val result = TestController.getInternalId(FakeRequest())
-      status(result) shouldBe Status.OK
+
+      status(result) mustBe OK
     }
   }
 

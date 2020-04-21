@@ -26,15 +26,17 @@ import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import scala.concurrent.Future
 
 sealed trait AuthenticationResult
+
 case object NotLoggedIn extends AuthenticationResult
+
 final case class LoggedIn(id: String) extends AuthenticationResult
 
 trait Authenticated extends AuthorisedFunctions {
 
   def isAuthenticated(failure: AuthenticationResult => Future[Result], success: String => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
     authorised().retrieve(internalId)(id => mapToAuthResult(id) match {
-      case LoggedIn(intId)  => success(intId)
-      case result           => failure(result)
+      case LoggedIn(intId) => success(intId)
+      case result => failure(result)
     }).recoverWith {
       case _: AuthorisationException => failure(NotLoggedIn)
       case err => Logger.error(s"[Authenticated][isAuthenticated] an error occured with message: ${err.getMessage()}")
@@ -42,7 +44,7 @@ trait Authenticated extends AuthorisedFunctions {
     }
   }
 
-  private def mapToAuthResult(internalId: Option[String]) : AuthenticationResult = {
+  private def mapToAuthResult(internalId: Option[String]): AuthenticationResult = {
     internalId.fold[AuthenticationResult](NotLoggedIn)(LoggedIn)
   }
 }

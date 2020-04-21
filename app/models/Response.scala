@@ -32,10 +32,10 @@
 
 package models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 
-case class Response(resp : String)
+case class Response(resp: String)
 
 object Response {
-  implicit val format = Json.format[Response]
+  implicit val format: OFormat[Response] = Json.format[Response]
 }

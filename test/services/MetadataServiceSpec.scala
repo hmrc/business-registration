@@ -21,28 +21,21 @@ import models.Metadata
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
-import org.scalactic.source.Position
-import org.scalatest.Tag
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import play.api.test.Helpers._
 import repositories._
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixture with MongoFixture {
+class MetadataServiceSpec extends PlaySpec with MockitoSugar with MetadataFixture with MongoFixture {
 
-  implicit val mongo = mongoDB
 
-  val mockMetadataRepository = mock[MetadataRepositoryMongo]
-  val mockMetadataMongo = mock[MetadataMongo]
-  val mockSequenceRepository = mock[SequenceRepository]
+  val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
+  val mockSequenceRepository: SequenceMongoRepository = mock[SequenceMongoRepository]
 
-  def setupService: MetadataService = {
-    new MetadataService(mockMetadataMongo, mockSequenceRepository){
-      override val metadataRepository = mockMetadataRepository
-    }
-  }
+  def setupService: MetadataService = new MetadataService(mockMetadataRepository, mockSequenceRepository)
 
   "calling createMetadataRecord" should {
 
@@ -55,7 +48,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(1))
 
       val result = service.createMetadataRecord("intId", "en")
-      await(result) shouldBe buildMetadataResponse()
+      await(result) mustBe buildMetadataResponse()
     }
   }
 
@@ -68,7 +61,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(Some(buildMetadata())))
 
       val result = service.retrieveMetadataRecord("testRegID")
-      await(result) shouldBe Some(buildMetadataResponse())
+      await(result) mustBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in {
@@ -76,7 +69,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(None))
 
       val result = service.retrieveMetadataRecord("testRegID")
-      await(result) shouldBe None
+      await(result) mustBe None
     }
   }
   "searchMetadataRecord" should {
@@ -87,7 +80,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       when(mockMetadataRepository.searchMetadata(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadata())))
       val result = service.searchMetadataRecord("testIntID")
-      await(result) shouldBe Some(buildMetadataResponse())
+      await(result) mustBe Some(buildMetadataResponse())
     }
 
     "return None if no document is retrieved" in {
@@ -95,7 +88,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(None))
 
       val result = service.searchMetadataRecord("testIntID")
-      await(result) shouldBe None
+      await(result) mustBe None
     }
   }
 
@@ -108,7 +101,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(buildMetadataResponse()))
 
       val result = service.updateMetaDataRecord("testIntID", buildMetadataResponse())
-      await(result) shouldBe buildMetadataResponse()
+      await(result) mustBe buildMetadataResponse()
     }
   }
 
@@ -121,7 +114,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(true))
 
       val result = service.removeMetadata("testIntID")
-      await(result) shouldBe true
+      await(result) mustBe true
     }
   }
   "update last signed in" should {
@@ -132,7 +125,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
         .thenReturn(Future.successful(currentTime))
 
       val result = service.updateLastSignedIn("testIntID", currentTime)
-      await(result) shouldBe currentTime
+      await(result) mustBe currentTime
     }
   }
 
@@ -143,7 +136,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       when(mockMetadataRepository.retrieveMetadata(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadata(regId = "regId"))))
 
-      await(service.checkCompletionCapacity(regId)) shouldBe Seq(true)
+      await(service.checkCompletionCapacity(regId)) mustBe Seq(true)
     }
 
     "return a false if regId is absent" in {
@@ -151,7 +144,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       when(mockMetadataRepository.retrieveMetadata(any())(any()))
         .thenReturn(Future.failed(new Exception))
 
-      await(service.checkCompletionCapacity(regId)) shouldBe Seq(false)
+      await(service.checkCompletionCapacity(regId)) mustBe Seq(false)
     }
 
     "return a false if no no document is returned" in {
@@ -159,7 +152,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       when(mockMetadataRepository.retrieveMetadata(any())(any()))
         .thenReturn(Future.successful(None))
 
-      await(service.checkCompletionCapacity(regId)) shouldBe Seq(false)
+      await(service.checkCompletionCapacity(regId)) mustBe Seq(false)
     }
 
     "return a sequence of booleans if more than one regId present" in {
@@ -171,7 +164,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       when(mockMetadataRepository.retrieveMetadata(eqTo("failed"))(any()))
         .thenReturn(Future.failed(new Exception))
 
-      await(service.checkCompletionCapacity(regIds)) shouldBe Seq(false, true)
+      await(service.checkCompletionCapacity(regIds)) mustBe Seq(false, true)
     }
   }
 
@@ -181,7 +174,7 @@ class MetadataServiceSpec extends UnitSpec with MockitoSugar with MetadataFixtur
       val regId = "123456"
       when(mockMetadataRepository.updateCompletionCapacity(any(),any())(any()))
         .thenReturn(Future.successful("director"))
-      await(service.updateCompletionCapacity(regId)) shouldBe true
+      await(service.updateCompletionCapacity(regId)) mustBe true
     }
   }
 }

@@ -17,39 +17,45 @@
 package controllers.prePop
 
 import auth.AuthorisationResource
-import helpers.{AuthMocks, SCRSSpec}
+import helpers.SCRSSpec
+import mocks.AuthMocks
 import models.prepop.{ContactDetails, PermissionDenied}
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
+import play.api.test.Helpers.stubControllerComponents
+import repositories.MetadataMongoRepository
 import repositories.prepop.ContactDetailsRepository
 
 import scala.concurrent.Future
 
 class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
 
-  val mockAuthorisationResource = mock[AuthorisationResource]
-  val mockContactDetailsRepo = mock[ContactDetailsRepository]
+  val mockAuthorisationResource: AuthorisationResource = mock[AuthorisationResource]
+  val mockContactDetailsRepo: ContactDetailsRepository = mock[ContactDetailsRepository]
+  val mockMetadataMongoRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
 
   class Setup {
-    val controller = new ContactDetailsController {
-      override val cdRepository: ContactDetailsRepository = mockContactDetailsRepo
-
-      override def authConnector = mockAuthConnector
-    }
+    val controller = new ContactDetailsController(
+      mockMetadataMongoRepository,
+      mockContactDetailsRepo,
+      mockAuthConnector,
+      stubControllerComponents()
+    )
   }
 
-  val validContactDetails = ContactDetails(
-    firstName       = Some("first"),
-    middleName      = Some("middle"),
-    surname         = Some("last"),
-    email           = Some("one@two.three"),
+  val validContactDetails: ContactDetails = ContactDetails(
+    firstName = Some("first"),
+    middleName = Some("middle"),
+    surname = Some("last"),
+    email = Some("one@two.three"),
     telephoneNumber = Some("1234567898765"),
-    mobileNumber    = Some("9876543321324")
+    mobileNumber = Some("9876543321324")
   )
 
-  val validContactDetailsJson = Json.parse(
+  val validContactDetailsJson: JsValue = Json.parse(
     """
       |{
       | "firstName": "first",
@@ -61,7 +67,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
       |}
     """.stripMargin)
 
-  val validUpdateContactDetailsJson = Json.parse(
+  val validUpdateContactDetailsJson: JsValue = Json.parse(
     """
       |{
       | "middleName": "newMiddle",
@@ -69,7 +75,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
       |}
     """.stripMargin)
 
-  val invalidUpdateContactDetailsJson = Json.parse(
+  val invalidUpdateContactDetailsJson: JsValue = Json.parse(
     """
       |{
       | "middleName": 12343,
@@ -80,10 +86,10 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
   "getContactDetails" should {
     "return OK if all goes well and contact details are found" in new Setup {
       mockSuccessfulAuthentication
-      when(mockContactDetailsRepo.getContactDetails(any(),any())(any()))
+      when(mockContactDetailsRepo.getContactDetails(any(), any())(any()))
         .thenReturn(Future.successful(Some(validContactDetails)))
 
-      val result = controller.getContactDetails("12345")(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails("12345")(FakeRequest())
 
       status(result) mustBe OK
       bodyAsJson(result) mustBe validContactDetailsJson
@@ -91,20 +97,20 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
 
     "return NotFound if no ContactDetails found" in new Setup {
       mockSuccessfulAuthentication
-      when(mockContactDetailsRepo.getContactDetails(any(),any())(any()))
+      when(mockContactDetailsRepo.getContactDetails(any(), any())(any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.getContactDetails("12345")(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails("12345")(FakeRequest())
 
       status(result) mustBe NOT_FOUND
     }
 
     "return forbidden if the the user is not authorised to get the record" in new Setup {
       mockSuccessfulAuthentication
-      when(mockContactDetailsRepo.getContactDetails(any(),any())(any()))
-        .thenReturn(Future.failed(PermissionDenied("12345","12345")))
+      when(mockContactDetailsRepo.getContactDetails(any(), any())(any()))
+        .thenReturn(Future.failed(PermissionDenied("12345", "12345")))
 
-      val result = controller.getContactDetails("12345")(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails("12345")(FakeRequest())
 
       status(result) mustBe FORBIDDEN
     }
@@ -112,7 +118,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
     "return a forbidden if the user is not logged in" in new Setup {
       mockNotLoggedIn
 
-      val result = controller.getContactDetails("12345")(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails("12345")(FakeRequest())
 
       status(result) mustBe FORBIDDEN
     }
@@ -124,7 +130,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
       when(mockContactDetailsRepo.upsertContactDetails(any(), any(), any())(any()))
         .thenReturn(Future.successful(Some(validContactDetails)))
 
-      val result = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validUpdateContactDetailsJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validUpdateContactDetailsJson))
 
       status(result) mustBe OK
     }
@@ -134,7 +140,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
       when(mockContactDetailsRepo.upsertContactDetails(any(), any(), any())(any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validContactDetailsJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validContactDetailsJson))
 
       status(result) mustBe NOT_FOUND
     }
@@ -142,9 +148,9 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
     "return forbidden if the the user is not authorised to get the record" in new Setup {
       mockSuccessfulAuthentication
       when(mockContactDetailsRepo.upsertContactDetails(any(), any(), any())(any()))
-        .thenReturn(Future.failed(PermissionDenied("12345","12345")))
+        .thenReturn(Future.failed(PermissionDenied("12345", "12345")))
 
-      val result = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody(validContactDetailsJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody(validContactDetailsJson))
 
       status(result) mustBe FORBIDDEN
     }
@@ -152,7 +158,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
     "return BadRequest if an invalid json is supplied" in new Setup {
       mockSuccessfulAuthentication
 
-      val result = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](invalidUpdateContactDetailsJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](invalidUpdateContactDetailsJson))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -160,7 +166,7 @@ class ContactDetailsControllerSpec extends SCRSSpec with AuthMocks {
     "return a forbidden if the user is not logged in" in new Setup {
       mockNotLoggedIn
 
-      val result = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validUpdateContactDetailsJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails("12345")(FakeRequest().withBody[JsValue](validUpdateContactDetailsJson))
 
       status(result) mustBe FORBIDDEN
     }

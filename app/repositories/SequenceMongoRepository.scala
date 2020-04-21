@@ -16,32 +16,21 @@
 
 package repositories
 
-import com.google.inject.ImplementedBy
 import javax.inject.{Inject, Singleton}
 import models.Metadata
-import play.api.Application
 import play.api.libs.json.{Format, JsValue}
-import reactivemongo.api.DB
+import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson._
 import reactivemongo.play.json._
 import repositories.CollectionsNames.SEQUENCE
-import repositories.InjectDB.injectDB
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-@ImplementedBy(classOf[SequenceRepositoryImpl])
-trait SequenceRepository {
-  def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int]
-}
-
-abstract class SequenceRepositoryBase(mongo: () => DB)(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
-  extends ReactiveRepository[Metadata, BSONObjectID](SEQUENCE, mongo, formats)
-    with SequenceRepository
-
 @Singleton
-class SequenceRepositoryImpl @Inject()(implicit app: Application) extends SequenceRepositoryBase(injectDB(app)) {
+class SequenceMongoRepository @Inject()(mongo: ReactiveMongoComponent)//(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
+  extends ReactiveRepository[Metadata, BSONObjectID](SEQUENCE, mongo.mongoConnector.db, Metadata.formats) {
 
   def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int] = {
     val selector = BSONDocument("_id" -> sequence)

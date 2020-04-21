@@ -18,35 +18,37 @@ package controllers.prePop
 
 import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
-import models.Metadata
 import models.prepop.ContactDetails
 import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.http.Status._
-import repositories.MetadataMongo
-import repositories.prepop.{ContactDetailsMongo, ContactDetailsRepository}
-import reactivemongo.play.json._
+import play.api.test.Helpers._
+import reactivemongo.api.commands.WriteResult
+import reactivemongo.play.json.ImplicitBSONHandlers._
+import repositories.MetadataMongoRepository
+import repositories.prepop.ContactDetailsRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFixtures {
 
   class Setup {
-    lazy val contactDetailsMongo  = app.injector.instanceOf[ContactDetailsMongo]
-    lazy val metadataMongo        = app.injector.instanceOf[MetadataMongo]
-    lazy val authCon              = app.injector.instanceOf[AuthConnector]
+    lazy val contactDetailsRepository: ContactDetailsRepository = app.injector.instanceOf[ContactDetailsRepository]
+    lazy val metadataMongoRepository: MetadataMongoRepository = app.injector.instanceOf[MetadataMongoRepository]
+    lazy val authConnector: AuthConnector = app.injector.instanceOf[AuthConnector]
 
-    val controller = new ContactDetailsController {
-      override val cdRepository: ContactDetailsRepository = contactDetailsMongo.repository
-      override def authConnector: AuthConnector = authCon
-    }
+    val controller = new ContactDetailsController(metadataMongoRepository, contactDetailsRepository, authConnector, stubControllerComponents())
 
-    def dropContactDetails(internalId: String = testInternalId, regId: String = testRegistrationId) =
-      await(contactDetailsMongo.repository.collection.remove(Json.obj("_id" -> regId, "InternalID" -> internalId)))
-    def insertContactDetails(regId: String = testRegistrationId, intId: String = testInternalId, contact: ContactDetails = validContactDetails) =
-      await(contactDetailsMongo.repository.upsertContactDetails(regId, intId, contact))
-    def getContactDetails(regId: String = testRegistrationId, intId: String = testInternalId) = await(contactDetailsMongo.repository.getContactDetails(regId, intId))
+    def dropContactDetails(internalId: String = testInternalId, regId: String = testRegistrationId): WriteResult =
+      await(contactDetailsRepository.collection.remove(Json.obj("_id" -> regId, "InternalID" -> internalId)))
+
+    def insertContactDetails(regId: String = testRegistrationId, intId: String = testInternalId, contact: ContactDetails = validContactDetails): Option[ContactDetails] =
+      await(contactDetailsRepository.upsertContactDetails(regId, intId, contact))
+
+    def getContactDetails(regId: String = testRegistrationId, intId: String = testInternalId): Option[ContactDetails] =
+      await(contactDetailsRepository.getContactDetails(regId, intId))
 
     dropContactDetails()
   }
@@ -60,7 +62,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     mobileNumber = Some("987382728372")
   )
 
-  val validUpdateContactJson = Json.parse(
+  val validUpdateContactJson: JsValue = Json.parse(
     """
       |{
       | "firstName"  : "first",
@@ -69,7 +71,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
       |}
     """.stripMargin)
 
-  val invalidUpdateContactJson = Json.parse(
+  val invalidUpdateContactJson: JsValue = Json.parse(
     """
       |{
       | "middleName" : true
@@ -77,68 +79,60 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     """.stripMargin)
 
   "calling getContactDetails" should {
-
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      def getResponse = controller.getContactDetails(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe NOT_FOUND
+      status(result) mustBe NOT_FOUND
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
-
       insertContactDetails()
-      def getResponse = controller.getContactDetails(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
+
+      status(result) mustBe OK
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.getContactDetails(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 
   "calling insertUpdateContactDetails" should {
-
     "return a BadRequest if an invalid json is supplied" in new Setup {
       stubSuccessfulLogin
-
       insertContactDetails()
-      def getResponse = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateContactJson))
 
-      val result = await(getResponse)
-      status(result) shouldBe BAD_REQUEST
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateContactJson))
+
+      status(result) mustBe BAD_REQUEST
     }
 
     "return a 200 with a response body" in new Setup {
       stubSuccessfulLogin
-
       insertContactDetails()
-      def getResponse = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateContactJson))
 
-      val result = await(getResponse)
-      status(result) shouldBe OK
-      val json = getContactDetails()
-      json.isEmpty shouldBe false
-      json.get.middleName shouldBe Some("newMiddle")
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateContactJson))
+
+      status(result) mustBe OK
+      val json: Option[ContactDetails] = getContactDetails()
+      json.isEmpty mustBe false
+      json.get.middleName mustBe Some("newMiddle")
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      def getResponse = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
 
-      val result = await(getResponse)
-      status(result) shouldBe FORBIDDEN
+      status(result) mustBe FORBIDDEN
     }
   }
 }

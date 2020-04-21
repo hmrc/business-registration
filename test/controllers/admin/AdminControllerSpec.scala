@@ -18,21 +18,23 @@ package controllers.admin
 
 import fixtures.MetadataFixture
 import helpers.SCRSSpec
-import models.{ErrorResponse, MetadataResponse}
-import services.MetadataService
-import org.mockito.ArgumentMatchers.{any, eq => eqTo}
+import models.ErrorResponse
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import play.api.libs.json.Json
+import play.api.mvc.Result
 import play.api.test.FakeRequest
+import play.api.test.Helpers.stubControllerComponents
+import services.MetadataService
 
 import scala.concurrent.Future
 
 class AdminControllerSpec extends SCRSSpec with MetadataFixture {
 
-  val mockMetadataService = mock[MetadataService]
+  val mockMetadataService: MetadataService = mock[MetadataService]
 
   class Setup {
-    val controller = new AdminController(mockMetadataService)
+    val controller = new AdminController(mockMetadataService, stubControllerComponents())
 
     when(mockMetadataService.buildSelfLink(any()))
       .thenReturn(buildSelfLinkJsObj())
@@ -43,25 +45,27 @@ class AdminControllerSpec extends SCRSSpec with MetadataFixture {
       when(mockMetadataService.retrieveMetadataRecord(any())(any()))
         .thenReturn(Future.successful(Some(buildMetadataResponse())))
 
-      val result = controller.retrieveBusinessRegistration("12345")(FakeRequest())
+      val result: Future[Result] = controller.retrieveBusinessRegistration("12345")(FakeRequest())
 
       status(result) mustBe OK
       bodyAsJson(result) mustBe metadataResponseJsObj
     }
+
     "return and NotFound with an error code if no metadata is found" in new Setup {
       when(mockMetadataService.retrieveMetadataRecord(any())(any()))
         .thenReturn(Future.successful(None))
 
-      val result = controller.retrieveBusinessRegistration("12345")(FakeRequest())
+      val result: Future[Result] = controller.retrieveBusinessRegistration("12345")(FakeRequest())
 
       status(result) mustBe NOT_FOUND
       bodyAsJson(result) mustBe Json.toJson(ErrorResponse("404", "Could not find metadata record"))
     }
+
     "throw an exception if an exception occurs in retrieving the metadata" in new Setup {
       when(mockMetadataService.retrieveMetadataRecord(any())(any()))
         .thenReturn(Future.failed(new IllegalStateException()))
 
-      val result = controller.retrieveBusinessRegistration("12345")(FakeRequest())
+      val result: Future[Result] = controller.retrieveBusinessRegistration("12345")(FakeRequest())
 
       intercept[IllegalStateException](await(result))
     }
@@ -76,6 +80,7 @@ class AdminControllerSpec extends SCRSSpec with MetadataFixture {
         status(controller.removeMetadata("12345")(FakeRequest())) mustBe OK
       }
     }
+
     "return NotFound" when {
       "no metadata is found" in new Setup {
         when(mockMetadataService.removeMetadata(any())(any()))
@@ -83,6 +88,7 @@ class AdminControllerSpec extends SCRSSpec with MetadataFixture {
 
         status(controller.removeMetadata("12345")(FakeRequest())) mustBe NOT_FOUND
       }
+
       "throw an exception" when {
         "an exception occurs in retrieving the metadata" in new Setup {
           when(mockMetadataService.removeMetadata(any())(any()))

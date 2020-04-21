@@ -18,17 +18,13 @@ package models
 
 import fixtures.MetadataFixture
 import org.joda.time.chrono.ISOChronology
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import org.scalatestplus.play.PlaySpec
-import play.api.data.validation.ValidationError
-import play.api.libs.json.{JsPath, Json}
+import play.api.libs.json.{JsPath, Json, JsonValidationError}
 
 class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixture {
 
-  def now = DateTime.now(DateTimeZone.UTC)
-
   "Metadata" should {
-
     "Be able to be parsed from JSON without a last signed in entry " in {
       val json = Json.parse(
         """
@@ -50,7 +46,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
     }
 
     "Be able to be parsed from JSON and the generated date time is now " in {
-      val json = Json.parse(
+      lazy val json = Json.parse(
         """
           |{
           | "internalId":"tiid",
@@ -62,9 +58,9 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
           | "declareAccurateAndComplete":true
           |}""".stripMargin)
 
-      val before = now.getMillis
+      val before = Metadata.now.getMillis
       val lastSignedIn = Json.fromJson[Metadata](json)(Metadata.reads).get.lastSignedIn.getMillis
-      val after = now.getMillis
+      val after = Metadata.now.getMillis
 
       lastSignedIn >= before && lastSignedIn <= after mustBe true
     }
@@ -73,21 +69,20 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
       val dateTime = DateTime.now(ISOChronology.getInstance())
       val json = Json.parse(
         s"""
-          |{
-          | "internalId":"tiid",
-          | "registrationID":"regId",
-          | "formCreationTimestamp":"2001-12-31T12:00:00Z",
-          | "language":"ENG",
-          | "submissionResponseEmail":"email@test.com",
-          | "completionCapacity":"Director",
-          | "declareAccurateAndComplete":true,
-          | "lastSignedIn" : ${dateTime.getMillis}
-          |}""".stripMargin)
+           |{
+           | "internalId":"tiid",
+           | "registrationID":"regId",
+           | "formCreationTimestamp":"2001-12-31T12:00:00Z",
+           | "language":"ENG",
+           | "submissionResponseEmail":"email@test.com",
+           | "completionCapacity":"Director",
+           | "declareAccurateAndComplete":true,
+           | "lastSignedIn" : ${dateTime.getMillis}
+           |}""".stripMargin)
 
       val result = json.validate[Metadata]
       result.isSuccess mustBe true
       val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true, dateTime)
-
       result.get mustBe expected
     }
 
@@ -105,7 +100,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
       val result = json.validate[Metadata]
 
-      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
+      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(JsonValidationError("Invalid completion capacity")))
     }
 
     "fail validation when an invalid language is present" in {
@@ -122,12 +117,11 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
           |}""".stripMargin)
       val result = json.validate[Metadata]
 
-      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(JsonValidationError("Language must either be 'ENG' or 'CYM'")))
     }
   }
 
   "MetadataResponse" should {
-
     "Be able to be parsed from JSON" in {
       val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"ENG","completionCapacity":"Director"}""")
       val expected = buildMetadataResponse()
@@ -140,19 +134,18 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
       val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"test-to-fail","completionCapacity":"Director"}""")
       val result = json.validate[MetadataResponse]
 
-      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(JsonValidationError("Language must either be 'ENG' or 'CYM'")))
     }
 
     "fail validation when an incorrect completion capacity is present" in {
       val json = Json.parse("""{"registrationID":"0123456789","formCreationTimestamp":"2001-12-31T12:00:00Z","language":"ENG","completionCapacity":"123£$test-to-fail"}""")
       val result = json.validate[MetadataResponse]
 
-      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(ValidationError("Invalid completion capacity")))
+      mustHaveErrors(result, JsPath \ "completionCapacity", Seq(JsonValidationError("Invalid completion capacity")))
     }
   }
 
   "MetadataRequest" should {
-
     "Be able to be parsed from JSON when language is 'ENG'" in {
       val json = Json.parse("""{"language":"ENG"}""")
       val expected = MetadataRequest("ENG")
@@ -173,7 +166,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
       val json = Json.parse("""{"language":"toFail"}""")
       val result = json.validate[MetadataRequest]
 
-      mustHaveErrors(result, JsPath \ "language", Seq(ValidationError("Language must either be 'ENG' or 'CYM'")))
+      mustHaveErrors(result, JsPath \ "language", Seq(JsonValidationError("Language must either be 'ENG' or 'CYM'")))
     }
   }
 }

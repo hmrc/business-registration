@@ -25,7 +25,7 @@ trait AuthorisationResource {
     * @return I - The registration id of the logged in user
     *         String - The internal ID of the logged in user
     */
-  def getInternalId(id: String)(implicit ec: ExecutionContext) : Future[Option[String]]
+  def getInternalId(id: String)(implicit ec: ExecutionContext): Future[Option[String]]
 
   def getInternalIds(registrationId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = Future.successful(Seq.empty)
 }

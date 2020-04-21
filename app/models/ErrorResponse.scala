@@ -16,12 +16,12 @@
 
 package models
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Json, OFormat}
 
 case class ErrorResponse(statusCode: String, message: String)
 
-object ErrorResponse{
-  implicit val formats = Json.format[ErrorResponse]
+object ErrorResponse {
+  implicit val formats: OFormat[ErrorResponse] = Json.format[ErrorResponse]
 
   def toJson(res: ErrorResponse): JsValue = {
     Json.toJson(res)
@@ -29,5 +29,5 @@ object ErrorResponse{
 
   lazy val MetadataNotFound: JsValue = toJson(ErrorResponse("404", "Could not find metadata record"))
 
-  lazy val UserNotFound : JsValue = toJson(ErrorResponse("404","Could not find user record"))
+  lazy val UserNotFound: JsValue = toJson(ErrorResponse("404", "Could not find user record"))
 }
