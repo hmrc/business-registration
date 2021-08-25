@@ -26,25 +26,23 @@ object AppDependencies {
       Seq()
 
   private val simpleReactive = "7.30.0-play-26"
-  private val bootstrap = "1.6.0"
+  private val bootstrap = "5.12.0"
   private val domain = "5.6.0-play-26"
   private val scheduling = "7.4.0-play-26"
   private val mongoLock = "6.23.0-play-26"
-  private val authClientVersion = "2.35.0-play-26"
   private val scalaTestPlusVersion = "3.1.3"
   private val mockitoCore = "2.13.0"
-  private val reactiveMongo = "4.21.0-play-26"
+  private val reactiveMongo = "5.0.0-play-26"
   private val wireMockVersion = "2.26.3"
   private val playJsonVersion = "2.6.14"
 
   val compile: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
     "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactive,
-    "uk.gov.hmrc" %% "bootstrap-play-26" % bootstrap,
+    "uk.gov.hmrc" %% "bootstrap-backend-play-26" % bootstrap,
     "uk.gov.hmrc" %% "domain" % domain,
     "uk.gov.hmrc" %% "play-scheduling" % scheduling,
     "uk.gov.hmrc" %% "mongo-lock" % mongoLock,
-    "uk.gov.hmrc" %% "auth-client" % authClientVersion,
     ws
   )
 
@@ -52,7 +50,8 @@ object AppDependencies {
     "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusVersion % "test, it",
     "uk.gov.hmrc" %% "reactivemongo-test" % reactiveMongo % "test, it",
     "org.mockito" % "mockito-core" % mockitoCore % "test",
-    "com.github.tomakehurst" % "wiremock-jre8" % wireMockVersion % "it"
+    "com.github.tomakehurst" % "wiremock-jre8" % wireMockVersion % "it",
+    "org.pegdown" % "pegdown" % "1.6.0" % "test, it"
   )
 
   def apply(): Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround

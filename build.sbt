@@ -29,7 +29,7 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory): _*)
+  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin): _*)
   .settings(scoverageSettings: _*)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
@@ -39,16 +39,10 @@ lazy val microservice = Project(appName, file("."))
   .settings(majorVersion := 1)
   .settings(
     libraryDependencies ++= AppDependencies(),
-    dependencyOverrides ++= Set(
-      "com.typesafe.akka" %% "akka-actor" % "2.5.23",
-      "com.typesafe.akka" %% "akka-protobuf" % "2.5.23",
-      "com.typesafe.akka" %% "akka-slf4j" % "2.5.23",
-      "com.typesafe.akka" %% "akka-stream" % "2.5.23"
-    ),
     retrieveManaged := true,
     evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
     routesGenerator := InjectedRoutesGenerator,
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.12.14",
     Keys.fork in Test := true,
     resolvers ++= Seq(Resolver.bintrayRepo("hmrc", "releases"), Resolver.jcenterRepo
     )

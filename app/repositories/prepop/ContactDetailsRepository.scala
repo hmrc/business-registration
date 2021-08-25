@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import repositories.CollectionsNames.CONTACTDETAILS
 import uk.gov.hmrc.mongo.ReactiveRepository
 
 import scala.collection.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -50,7 +49,7 @@ class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val conf
     }
   }
 
-  private def fetchLatestIndexes: Future[List[Index]] = {
+  private def fetchLatestIndexes(implicit ec: ExecutionContext): Future[List[Index]] = {
     collection.indexesManager.list() map { indexes =>
       indexes.map { index =>
         val indexOptions = index.options.elements.toString()
