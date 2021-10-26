@@ -17,27 +17,27 @@
 package controllers.helper
 
 import auth._
-import play.api.Logger
+import play.api.Logging
 import play.api.mvc.Result
 import play.api.mvc.Results._
 
 import scala.concurrent.Future
 
-trait AuthControllerHelpers extends Authenticated {
+trait AuthControllerHelpers extends Authenticated with Logging {
   def authenticationResultHandler(methodName: String)(authResult: AuthenticationResult): Future[Result] = authResult match {
-    case NotLoggedIn => Logger.info(s"[Authentication] [$methodName] User not logged in")
+    case NotLoggedIn => logger.info(s"[Authentication] [$methodName] User not logged in")
       Future.successful(Forbidden)
   }
 
   def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] = authResult match {
     case NotLoggedInOrAuthorised =>
-      Logger.info(s"[Authorisation] [$methodName] User not logged in")
+      logger.info(s"[Authorisation] [$methodName] User not logged in")
       Future.successful(Forbidden)
     case NotAuthorised(_) =>
-      Logger.info(s"[Authorisation] [$methodName] User logged in but not authorised for resource $regId")
+      logger.info(s"[Authorisation] [$methodName] User logged in but not authorised for resource $regId")
       Future.successful(Forbidden)
     case AuthResourceNotFound(_) =>
-      Logger.info(s"[Authorisation] [$methodName] Could not match an Auth resource to registration id $regId")
+      logger.info(s"[Authorisation] [$methodName] Could not match an Auth resource to registration id $regId")
       Future.successful(NotFound)
   }
 

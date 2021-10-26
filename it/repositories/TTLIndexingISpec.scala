@@ -18,14 +18,15 @@ package repositories
 
 import helpers.MongoSpec
 import org.scalatest.concurrent.Eventually
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Format, Json}
 import play.api.test.Helpers._
-import play.api.{Application, Configuration}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONElement, BSONLong, BSONObjectID}
 import repositories.prepop.TTLIndexing
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,13 +48,13 @@ class TTLIndexingISpec extends MongoSpec with Eventually {
     implicit val format: Format[TestCaseClass] = Json.format[TestCaseClass]
   }
 
-  val config: Configuration = app.injector.instanceOf(classOf[Configuration])
+  val config: ServicesConfig = app.injector.instanceOf(classOf[ServicesConfig])
 
   class TestTTLRepository extends ReactiveRepository[TestCaseClass, BSONObjectID](collectionName = "test-collection", mongo, TestCaseClass.format)
     with TTLIndexing[TestCaseClass, BSONObjectID] {
 
 
-    override val configuration: Configuration = config
+    override val configuration: ServicesConfig = config
 
     override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
       //Explicitly passing in execution context due to ambiguous inheritance

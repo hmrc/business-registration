@@ -16,10 +16,8 @@
 
 package repositories.prepop
 
-import javax.inject.{Inject, Singleton}
 import models.prepop.{ContactDetails, PermissionDenied}
 import play.api.libs.json.JsObject
-import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
@@ -27,12 +25,14 @@ import reactivemongo.play.json._
 import repositories.CollectionsNames
 import repositories.CollectionsNames.CONTACTDETAILS
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: Configuration) extends
+class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends
   ReactiveRepository[ContactDetails, BSONObjectID](
     collectionName = CONTACTDETAILS,
     mongo.mongoConnector.db,
@@ -53,7 +53,7 @@ class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val conf
     collection.indexesManager.list() map { indexes =>
       indexes.map { index =>
         val indexOptions = index.options.elements.toString()
-        Logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.CONTACTDETAILS} \n" +
+        logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.CONTACTDETAILS} \n" +
           s"Index : ${index.eventualName} \n" +
           s"""keys : ${
             index.key match {

@@ -16,21 +16,21 @@
 
 package repositories.prepop
 
-import javax.inject.{Inject, Singleton}
 import models.prepop.{PermissionDenied, TradingName}
 import play.api.libs.json._
-import play.api.{Configuration, Logger}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
 import repositories.CollectionsNames
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TradingNameRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: Configuration) extends
+class TradingNameRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends
   ReactiveRepository[String, BSONObjectID](
     collectionName = CollectionsNames.TRADING_NAME,
     mongo.mongoConnector.db,
@@ -49,7 +49,7 @@ class TradingNameRepository @Inject()(mongo: ReactiveMongoComponent, val configu
     collection.indexesManager.list() map { indexes =>
       indexes.map { index =>
         val indexOptions = index.options.elements.toString()
-        Logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.TRADING_NAME} \n" +
+        logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.TRADING_NAME} \n" +
           s"Index : ${index.eventualName} \n" +
           s"""keys : ${
             index.key match {

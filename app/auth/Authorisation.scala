@@ -16,11 +16,12 @@
 
 package auth
 
-import play.api.Logger
+import play.api.Logging
 import play.api.mvc.Result
 import uk.gov.hmrc.auth.core.retrieve.Retrievals.internalId
 import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -34,7 +35,7 @@ final case class Authorised(intId: String) extends AuthorisationResult
 
 final case class AuthResourceNotFound(intId: String) extends AuthorisationResult
 
-trait Authorisation extends AuthorisedFunctions {
+trait Authorisation extends AuthorisedFunctions with Logging {
   val resourceConn: AuthorisationResource
 
   def isAuthorised(id: String)(failure: (String, AuthorisationResult) => Future[Result], success: => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
@@ -44,7 +45,7 @@ trait Authorisation extends AuthorisedFunctions {
         case result => failure(id, result)
       })).recoverWith {
       case _: AuthorisationException => failure(id, NotLoggedInOrAuthorised)
-      case err => Logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
+      case err => logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
         throw err
     }
   }

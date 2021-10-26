@@ -17,10 +17,8 @@
 package repositories.prepop
 
 import auth.AuthorisationResource
-import javax.inject.{Inject, Singleton}
 import models.prepop.Address
 import org.joda.time.{DateTime, DateTimeZone}
-import play.api.Configuration
 import play.api.libs.json.JodaWrites.JodaDateTimeWrites
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -28,13 +26,15 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
 import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class AddressRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: Configuration) extends ReactiveRepository[JsObject, BSONObjectID](
+class AddressRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends ReactiveRepository[JsObject, BSONObjectID](
   collectionName = "SharedAddresses",
   mongo = mongo.mongoConnector.db,
   domainFormat = Address.format
@@ -70,7 +70,7 @@ class AddressRepository @Inject()(mongo: ReactiveMongoComponent, val configurati
 
   def fetchAddresses(regId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
     find(regIdSelector(regId)) map { addressList =>
-      if (addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id")))(Writes.traversableWrites[JsObject]))) else None
+      if (addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id")))(Writes.list[JsObject]))) else None
     }
   }
 
