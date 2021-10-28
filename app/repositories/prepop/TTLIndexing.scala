@@ -16,19 +16,19 @@
 
 package repositories.prepop
 
-import play.api.{Configuration, Logger}
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONDocument, BSONLong}
 import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TTLIndexing[A, ID] {
   self: ReactiveRepository[A, ID] =>
 
-  val configuration: Configuration
+  val configuration: ServicesConfig
 
-  lazy val ttl: Long = configuration.getLong("microservice.services.prePop.ttl").getOrElse(throw new Exception("Can't find key prePop.ttl"))
+  lazy val ttl: Long = configuration.getInt("microservice.services.prePop.ttl")
 
   private val colName: String = self.collection.name
 
@@ -44,13 +44,13 @@ trait TTLIndexing[A, ID] {
 
         ttlIndex match {
           case Some(index) if hasSameTTL(index) =>
-            Logger.info(s"[TTLIndex] document expiration value for collection : $colName has not been changed")
+            logger.info(s"[TTLIndex] document expiration value for collection : $colName has not been changed")
             doNothing
           case Some(index) =>
-            Logger.info(s"[TTLIndex] document expiration value for collection : $colName has been changed. Updating ttl index to : $ttl")
+            logger.info(s"[TTLIndex] document expiration value for collection : $colName has been changed. Updating ttl index to : $ttl")
             deleteIndex(index) flatMap (_ => ensureLastUpdated)
           case _ =>
-            Logger.info(s"[TTLIndex] TTL Index for collection : $colName does not exist. Creating TTL index")
+            logger.info(s"[TTLIndex] TTL Index for collection : $colName does not exist. Creating TTL index")
             ensureLastUpdated
         }
       }
@@ -62,13 +62,13 @@ trait TTLIndexing[A, ID] {
   private def hasSameTTL(index: Index): Boolean = index.options.getAs[BSONLong](EXPIRE_AFTER_SECONDS).exists(_.as[Long] == ttl)
 
   private def deleteIndex(index: Index)(implicit ec: ExecutionContext): Future[Int] = collection.indexesManager.drop(index.eventualName).map { amountDropped =>
-    Logger.info(s"[deleteIndex] dropped $amountDropped for ${index.eventualName}")
+    logger.info(s"[deleteIndex] dropped $amountDropped for ${index.eventualName}")
     amountDropped
   }
 
   private def errorHandler: PartialFunction[Throwable, Future[Seq[Boolean]]] = {
     case ex =>
-      Logger.error(s"[TTLIndex] Exception thrown in TTLIndexing", ex)
+      logger.error(s"[TTLIndex] Exception thrown in TTLIndexing", ex)
       throw ex
   }
 
@@ -80,7 +80,7 @@ trait TTLIndexing[A, ID] {
         options = BSONDocument(EXPIRE_AFTER_SECONDS -> BSONLong(ttl))
       )
     ))).map { ensured =>
-      Logger.info(s"[TTLIndex] Ensuring ttl index on field : $LAST_UPDATED_INDEX in collection : $colName is set to $ttl")
+      logger.info(s"[TTLIndex] Ensuring ttl index on field : $LAST_UPDATED_INDEX in collection : $colName is set to $ttl")
       ensured
     }
   }

@@ -20,7 +20,7 @@ import auth.AuthorisationResource
 import javax.inject.{Inject, Singleton}
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.Logging
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson._
@@ -77,7 +77,7 @@ class MetadataMongoRepository @Inject()(mongo: ReactiveMongoComponent) extends
     val selector = regIDMetadataSelector(regID)
     collection.update(selector, BSONDocument("$set" -> BSONDocument("completionCapacity" -> newMetaData.completionCapacity))) map { res =>
       if (!res.ok) {
-        Logger.error(s"Failed to update metadata. Error: ${res.errmsg.getOrElse("")} for registration ud ${newMetaData.registrationID}")
+        logger.error(s"Failed to update metadata. Error: ${res.errmsg.getOrElse("")} for registration ud ${newMetaData.registrationID}")
       }
       newMetaData
     }

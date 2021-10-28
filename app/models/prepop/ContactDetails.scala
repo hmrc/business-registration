@@ -17,7 +17,7 @@
 package models.prepop
 
 import org.joda.time.{DateTime, DateTimeZone}
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -32,8 +32,8 @@ case class ContactDetails(firstName: Option[String],
                           mobileNumber: Option[String]
                          )
 
-case class PermissionDenied(registrationID: String, internalID: String) extends NoStackTrace {
-  Logger.error("The contact details allocated to the RegistrationID: " + registrationID + ", was requested to be accessed by a user that appeared authorised " +
+case class PermissionDenied(registrationID: String, internalID: String) extends NoStackTrace with Logging {
+  logger.error("The contact details allocated to the RegistrationID: " + registrationID + ", was requested to be accessed by a user that appeared authorised " +
     "but their internalID: " + internalID + " did not match the records InternalID")
 }
 

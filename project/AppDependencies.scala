@@ -25,23 +25,21 @@ object AppDependencies {
     else
       Seq()
 
-  private val simpleReactive = "7.30.0-play-26"
-  private val bootstrap = "5.12.0"
-  private val domain = "5.6.0-play-26"
-  private val scheduling = "7.4.0-play-26"
-  private val mongoLock = "6.23.0-play-26"
-  private val scalaTestPlusVersion = "3.1.3"
+  private val simpleReactive = "8.0.0-play-28"
+  private val bootstrap = "5.16.0"
+  private val domain = "6.2.0-play-28"
+  private val mongoLock = "7.0.0-play-28"
+  private val scalaTestPlusVersion = "5.0.0"
   private val mockitoCore = "2.13.0"
-  private val reactiveMongo = "5.0.0-play-26"
-  private val wireMockVersion = "2.26.3"
+  private val reactiveMongo = "5.0.0-play-28"
+  private val wireMockVersion = "2.27.2"
   private val playJsonVersion = "2.6.14"
 
   val compile: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
     "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactive,
-    "uk.gov.hmrc" %% "bootstrap-backend-play-26" % bootstrap,
+    "uk.gov.hmrc" %% "bootstrap-backend-play-28" % bootstrap,
     "uk.gov.hmrc" %% "domain" % domain,
-    "uk.gov.hmrc" %% "play-scheduling" % scheduling,
     "uk.gov.hmrc" %% "mongo-lock" % mongoLock,
     ws
   )

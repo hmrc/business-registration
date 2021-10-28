@@ -18,7 +18,6 @@ package controllers.prePop
 
 import auth.Authorisation
 import controllers.helper.AuthControllerHelpers
-import javax.inject.{Inject, Singleton}
 import models.prepop.Address
 import play.api.libs.json._
 import play.api.mvc._
@@ -26,8 +25,9 @@ import repositories.prepop.AddressRepository
 import services.prepop.AddressService
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -51,7 +51,7 @@ class AddressController @Inject()(addressService: AddressService,
         })
   }
 
-  def updateAddress(registrationId: String): Action[JsValue] = Action.async(BodyParsers.parse.json) {
+  def updateAddress(registrationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       withJsonBody[JsObject] {
         authenticatedToUpdate(registrationId, _) { address =>
