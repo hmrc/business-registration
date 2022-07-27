@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return a 204 if no trading name is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NO_CONTENT
     }
@@ -71,7 +71,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
       stubSuccessfulLogin
       insertTradingName()
 
-      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       bodyAsJson(result) mustBe Json.obj("tradingName" -> "foo bar wizz")
@@ -81,7 +81,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
       stubSuccessfulLogin
       insertTradingName(intId = "SomethingWrong")
 
-      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -89,7 +89,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return a 403 if the user is not logged in" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getTradingName(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -99,7 +99,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return the trading name that was passed in" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       bodyAsJson(result) mustBe Json.obj("tradingName" -> "new foo bar wizz")
@@ -109,7 +109,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return a 400 for incorrect json passed in" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tracingName" -> "new foo bar wizz")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -118,7 +118,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
       stubSuccessfulLogin
       insertTradingName(intId = "oooooops")
 
-      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -126,7 +126,7 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
     "return a 403 if the user is not logged in" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")))
+      val result: Future[Result] = controller.upsertTradingName(testRegistrationId)(FakeRequest().withBody(Json.obj("tradingName" -> "new foo bar wizz")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }

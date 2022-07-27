@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import com.github.tomakehurst.wiremock.http.HttpHeaders
+import com.github.tomakehurst.wiremock.http.HttpHeaders.noHeaders
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.libs.ws.{WSClient, WSRequest}
@@ -55,45 +57,45 @@ trait WiremockHelper {
   def stubGet(url: String, status: Integer, body: String): StubMapping =
     stubFor(get(urlMatching(url))
       .willReturn(
-        aResponse().
-          withStatus(status).
-          withBody(body)
+        aResponse()
+          .withStatus(status)
+          .withBody(body)
       )
     )
 
   def stubPost(url: String, status: Integer, responseBody: String): StubMapping =
     stubFor(post(urlMatching(url))
       .willReturn(
-        aResponse().
-          withStatus(status).
-          withBody(responseBody)
+        aResponse()
+          .withStatus(status)
+          .withBody(responseBody)
       )
     )
 
   def stubPut(url: String, status: Integer, responseBody: String): StubMapping =
     stubFor(put(urlMatching(url))
       .willReturn(
-        aResponse().
-          withStatus(status).
-          withBody(responseBody)
+        aResponse()
+          .withStatus(status)
+          .withBody(responseBody)
       )
     )
 
   def stubPatch(url: String, status: Integer, responseBody: String): StubMapping =
     stubFor(patch(urlMatching(url))
       .willReturn(
-        aResponse().
-          withStatus(status).
-          withBody(responseBody)
+        aResponse()
+          .withStatus(status)
+          .withBody(responseBody)
       )
     )
 
   def stubDelete(url: String, status: Integer, responseBody: String): StubMapping =
     stubFor(delete(urlMatching(url))
       .willReturn(
-        aResponse().
-          withStatus(status).
-          withBody(responseBody)
+        aResponse()
+          .withStatus(status)
+          .withBody(responseBody)
       )
     )
 }

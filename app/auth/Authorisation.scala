@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,19 +38,24 @@ final case class AuthResourceNotFound(intId: String) extends AuthorisationResult
 trait Authorisation extends AuthorisedFunctions with Logging {
   val resourceConn: AuthorisationResource
 
-  def isAuthorised(id: String)(failure: (String, AuthorisationResult) => Future[Result], success: => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
+  def isAuthorised(id: String
+                  )(failure: (String, AuthorisationResult) => Future[Result],
+                    success: => Future[Result]
+                  )(implicit hc: HeaderCarrier): Future[Result] =
+
     authorised().retrieve(internalId)(intId => resourceConn.getInternalId(id) flatMap (
       resource => mapToAuthResult(intId, resource) match {
         case Authorised(_) => success
         case result => failure(id, result)
       })).recoverWith {
-      case _: AuthorisationException => failure(id, NotLoggedInOrAuthorised)
-      case err => logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage()}")
+      case _: AuthorisationException =>
+        failure(id, NotLoggedInOrAuthorised)
+      case err =>
+        logger.error(s"[Authorisation][isAuthorised] an error occurred for regId: $id with message: ${err.getMessage}")
         throw err
     }
-  }
 
-  private[auth] def mapToAuthResult(internalId: Option[String], resource: Option[String]): AuthorisationResult = {
+  private[auth] def mapToAuthResult(internalId: Option[String], resource: Option[String]): AuthorisationResult =
     internalId match {
       case None => NotLoggedInOrAuthorised
       case Some(intId) =>
@@ -60,5 +65,5 @@ trait Authorisation extends AuthorisedFunctions with Logging {
           case _ => NotAuthorised(intId)
         }
     }
-  }
+
 }

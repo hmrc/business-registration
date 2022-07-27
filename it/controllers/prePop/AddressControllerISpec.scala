@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -92,7 +92,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
       stubSuccessfulLogin
       insertAddress()
 
-      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
     }
@@ -100,7 +100,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.fetchAddresses(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -111,7 +111,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
       stubSuccessfulLogin
       insertAddress()
 
-      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](invalidAddressJson))
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](invalidAddressJson).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -120,7 +120,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
       stubSuccessfulLogin
       insertAddress()
 
-      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       val json: Option[JsObject] = getAddresses()
@@ -131,7 +131,7 @@ class AddressControllerISpec extends IntegrationSpecBase {
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson))
+      val result: Future[Result] = controller.updateAddress(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateAddressJson).withHeaders("Authorization" -> "Bearer123"))
       status(result) mustBe FORBIDDEN
     }
   }

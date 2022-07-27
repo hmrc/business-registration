@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package itutil
 
-import java.time.LocalDate
-
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.scalatest._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
+import play.api.http.Status.{OK, UNAUTHORIZED}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
-import play.api.test.{DefaultAwaitTimeout, Helpers}
+import play.api.test._
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 trait IntegrationSpecBase extends PlaySpec
@@ -77,9 +77,19 @@ trait IntegrationSpecBase extends PlaySpec
        |}
        |""".stripMargin)
 
-  def stubSuccessfulLogin: StubMapping = stubPost("/auth/authorise", 200, successfullAuth().toString())
+  def stubSuccessfulLogin: StubMapping =
+    stubPost(
+      url = "/auth/authorise",
+      status = OK,
+      responseBody = successfullAuth().toString()
+    )
 
-  def stubRetrieveInternalId(internalId: String): StubMapping = stubPost("/auth/authorise", 200, successfullAuth(internalId).toString())
+  def stubRetrieveInternalId(internalId: String): StubMapping =
+    stubPost(
+      url = "/auth/authorise",
+      status = OK,
+      responseBody = successfullAuth(internalId).toString()
+    )
 
-  def stubNotLoggedIn: StubMapping = stubPost("/auth/authorise", 401, "")
+  def stubNotLoggedIn: StubMapping = stubPost("/auth/authorise", UNAUTHORIZED, "")
 }

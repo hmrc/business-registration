@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a 201" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson()))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson()).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe CREATED
     }
@@ -66,7 +66,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a 400 with an invalid Json" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](Json.parse("""{}""")))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](Json.parse("""{}""")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -74,7 +74,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson("unmatchedInternalId")))
+      val result: Future[Result] = controller.createMetadata()(FakeRequest().withBody[JsValue](buildMetadataJson("unmatchedInternalId")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
       dropMetadata("unmatchedInternalId")
@@ -85,7 +85,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.searchMetadata(FakeRequest())
+      val result: Future[Result] = controller.searchMetadata(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
       status(result) mustBe NOT_FOUND
     }
 
@@ -93,7 +93,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.searchMetadata()(FakeRequest())
+      val result: Future[Result] = controller.searchMetadata()(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
     }
@@ -101,7 +101,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.searchMetadata()(FakeRequest())
+      val result: Future[Result] = controller.searchMetadata()(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -111,7 +111,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -120,7 +120,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
     }
@@ -128,7 +128,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -138,7 +138,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -147,7 +147,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
     }
@@ -155,7 +155,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.retrieveMetadata(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -165,7 +165,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson()))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson()).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -174,7 +174,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateJson))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateJson).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -183,7 +183,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       val json: Option[Metadata] = await(getMetadata())
@@ -194,7 +194,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")))
+      val result: Future[Result] = controller.updateMetaData(testRegistrationId)(FakeRequest().withBody[JsValue](buildMetadataResponseJson(cc = "Guardian")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -204,7 +204,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "2010-05-12"}""")))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "2010-05-12"}""")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -213,7 +213,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "ACE12"}""")))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.parse("""{"DateTime": "ACE12"}""")).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -222,7 +222,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       val json: Option[Metadata] = await(getMetadata())
@@ -235,7 +235,7 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
