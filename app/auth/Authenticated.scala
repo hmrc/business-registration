@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,21 @@ final case class LoggedIn(id: String) extends AuthenticationResult
 
 trait Authenticated extends AuthorisedFunctions with Logging {
 
-  def isAuthenticated(failure: AuthenticationResult => Future[Result], success: String => Future[Result])(implicit hc: HeaderCarrier): Future[Result] = {
-    authorised().retrieve(internalId)(id => mapToAuthResult(id) match {
-      case LoggedIn(intId) => success(intId)
-      case result => failure(result)
-    }).recoverWith {
-      case _: AuthorisationException => failure(NotLoggedIn)
-      case err => logger.error(s"[Authenticated][isAuthenticated] an error occured with message: ${err.getMessage()}")
+  def isAuthenticated(failure: AuthenticationResult => Future[Result],
+                      success: String => Future[Result]
+                     )(implicit hc: HeaderCarrier): Future[Result] =
+
+    authorised().retrieve(internalId) {
+      case Some(id) =>
+        success(id)
+      case _ =>
+        failure(NotLoggedIn)
+    }.recoverWith {
+      case _: AuthorisationException =>
+        failure(NotLoggedIn)
+      case err =>
+        logger.error(s"[Authenticated][isAuthenticated] an error occurred with message: ${err.getMessage}")
         throw err
     }
-  }
 
-  private def mapToAuthResult(internalId: Option[String]): AuthenticationResult = {
-    internalId.fold[AuthenticationResult](NotLoggedIn)(LoggedIn)
-  }
 }

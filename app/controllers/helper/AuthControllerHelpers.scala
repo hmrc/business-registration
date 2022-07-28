@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,21 +24,24 @@ import play.api.mvc.Results._
 import scala.concurrent.Future
 
 trait AuthControllerHelpers extends Authenticated with Logging {
-  def authenticationResultHandler(methodName: String)(authResult: AuthenticationResult): Future[Result] = authResult match {
-    case NotLoggedIn => logger.info(s"[Authentication] [$methodName] User not logged in")
-      Future.successful(Forbidden)
-  }
+  def authenticationResultHandler(methodName: String)(authResult: AuthenticationResult): Future[Result] =
+    authResult match {
+      case NotLoggedIn =>
+        logger.info(s"[Authentication] [$methodName] User not logged in")
+        Future.successful(Forbidden)
+    }
 
-  def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] = authResult match {
-    case NotLoggedInOrAuthorised =>
-      logger.info(s"[Authorisation] [$methodName] User not logged in")
-      Future.successful(Forbidden)
-    case NotAuthorised(_) =>
-      logger.info(s"[Authorisation] [$methodName] User logged in but not authorised for resource $regId")
-      Future.successful(Forbidden)
-    case AuthResourceNotFound(_) =>
-      logger.info(s"[Authorisation] [$methodName] Could not match an Auth resource to registration id $regId")
-      Future.successful(NotFound)
-  }
+  def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] =
+    authResult match {
+      case NotLoggedInOrAuthorised =>
+        logger.info(s"[Authorisation] [$methodName] User not logged in")
+        Future.successful(Forbidden)
+      case NotAuthorised(_) =>
+        logger.info(s"[Authorisation] [$methodName] User logged in but not authorised for resource $regId")
+        Future.successful(Forbidden)
+      case AuthResourceNotFound(_) =>
+        logger.info(s"[Authorisation] [$methodName] Could not match an Auth resource to registration id $regId")
+        Future.successful(NotFound)
+    }
 
 }

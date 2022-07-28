@@ -26,12 +26,12 @@ object AppDependencies {
       Seq()
 
   private val simpleReactive = "8.0.0-play-28"
-  private val bootstrap = "5.16.0"
-  private val domain = "6.2.0-play-28"
-  private val mongoLock = "7.0.0-play-28"
+  private val bootstrap = "6.4.0"
+  private val domain = "8.1.0-play-28"
+  private val mongoLock = "7.1.0-play-28"
   private val scalaTestPlusVersion = "5.0.0"
   private val mockitoCore = "2.13.0"
-  private val reactiveMongo = "5.0.0-play-28"
+  private val reactiveMongo = "5.1.0-play-28"
   private val wireMockVersion = "2.27.2"
   private val playJsonVersion = "2.6.14"
 

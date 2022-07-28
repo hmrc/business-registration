@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     "return a NotFound if no data is found" in new Setup {
       stubSuccessfulLogin
 
-      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe NOT_FOUND
     }
@@ -91,7 +91,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
       stubSuccessfulLogin
       insertContactDetails()
 
-      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
     }
@@ -99,7 +99,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest())
+      val result: Future[Result] = controller.getContactDetails(testRegistrationId)(FakeRequest().withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
@@ -110,7 +110,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
       stubSuccessfulLogin
       insertContactDetails()
 
-      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateContactJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](invalidUpdateContactJson).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe BAD_REQUEST
     }
@@ -119,7 +119,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
       stubSuccessfulLogin
       insertContactDetails()
 
-      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateContactJson))
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](validUpdateContactJson).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       val json: Option[ContactDetails] = getContactDetails()
@@ -130,7 +130,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)))
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }
