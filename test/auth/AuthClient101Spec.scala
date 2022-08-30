@@ -27,7 +27,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.retrieve.Retrievals._
 import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

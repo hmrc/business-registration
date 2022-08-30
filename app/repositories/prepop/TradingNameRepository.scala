@@ -16,75 +16,55 @@
 
 package repositories.prepop
 
-import models.prepop.{PermissionDenied, TradingName}
-import play.api.libs.json._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.Index
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json._
+import models.prepop.{MongoTradingName, PermissionDenied}
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model._
 import repositories.CollectionsNames
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TradingNameRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends
-  ReactiveRepository[String, BSONObjectID](
+class TradingNameRepository @Inject()(mongo: MongoComponent, val configuration: ServicesConfig)(implicit ec: ExecutionContext) extends
+  PlayMongoRepository[MongoTradingName](
+    mongo,
     collectionName = CollectionsNames.TRADING_NAME,
-    mongo.mongoConnector.db,
-    TradingName.format
-  ) with TTLIndexing[String, BSONObjectID] {
-
-  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = for {
-    ttlIndexes <- ensureTTLIndexes
-    indexes <- super.ensureIndexes
-    _ <- fetchLatestIndexes
-  } yield {
-    indexes ++ ttlIndexes
-  }
-
-  private def fetchLatestIndexes(implicit ec: ExecutionContext): Future[List[Index]] = {
-    collection.indexesManager.list() map { indexes =>
-      indexes.map { index =>
-        val indexOptions = index.options.elements.toString()
-        logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.TRADING_NAME} \n" +
-          s"Index : ${index.eventualName} \n" +
-          s"""keys : ${
-            index.key match {
-              case Seq(s@_*) => s"$s\n"
-              case Nil => "None\n"
-            }
-          }""" +
-          s"Is Unique? : ${index.unique}\n" +
-          s"In Background? : ${index.background}\n" +
-          s"Is sparse? : ${index.sparse}\n" +
-          s"version : ${index.version}\n" +
-          s"partialFilter : ${index.partialFilter.map(_.values)}\n" +
-          s"Options : $indexOptions")
-        index
-      }
-    }
-  }
+    MongoTradingName.mongoFormat,
+    Seq(
+      IndexModel(
+        ascending("lastUpdated"),
+        IndexOptions()
+          .name("lastUpdatedIndex")
+          .expireAfter(configuration.getInt("microservice.services.prePop.ttl"), TimeUnit.SECONDS)
+      )
+    ),
+    replaceIndexes = configuration.getBoolean("mongodb.allowReplaceTimeToLiveIndex")
+  ) {
 
   def getTradingName(regId: String, intId: String)(implicit ec: ExecutionContext): Future[Option[String]] = fetchAndAuthorisedCheck(regId, intId)
 
   def upsertTradingName(regId: String, intId: String, tradingName: String)(implicit ec: ExecutionContext): Future[Option[String]] =
-    fetchAndAuthorisedCheck(regId, intId).flatMap {
-      _ =>
-        val selector = BSONDocument("_id" -> regId, "internalId" -> intId)
-        val data = TradingName.mongoWrites(regId, intId).writes(tradingName)
-        collection.findAndUpdate(selector, data, upsert = true, fetchNewObject = true) map {
-          _.result[String](TradingName.mongoTradingNameReads)
-        }
+    fetchAndAuthorisedCheck(regId, intId).flatMap { _ =>
+      val selector = Filters.and(equal("_id", regId), equal("internalId", intId))
+      val data = MongoTradingName(regId, intId, tradingName)
+      collection.findOneAndReplace(
+        filter = selector,
+        replacement = data,
+        options = FindOneAndReplaceOptions()
+          .upsert(true)
+          .returnDocument(ReturnDocument.AFTER)
+      ).headOption().map(_.map(_.tradingName))
     }
 
   private def fetchAndAuthorisedCheck(regId: String, intId: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
-    collection.find(BSONDocument("_id" -> regId)).one[JsObject] map {
-      case Some(json) if json.as[String](TradingName.mongoInternalIdReads) != intId => throw PermissionDenied(regId, intId)
-      case Some(json) => Some(json.as[String](TradingName.mongoTradingNameReads))
-      case _ => None
+    collection.find(equal("_id", regId)).headOption() map {
+      case Some(tn) if tn.internalID != intId => throw PermissionDenied(regId, intId)
+      case tn => tn.map(_.tradingName)
     }
   }
 }

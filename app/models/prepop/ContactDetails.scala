@@ -16,10 +16,13 @@
 
 package models.prepop
 
+import models.prepop.ContactDetails.formats
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logging
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
 
 import scala.util.control.NoStackTrace
 
@@ -41,36 +44,38 @@ case class PermissionDenied(registrationID: String, internalID: String) extends 
 object ContactDetails {
   implicit val formats: OFormat[ContactDetails] = Json.format[ContactDetails]
 
-  def now: DateTime = DateTime.now(DateTimeZone.UTC)
+  def apply(originalContactDetails: ContactDetails, newContactDetails: ContactDetails): ContactDetails =
+    ContactDetails(
+      newContactDetails.firstName.fold(originalContactDetails.firstName)(Some(_)),
+      newContactDetails.middleName.fold(originalContactDetails.middleName)(Some(_)),
+      newContactDetails.surname.fold(originalContactDetails.surname)(Some(_)),
+      newContactDetails.email.fold(originalContactDetails.email)(Some(_)),
+      newContactDetails.telephoneNumber.fold(originalContactDetails.telephoneNumber)(Some(_)),
+      newContactDetails.mobileNumber.fold(originalContactDetails.mobileNumber)(Some(_))
+    )
+}
 
-  val mongoReads: Reads[ContactDetails] = new Reads[ContactDetails] {
-    def reads(json: JsValue): JsResult[ContactDetails] = {
-      (json \ "ContactDetails").validate[ContactDetails](ContactDetails.formats)
-    }
-  }
+case class MongoContactDetails(registrationID: String,
+                               internalID: String,
+                               contactDetails: Option[ContactDetails],
+                               dateTime: DateTime = DateTime.now(DateTimeZone.UTC))
 
-  def mongoWrites(registrationID: String,
-                  dateTime: DateTime = now,
-                  internalID: String,
-                  originalContactDetails: Option[ContactDetails]
-                 ): OWrites[ContactDetails] = new OWrites[ContactDetails] {
+object MongoContactDetails {
 
-    override def writes(cd: ContactDetails): JsObject = {
+  val mongoReads: Reads[MongoContactDetails] = (
+    (__ \ "_id").read[String] and
+      (__ \ "InternalID").read[String] and
+      (__ \ "ContactDetails").readNullable[ContactDetails] and
+      (__ \ "lastUpdated").read[DateTime](MongoJodaFormats.dateTimeReads)
+    )(MongoContactDetails.apply _)
 
-      val newCD = ContactDetails(
-        if (cd.firstName.isDefined) cd.firstName else originalContactDetails.flatMap(s => s.firstName),
-        if (cd.middleName.isDefined) cd.middleName else originalContactDetails.flatMap(s => s.middleName),
-        if (cd.surname.isDefined) cd.surname else originalContactDetails.flatMap(s => s.surname),
-        if (cd.email.isDefined) cd.email else originalContactDetails.flatMap(s => s.email),
-        if (cd.telephoneNumber.isDefined) cd.telephoneNumber else originalContactDetails.flatMap(s => s.telephoneNumber),
-        if (cd.mobileNumber.isDefined) cd.mobileNumber else originalContactDetails.flatMap(s => s.mobileNumber)
-      )
-      Json.obj(
-        "_id" -> registrationID,
-        "InternalID" -> internalID,
-        "lastUpdated" -> Json.toJson(dateTime)(ReactiveMongoFormats.dateTimeWrite),
-        "ContactDetails" -> Json.toJsFieldJsValueWrapper(newCD)(formats)
-      )
-    }
-  }
+  val mongoWrites: OWrites[MongoContactDetails] = (cd: MongoContactDetails) =>
+    Json.obj(
+      "_id" -> cd.registrationID,
+      "InternalID" -> cd.internalID,
+      "ContactDetails" -> Json.toJson(cd.contactDetails),
+      "lastUpdated" -> Json.toJson(cd.dateTime)(MongoJodaFormats.dateTimeFormat)
+    )
+
+  val mongoFormat: Format[MongoContactDetails] = Format(mongoReads, mongoWrites)
 }

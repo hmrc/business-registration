@@ -16,32 +16,40 @@
 
 package repositories
 
-import javax.inject.{Inject, Singleton}
-import models.Metadata
-import play.api.libs.json.{Format, JsValue}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.bson._
-import reactivemongo.play.json._
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Updates.inc
+import org.mongodb.scala.model.{FindOneAndUpdateOptions, ReturnDocument}
+import play.api.libs.json.{Format, JsObject}
 import repositories.CollectionsNames.SEQUENCE
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class SequenceMongoRepository @Inject()(mongo: ReactiveMongoComponent)//(implicit formats: Format[Metadata], manifest: Manifest[Metadata])
-  extends ReactiveRepository[Metadata, BSONObjectID](SEQUENCE, mongo.mongoConnector.db, Metadata.formats) {
+class SequenceMongoRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext)
+  extends PlayMongoRepository[JsObject](
+    mongoComponent = mongo,
+    collectionName = SEQUENCE,
+    domainFormat = implicitly[Format[JsObject]],
+    Seq()
+  ) {
 
   def getNext(sequence: String)(implicit ec: ExecutionContext): Future[Int] = {
-    val selector = BSONDocument("_id" -> sequence)
-    val modifier = BSONDocument("$inc" -> BSONDocument("seq" -> 1))
+    val selector = equal("_id", sequence)
+    val modifier = inc("seq", 1)
 
-    collection.findAndUpdate(selector, modifier, fetchNewObject = true, upsert = true)
-      .map {
-        _.result[JsValue] match {
-          case None => -1
-          case Some(x) => (x \ "seq").as[Int]
-        }
-      }
+    collection.findOneAndUpdate(
+      filter = selector,
+      update = modifier,
+      options = FindOneAndUpdateOptions()
+        .upsert(true)
+        .returnDocument(ReturnDocument.AFTER)
+    ).toFutureOption().map {
+      case None => -1
+      case Some(x) => (x \ "seq").as[Int]
+    }
   }
 }

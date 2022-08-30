@@ -16,23 +16,17 @@
 
 package repositories
 
-import java.util.UUID
-
+import helpers.MongoSpec
 import models.{Metadata, MetadataResponse}
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers._
-import uk.gov.hmrc.mongo.MongoSpecSupport
 
-import scala.concurrent.ExecutionContext
+import java.util.UUID
 import scala.language.postfixOps
 
-class MetadataMongoRepositoryISpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with GuiceOneAppPerSuite {
-
-  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
+class MetadataMongoRepositoryISpec extends MongoSpec with BeforeAndAfterAll with ScalaFutures with Eventually {
 
   class Setup {
 
@@ -57,14 +51,10 @@ class MetadataMongoRepositoryISpec extends PlaySpec with MongoSpecSupport with B
 
     def updateLastSignin(regId: String = randomRegid, timeNow: DateTime): DateTime = await(repository.updateLastSignedIn(regId, timeNow))
 
-    def count: Int = await(repository.count)
+    def count: Int = repository.awaitCount
 
-    await(repository.removeAll())
+    repository.removeAll()
     await(repository.ensureIndexes)
-  }
-
-  override def afterAll(): Unit = new Setup {
-    await(repository.removeAll())
   }
 
   "MetadataRepository" should {
@@ -110,66 +100,66 @@ class MetadataMongoRepositoryISpec extends PlaySpec with MongoSpecSupport with B
       val auth: Option[String] = getInternalId()
       auth mustBe None
     }
-  }
 
-  "Update Last Sign In" should {
-    "update the last sign in date if record exists" in new Setup {
-      val metdataResponse: Metadata = createMetadata()
-      val timeNow: DateTime = DateTime.now()
+    "Update Last Sign In" should {
+      "update the last sign in date if record exists" in new Setup {
+        val metdataResponse: Metadata = createMetadata()
+        val timeNow: DateTime = DateTime.now()
 
-      val updateResponse: DateTime = updateLastSignin(timeNow = timeNow)
+        val updateResponse: DateTime = updateLastSignin(timeNow = timeNow)
 
-      updateResponse mustBe timeNow
+        updateResponse mustBe timeNow
 
-      val queryResponse: Option[Metadata] = retrieveMetadata()
+        val queryResponse: Option[Metadata] = retrieveMetadata()
 
-      queryResponse mustBe defined
-      queryResponse.get.lastSignedIn mustBe timeNow
+        queryResponse mustBe defined
+        queryResponse.get.lastSignedIn mustBe timeNow
+      }
     }
-  }
 
-  "UpdateMetData" should {
-    "update the Completion Capacity if record is present" in new Setup {
-      val metadataResponse: Metadata = createMetadata()
-      val newMetadataResponseModel: MetadataResponse = MetadataResponse(
-        registrationID = randomRegid,
-        formCreationTimestamp = metadataResponse.formCreationTimestamp,
-        language = metadataResponse.language,
-        completionCapacity = Some("newCapacity"))
+    "UpdateMetData" should {
+      "update the Completion Capacity if record is present" in new Setup {
+        val metadataResponse: Metadata = createMetadata()
+        val newMetadataResponseModel: MetadataResponse = MetadataResponse(
+          registrationID = randomRegid,
+          formCreationTimestamp = metadataResponse.formCreationTimestamp,
+          language = metadataResponse.language,
+          completionCapacity = Some("newCapacity"))
 
-      val updateResponse: MetadataResponse = updateMetatdata(data = newMetadataResponseModel)
+        val updateResponse: MetadataResponse = updateMetatdata(data = newMetadataResponseModel)
 
-      updateResponse mustBe newMetadataResponseModel
+        updateResponse mustBe newMetadataResponseModel
 
-      val queryResponse: Option[Metadata] = retrieveMetadata()
+        val queryResponse: Option[Metadata] = retrieveMetadata()
 
-      queryResponse mustBe defined
-      queryResponse.get.completionCapacity mustBe Some("newCapacity")
+        queryResponse mustBe defined
+        queryResponse.get.completionCapacity mustBe Some("newCapacity")
+      }
     }
-  }
 
-  "removeMetadata" should {
-    "remove the required record" in new Setup {
-      val metadataResponse: Metadata = createMetadata()
-      count mustBe 1
+    "removeMetadata" should {
+      "remove the required record" in new Setup {
+        val metadataResponse: Metadata = createMetadata()
+        count mustBe 1
 
-      val removeResponse: Boolean = removeMetadata()
-      val queryResponse: Option[Metadata] = retrieveMetadata()
+        val removeResponse: Boolean = removeMetadata()
+        val queryResponse: Option[Metadata] = retrieveMetadata()
 
-      queryResponse mustBe None
-      count mustBe 0
+        queryResponse mustBe None
+        count mustBe 0
+      }
     }
-  }
 
-  "updateCompletionCapacity" should {
-    "successfully update the completion capacity in a document" in new Setup {
-      val metdataResponse: Metadata = createMetadata()
+    "updateCompletionCapacity" should {
+      "successfully update the completion capacity in a document" in new Setup {
+        val metdataResponse: Metadata = createMetadata()
 
-      val updatedCapacity: String = updateCompletionCapacity(cc = "director")
-      updatedCapacity mustBe "director"
+        val updatedCapacity: String = updateCompletionCapacity(cc = "director")
+        updatedCapacity mustBe "director"
 
-      val fetchedMetaData: Option[Metadata] = retrieveMetadata()
-      fetchedMetaData.get.completionCapacity mustBe Some("director")
+        val fetchedMetaData: Option[Metadata] = retrieveMetadata()
+        fetchedMetaData.get.completionCapacity mustBe Some("director")
+      }
     }
   }
 }

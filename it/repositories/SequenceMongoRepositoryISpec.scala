@@ -16,29 +16,23 @@
 
 package repositories
 
+import helpers.MongoSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.Helpers._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.MongoSpecSupport
 
-import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 
-class SequenceMongoRepositoryISpec extends PlaySpec with MongoSpecSupport with BeforeAndAfterAll with ScalaFutures with Eventually with GuiceOneAppPerSuite {
-
-  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
+class SequenceMongoRepositoryISpec extends MongoSpec with BeforeAndAfterAll with ScalaFutures with Eventually {
 
   class Setup {
-    val repository = new SequenceMongoRepository(app.injector.instanceOf[ReactiveMongoComponent])
-    await(repository.removeAll())
+    val repository = new SequenceMongoRepository(mongoComponent)
+    repository.removeAll()
     await(repository.ensureIndexes)
   }
 
   override def afterAll(): Unit = new Setup {
-    await(repository.removeAll())
+    repository.removeAll()
   }
 
   val testSequence = "testSequence"

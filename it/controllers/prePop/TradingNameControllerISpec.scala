@@ -18,13 +18,13 @@ package controllers.prePop
 
 import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
-import models.prepop.TradingName
+import models.prepop.MongoTradingName
+import org.mongodb.scala.model.{Filters, ReplaceOptions}
+import org.mongodb.scala.result.{DeleteResult, UpdateResult}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import reactivemongo.api.commands.{UpdateWriteResult, WriteResult}
-import reactivemongo.play.json.ImplicitBSONHandlers._
 import repositories.prepop.TradingNameRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 
@@ -39,18 +39,20 @@ class TradingNameControllerISpec extends IntegrationSpecBase with MetadataFixtur
 
     val controller: TradingNameController = new TradingNameController(tradingNameRepository, authConnector, stubControllerComponents())
 
-    def dropTradingName(intId: String = testInternalId, regId: String = testRegistrationId): WriteResult =
-      await(tradingNameRepository.collection.remove(Json.obj("_id" -> regId)))
+    def dropTradingName(regId: String = testRegistrationId): DeleteResult =
+      await(tradingNameRepository.collection.deleteOne(Filters.equal("_id", regId)).toFuture())
 
-    def insertTradingName(regId: String = testRegistrationId, intId: String = testInternalId, tradingName: String = "foo bar wizz"): UpdateWriteResult =
-      await(tradingNameRepository.collection.update(
-        Json.obj("_id" -> regId, "internalId" -> intId), TradingName.mongoWrites(regId, intId).writes(tradingName), upsert = true)
-      )
+    def insertTradingName(regId: String = testRegistrationId, intId: String = testInternalId, tradingName: String = "foo bar wizz"): UpdateResult =
+      await(tradingNameRepository.collection.replaceOne(
+        Filters.and(Filters.equal("_id", regId), Filters.equal("internalId", intId)),
+        MongoTradingName(regId, intId, tradingName),
+        ReplaceOptions().upsert(true)
+      ).toFuture())
 
     def getTradingName(regId: String = testRegistrationId, intId: String = testInternalId): String =
-      await(tradingNameRepository.collection.find(Json.obj("_id" -> regId, "internalId" -> intId)).one[JsObject].map {
-        case Some(x) => x.as[String](TradingName.mongoTradingNameReads)
-      })
+      await(tradingNameRepository.collection.find(
+        Filters.and(Filters.equal("_id", regId), Filters.equal("internalId", intId))
+      ).head().map(_.tradingName))
 
     dropTradingName()
   }

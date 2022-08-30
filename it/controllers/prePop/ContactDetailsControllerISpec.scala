@@ -19,12 +19,12 @@ package controllers.prePop
 import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
 import models.prepop.ContactDetails
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.result.DeleteResult
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
-import reactivemongo.play.json.ImplicitBSONHandlers._
 import repositories.MetadataMongoRepository
 import repositories.prepop.ContactDetailsRepository
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -41,8 +41,10 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
 
     val controller = new ContactDetailsController(metadataMongoRepository, contactDetailsRepository, authConnector, stubControllerComponents())
 
-    def dropContactDetails(internalId: String = testInternalId, regId: String = testRegistrationId): WriteResult =
-      await(contactDetailsRepository.collection.remove(Json.obj("_id" -> regId, "InternalID" -> internalId)))
+    def dropContactDetails(internalId: String = testInternalId, regId: String = testRegistrationId): DeleteResult =
+      await(contactDetailsRepository.collection.deleteOne(
+        Filters.and(Filters.equal("_id", regId), Filters.equal("InternalID", internalId))
+      ).toFuture())
 
     def insertContactDetails(regId: String = testRegistrationId, intId: String = testInternalId, contact: ContactDetails = validContactDetails): Option[ContactDetails] =
       await(contactDetailsRepository.upsertContactDetails(regId, intId, contact))

@@ -40,7 +40,7 @@ class AddressServiceSpec extends PlaySpec with MockitoSugar with AddressHelper {
       when(mockAddressesRepository.fetchAddresses(any())(any())).thenReturn(Future.successful(toReturn))
 
     def mockUpdateAddress(successful: Boolean): OngoingStubbing[Future[Boolean]] =
-      when(mockAddressesRepository.insertAddress(any(), any())(any())).thenReturn(Future.successful(successful))
+      when(mockAddressesRepository.insertAddress(any())(any())).thenReturn(Future.successful(successful))
 
     def mockUpdateTTL(successful: Boolean): OngoingStubbing[Future[Boolean]] =
       when(mockAddressesRepository.updateAddress(any(), any())(any())).thenReturn(Future.successful(successful))

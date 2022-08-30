@@ -17,12 +17,12 @@
 package controllers.prePop
 
 import itutil.IntegrationSpecBase
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.result.DeleteResult
 import play.api.libs.json._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
-import reactivemongo.play.json.ImplicitBSONHandlers._
 import repositories.prepop.AddressRepository
 import services.prepop.AddressService
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -39,11 +39,11 @@ class AddressControllerISpec extends IntegrationSpecBase {
 
     val controller = new AddressController(addressService, addressRepository, authConnector, stubControllerComponents())
 
-    def dropAddress(regId: String = testRegistrationId): WriteResult =
-      await(addressRepository.collection.remove(Json.obj("registration_id" -> regId)))
+    def dropAddress(regId: String = testRegistrationId): DeleteResult =
+      await(addressRepository.collection.deleteOne(Filters.equal("registration_id", regId)).toFuture())
 
-    def insertAddress(regId: String = testRegistrationId, address: JsObject = validAddressJson ++ validIdsJson): Boolean =
-      await(addressRepository.insertAddress(regId, address))
+    def insertAddress(address: JsObject = validAddressJson ++ validIdsJson): Boolean =
+      await(addressRepository.insertAddress(address))
 
     def getAddresses(regId: String = testRegistrationId): Option[JsObject] = await(addressRepository.fetchAddresses(regId))
 
