@@ -31,7 +31,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class MetadataServiceSpec extends PlaySpec with MockitoSugar with MetadataFixture with MongoFixture {
 
-
   val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
   val mockSequenceRepository: SequenceMongoRepository = mock[SequenceMongoRepository]
 

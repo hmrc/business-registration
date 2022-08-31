@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import repositories._
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -32,9 +32,10 @@ class MetadataTestController @Inject()(metadataMongoRepository: MetadataMongoRep
 
   def dropMetadataCollection: Action[AnyContent] = Action.async {
     implicit request =>
-      metadataMongoRepository.drop.map {
-        case true => Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
-        case false => Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
+      metadataMongoRepository.collection.drop().toFuture().map { _ =>
+        Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
+      } recover { case _ =>
+        Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
       }
   }
 

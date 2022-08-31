@@ -16,19 +16,21 @@
 
 package helpers
 
+import org.mongodb.scala.bson.{BsonDocument, ObjectId}
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.result.{DeleteResult, InsertOneResult}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
-import reactivemongo.api.indexes.Index
-import repositories.prepop.TTLIndexing
-import uk.gov.hmrc.mongo.{MongoSpecSupport, ReactiveRepository}
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
 
 import scala.concurrent.ExecutionContext
+import scala.reflect.ClassTag
 import scala.util.Random
 
-trait MongoSpec extends PlaySpec with MongoSpecSupport with GuiceOneAppPerSuite with RichReactiveRepository {
+trait MongoSpec extends PlaySpec with MongoSupport with GuiceOneAppPerSuite with RichMongoRepository {
   implicit val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   def generateOID: String = {
@@ -37,34 +39,33 @@ trait MongoSpec extends PlaySpec with MongoSpecSupport with GuiceOneAppPerSuite 
   }
 }
 
-trait RichReactiveRepository {
+trait RichMongoRepository {
   self: PlaySpec =>
 
   import scala.language.implicitConversions
 
-  implicit class MongoTTLOps[T](repo: ReactiveRepository[T, _] with TTLIndexing[T, _])(implicit ec: ExecutionContext) {
-    def awaitCount: Int = await(repo.count)
-
-    def awaitInsert(e: T): WriteResult = await(repo.insert(e))
-
-    def awaitDrop: Boolean = await(repo.drop)
-
-    def awaitEnsureIndexes: Seq[Boolean] = await(repo.ensureIndexes)
-
-    def createIndex(index: Index): WriteResult = await(repo.collection.indexesManager.create(index))
-
-    def listIndexes: List[Index] = await(repo.collection.indexesManager.list())
-
-    def dropIndexes: Int = await(repo.collection.indexesManager.dropAll())
-
-    def findIndex(indexName: String): Option[Index] = listIndexes.find(_.eventualName == indexName)
+  implicit class MongoOps[T](repo: PlayMongoRepository[T])(implicit ec: ExecutionContext) {
+    def removeAll(): DeleteResult = await(repo.collection.deleteMany(BsonDocument()).toFuture())
+    def awaitCount: Int = await(repo.collection.countDocuments().toFuture()).toInt
+    def awaitInsert(e: T): InsertOneResult = await(repo.collection.insertOne(e).toFuture())
+    def findById(id: ObjectId)(implicit ct: ClassTag[T]): Option[T] = await(repo.collection.find(Filters.equal("_id", id)).headOption())
   }
 
-  class JsObjectHelpers(o: JsObject) {
+  implicit class JsObjectHelpers(o: JsObject) {
     def pretty: String = Json.prettyPrint(o)
   }
 
-  implicit def impJsObjectHelpers(o: JsObject): JsObjectHelpers = new JsObjectHelpers(o)
-
   implicit def toJsObject(v: JsValue): JsObject = v.as[JsObject]
+
+  case class Index(name: String, expireAfterSeconds: Option[Int])
+
+  object Index {
+    implicit val format = Json.format[Index]
+  }
+
+  def getTTLIndex(repo: PlayMongoRepository[_]): Index = {
+    val documents = await(repo.collection.listIndexes.toFuture())
+    val indexesJson = documents.map(doc => Json.parse(doc.toJson()))
+    indexesJson.map(_.as[Index]).find(_.name == "lastUpdatedIndex").get
+  }
 }

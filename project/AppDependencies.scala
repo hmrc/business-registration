@@ -19,39 +19,35 @@ import sbt._
 
 object AppDependencies {
 
-  val tmpMacWorkaround: Seq[ModuleID] =
-    if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac")))
-      Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.17.1-osx-x86-64" % "runtime,test,it")
-    else
-      Seq()
+  private val playVersion           = "-play-28"
 
-  private val simpleReactive = "8.0.0-play-28"
-  private val bootstrap = "6.4.0"
-  private val domain = "8.1.0-play-28"
-  private val mongoLock = "7.1.0-play-28"
-  private val scalaTestPlusVersion = "5.0.0"
-  private val mockitoCore = "2.13.0"
-  private val reactiveMongo = "5.1.0-play-28"
-  private val wireMockVersion = "2.27.2"
-  private val playJsonVersion = "2.6.14"
+  private val bootstrap             =  "6.4.0"
+  private val domain                = s"8.1.0$playVersion"
+  private val mongoLock             = s"7.1.0$playVersion"
+  private val scalaTestPlusVersion  =  "5.1.0"
+  private val wireMockVersion       =  "2.27.2"
+  private val playJsonVersion       =  "2.6.14"
+  private val hmrcMongoVersion      =  "0.71.0"
+  private val scalaTestVersion      =  "3.2.12"
+  private val flexmarkAllVersion    =  "0.62.2"
 
   val compile: Seq[ModuleID] = Seq(
-    "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
-    "uk.gov.hmrc" %% "simple-reactivemongo" % simpleReactive,
-    "uk.gov.hmrc" %% "bootstrap-backend-play-28" % bootstrap,
-    "uk.gov.hmrc" %% "domain" % domain,
-    "uk.gov.hmrc" %% "mongo-lock" % mongoLock,
+    "uk.gov.hmrc.mongo"       %% s"hmrc-mongo$playVersion"          % hmrcMongoVersion,
+    "com.typesafe.play"       %%  "play-json-joda"                  % playJsonVersion,
+    "uk.gov.hmrc"             %% s"bootstrap-backend$playVersion"   % bootstrap,
+    "uk.gov.hmrc"             %%  "domain"                          % domain,
     ws
   )
 
   val test: Seq[ModuleID] = Seq(
-    "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusVersion % "test, it",
-    "uk.gov.hmrc" %% "reactivemongo-test" % reactiveMongo % "test, it",
-    "org.mockito" % "mockito-core" % mockitoCore % "test",
-    "com.github.tomakehurst" % "wiremock-jre8" % wireMockVersion % "it",
-    "org.pegdown" % "pegdown" % "1.6.0" % "test, it"
+    "org.scalatest"           %%  "scalatest"                       % scalaTestVersion        % "test, it",
+    "org.scalatestplus.play"  %%  "scalatestplus-play"              % scalaTestPlusVersion    % "test, it",
+    "com.vladsch.flexmark"    %   "flexmark-all"                    % flexmarkAllVersion      % "test, it",
+    "uk.gov.hmrc.mongo"       %% s"hmrc-mongo-test$playVersion"     % hmrcMongoVersion        % "test, it",
+    "org.scalatestplus"       %%  "mockito-4-5"                     % s"$scalaTestVersion.0"  % "test, it",
+    "com.github.tomakehurst"  %   "wiremock-jre8"                   % wireMockVersion         % "it"
   )
 
-  def apply(): Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
+  def apply(): Seq[ModuleID] = compile ++ test
 
 }

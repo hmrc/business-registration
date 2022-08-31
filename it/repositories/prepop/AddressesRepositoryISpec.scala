@@ -19,18 +19,18 @@ package repositories.prepop
 import helpers.MongoSpec
 import models.prepop.Address
 import org.joda.time.DateTime
+import org.mongodb.scala.MongoException
+import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import play.api.test.Helpers._
-import reactivemongo.bson.BSONObjectID
-import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJodaFormats}
 
 class AddressesRepositoryISpec extends MongoSpec {
 
   class Setup {
     val repo: AddressRepository = app.injector.instanceOf(classOf[AddressRepository])
 
-    await(repo.removeAll())
+    repo.removeAll()
     await(repo.ensureIndexes)
     repo.awaitCount mustBe 0
   }
@@ -40,7 +40,7 @@ class AddressesRepositoryISpec extends MongoSpec {
   val regId2 = "regId2"
 
   val dateTime: DateTime = DateTime.parse("2017-06-15T10:06:28.434Z")
-  val now: JsValue = Json.toJson(dateTime)(ReactiveMongoFormats.dateTimeWrite)
+  val now: JsValue = Json.toJson(dateTime)(MongoJodaFormats.dateTimeFormat)
 
   def buildAddressJson(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false): JsObject = {
 
@@ -196,19 +196,19 @@ class AddressesRepositoryISpec extends MongoSpec {
 
     "insert an address" in new Setup {
 
-      val result: Boolean = await(repo.insertAddress(regId1, buildAddressJson(regId1)))
+      val result: Boolean = await(repo.insertAddress(buildAddressJson(regId1)))
       result mustBe true
 
       repo.awaitCount mustBe 1
     }
 
     "throw a DatabaseException when inserting a duplicate Address" in new Setup {
-      await(repo.insertAddress(regId1, buildAddressJson(regId1, withOid = false)))
+      await(repo.insertAddress(buildAddressJson(regId1, withOid = false)))
       repo.awaitCount mustBe 1
 
-      val ex: DatabaseException = intercept[DatabaseException](await(repo.insertAddress(regId1, buildAddressJson(regId1, withOid = false))))
+      val ex: MongoException = intercept[MongoException](await(repo.insertAddress(buildAddressJson(regId1, withOid = false))))
 
-      ex.code mustBe Some(11000)
+      ex.getCode mustBe 11000
 
     }
   }
@@ -223,15 +223,15 @@ class AddressesRepositoryISpec extends MongoSpec {
 
       def getAddressesAsList: Seq[JsObject] = (o \ "addresses").as[Seq[JsObject]](Reads.seq(Address.reads))
 
-      def getTTL: DateTime = (o \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
+      def getTTL: DateTime = (o \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
     }
 
     "update the lastUpdated ttl value when the supplied address exactly matches an existing address for the regId" in new Setup {
       val existingAddress: JsObject = buildAddressJson(regId)
       val suppliedAddress: JsObject = buildAddressJson(regId, withOid = false)
 
-      val originalTTL: DateTime = (existingAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
-      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val originalTTL: DateTime = (existingAddress \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
+      val oid: ObjectId = (existingAddress \ "_id").as[ObjectId](MongoFormats.objectIdFormat)
 
       repo.awaitInsert(existingAddress)
       repo.awaitCount mustBe 1
@@ -241,8 +241,8 @@ class AddressesRepositoryISpec extends MongoSpec {
       result mustBe true
       repo.awaitCount mustBe 1
 
-      val updatedAddress: JsObject = await(repo.findById(oid)).get
-      val updatedTTL: DateTime = (updatedAddress \ "lastUpdated").as[DateTime](ReactiveMongoFormats.dateTimeRead)
+      val updatedAddress: JsObject = repo.findById(oid).get
+      val updatedTTL: DateTime = (updatedAddress \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
 
       updatedAddress - "lastUpdated" - "_id" mustBe suppliedAddress - "lastUpdated"
 
@@ -251,7 +251,7 @@ class AddressesRepositoryISpec extends MongoSpec {
 
     "update an existing addresses fields if the supplied address is equal but non-equality checked fields have changed" in new Setup {
       val existingAddress: JsObject = buildAddressJson(regId)
-      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val oid: ObjectId = (existingAddress \ "_id").as[ObjectId](MongoFormats.objectIdFormat)
       val newAddressLine2 = "newAddressLine2"
       val suppliedAddressWithNewAddressLine2: JsObject = buildAddressJson(regId, withOid = false) + ("addressLine2" -> Json.toJson(newAddressLine2))
 
@@ -263,7 +263,7 @@ class AddressesRepositoryISpec extends MongoSpec {
       result mustBe true
       repo.awaitCount mustBe 1
 
-      val updatedAddress: JsObject = await(repo.findById(oid)).get
+      val updatedAddress: JsObject = repo.findById(oid).get
 
       updatedAddress.withoutTTL.withoutObjectID mustBe suppliedAddressWithNewAddressLine2.withoutTTL
     }
@@ -285,7 +285,7 @@ class AddressesRepositoryISpec extends MongoSpec {
            |}
            |""".stripMargin).as[JsObject]
 
-      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val oid: ObjectId = (existingAddress \ "_id").as[ObjectId](MongoFormats.objectIdFormat)
 
       val suppliedAddress: JsObject = Json.parse(
         s"""{
@@ -308,7 +308,7 @@ class AddressesRepositoryISpec extends MongoSpec {
 
       repo.awaitCount mustBe 1
 
-      val updatedAddress: JsObject = await(repo.findById(oid)).get
+      val updatedAddress: JsObject = repo.findById(oid).get
 
       existingAddress.getTTL isBefore updatedAddress.getTTL mustBe true
 
@@ -332,7 +332,7 @@ class AddressesRepositoryISpec extends MongoSpec {
            |}
            |""".stripMargin).as[JsObject]
 
-      val oid: BSONObjectID = (existingAddress \ "_id").as[BSONObjectID](ReactiveMongoFormats.objectIdRead)
+      val oid: ObjectId = (existingAddress \ "_id").as[ObjectId](MongoFormats.objectIdFormat)
 
       val suppliedAddress: JsObject = Json.parse(
         s"""{
@@ -353,7 +353,7 @@ class AddressesRepositoryISpec extends MongoSpec {
 
       repo.awaitCount mustBe 1
 
-      val updatedAddress: JsObject = await(repo.findById(oid)).get
+      val updatedAddress: JsObject = repo.findById(oid).get
 
       existingAddress.getTTL isBefore updatedAddress.getTTL mustBe true
 

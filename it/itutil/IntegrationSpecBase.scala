@@ -36,14 +36,10 @@ trait IntegrationSpecBase extends PlaySpec
   with GuiceOneServerPerSuite with ScalaFutures with IntegrationPatience
   with WiremockHelper with BeforeAndAfterEach with BeforeAndAfterAll with DefaultAwaitTimeout {
 
-  val mockHost: String = WiremockHelper.wiremockHost
-  val mockPort: Int = WiremockHelper.wiremockPort
-  val mockUrl = s"http://$mockHost:$mockPort"
-
-  val additionalConfiguration: Map[String, String] = Map(
-    "microservice.services.auth.host" -> s"$mockHost",
-    "microservice.services.auth.port" -> s"$mockPort",
-    "application.router" -> "testOnlyDoNotUseInAppConf.Routes"
+  val additionalConfiguration: Map[String, _] = Map(
+    "microservice.services.auth.port" -> WiremockHelper.wiremockPort,
+    "application.router" -> "testOnlyDoNotUseInAppConf.Routes",
+    "mongodb.allowReplaceTimeToLiveIndex" -> true
   )
 
   override implicit lazy val app: Application = new GuiceApplicationBuilder()

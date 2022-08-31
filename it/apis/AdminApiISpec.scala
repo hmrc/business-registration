@@ -16,29 +16,29 @@
 
 package apis
 
+import helpers.MongoSpec
 import models.Metadata
 import org.joda.time.DateTime
-import org.scalatestplus.play.PlaySpec
+import org.mongodb.scala.result.InsertOneResult
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.Application
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
 import repositories.MetadataMongoRepository
-import uk.gov.hmrc.mongo.MongoSpecSupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
+class AdminApiISpec extends MongoSpec with GuiceOneServerPerSuite {
 
-class AdminApiISpec extends PlaySpec with MongoSpecSupport with GuiceOneServerPerSuite {
+  override lazy val app: Application = fakeApplication()
 
   trait Setup {
     val metadataMongoRepository: MetadataMongoRepository = app.injector.instanceOf[MetadataMongoRepository]
-    await(metadataMongoRepository.removeAll())
+    metadataMongoRepository.removeAll()
     await(metadataMongoRepository.ensureIndexes)
 
-    def count: Int = await(metadataMongoRepository.count)
+    def count: Int = metadataMongoRepository.awaitCount
 
-    def insert(e: Metadata): WriteResult = await(metadataMongoRepository.insert(e))
+    def insert(e: Metadata): InsertOneResult = await(metadataMongoRepository.collection.insertOne(e).toFuture())
   }
 
   val regId = "reg-id-12345"

@@ -16,95 +16,67 @@
 
 package repositories.prepop
 
-import models.prepop.{ContactDetails, PermissionDenied}
-import play.api.libs.json.JsObject
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.Index
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json._
-import repositories.CollectionsNames
+import models.prepop.{ContactDetails, MongoContactDetails, PermissionDenied}
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model._
 import repositories.CollectionsNames.CONTACTDETAILS
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ContactDetailsRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends
-  ReactiveRepository[ContactDetails, BSONObjectID](
+class ContactDetailsRepository @Inject()(mongo: MongoComponent,val configuration: ServicesConfig)(implicit ec: ExecutionContext) extends
+  PlayMongoRepository[MongoContactDetails](
+    mongoComponent = mongo,
     collectionName = CONTACTDETAILS,
-    mongo.mongoConnector.db,
-    ContactDetails.formats
-  ) with TTLIndexing[ContactDetails, BSONObjectID] {
-
-  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
-    for {
-      ttlIndexes <- ensureTTLIndexes
-      indexes <- super.ensureIndexes
-      _ <- fetchLatestIndexes
-    } yield {
-      indexes ++ ttlIndexes
-    }
-  }
-
-  private def fetchLatestIndexes(implicit ec: ExecutionContext): Future[List[Index]] = {
-    collection.indexesManager.list() map { indexes =>
-      indexes.map { index =>
-        val indexOptions = index.options.elements.toString()
-        logger.info(s"[EnsuringIndexes] Collection : ${CollectionsNames.CONTACTDETAILS} \n" +
-          s"Index : ${index.eventualName} \n" +
-          s"""keys : ${
-            index.key match {
-              case Seq(s@_*) => s"$s\n"
-              case Nil => "None\n"
-            }
-          }""" +
-          s"Is Unique? : ${index.unique}\n" +
-          s"In Background? : ${index.background}\n" +
-          s"Is sparse? : ${index.sparse}\n" +
-          s"version : ${index.version}\n" +
-          s"partialFilter : ${index.partialFilter.map(_.values)}\n" +
-          s"Options : $indexOptions")
-        index
-      }
-    }
-  }
-
+    domainFormat = MongoContactDetails.mongoFormat,
+    Seq(
+      IndexModel(
+        ascending("lastUpdated"),
+        IndexOptions()
+          .name("lastUpdatedIndex")
+          .expireAfter(configuration.getInt("microservice.services.prePop.ttl"), TimeUnit.SECONDS)
+      )
+    ),
+    replaceIndexes = configuration.getBoolean("mongodb.allowReplaceTimeToLiveIndex")
+  ) {
 
   def upsertContactDetails(registrationID: String, intID: String, contactDetails: ContactDetails)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
-    val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
-    getContactDetailsUnVerifiedUser(registrationID, intID).flatMap { res =>
-      val js = ContactDetails.mongoWrites(registrationID, internalID = intID, originalContactDetails = res).writes(contactDetails)
-      collection.findAndUpdate(selector, js, upsert = true, fetchNewObject = true) map {
-        s => s.result[ContactDetails](ContactDetails.mongoReads)
-      }
+
+    getContactDetailsUnVerifiedUser(registrationID, intID).flatMap { optExistingDetails =>
+
+      val update = MongoContactDetails(
+        registrationID,
+        intID,
+        optExistingDetails.fold(Some(contactDetails))(mcd => Some(ContactDetails(mcd, contactDetails)))
+      )
+
+      collection.findOneAndReplace(
+        Filters.and(equal("_id", registrationID), equal("InternalID", intID)),
+        update,
+        FindOneAndReplaceOptions()
+          .upsert(true)
+          .returnDocument(ReturnDocument.AFTER)
+      ).headOption().map(_.flatMap(_.contactDetails))
     }
   }
 
 
-  def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
-    val selector = BSONDocument("_id" -> registrationID, "InternalID" -> intID)
-    getContactDetailsUnVerifiedUser(registrationID, intID).flatMap {
-      case Some(cd: ContactDetails) => Future.successful(Some(cd))
-      case _ => Future.successful(None)
-    }
-  }
+  def getContactDetails(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] =
+    getContactDetailsUnVerifiedUser(registrationID, intID)
 
-  private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
-    val selector = BSONDocument("_id" -> registrationID)
-    collection.find(selector).one[JsObject]
-  }
+  private[repositories] def getContactDetailsWithJustRegID(registrationID: String)(implicit ec: ExecutionContext): Future[Option[MongoContactDetails]] =
+    collection.find(equal("_id", registrationID)).headOption()
 
-  def getContactDetailsUnVerifiedUser(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] = {
-
+  def getContactDetailsUnVerifiedUser(registrationID: String, intID: String)(implicit ec: ExecutionContext): Future[Option[ContactDetails]] =
     getContactDetailsWithJustRegID(registrationID).map {
-      case Some(s) if ((s \ "InternalID").get.as[String] != intID) =>
-        throw PermissionDenied(registrationID, intID)
-      case Some(s) => Some(s.as[ContactDetails](ContactDetails.mongoReads))
-      case _ => None
+      case Some(s) if s.internalID != intID => throw PermissionDenied(registrationID, intID)
+      case cd => cd.flatMap(_.contactDetails)
     }
-  }
 
 }

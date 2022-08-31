@@ -19,12 +19,12 @@ package controllers
 import fixtures.MetadataFixtures
 import itutil.IntegrationSpecBase
 import models.Metadata
+import org.mongodb.scala.model.Filters
+import org.mongodb.scala.result.DeleteResult
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import reactivemongo.api.commands.WriteResult
-import reactivemongo.play.json.ImplicitBSONHandlers._
 import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.auth.core.AuthConnector
@@ -42,8 +42,8 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
 
     val controller = new MetadataController(metadataService, metricsService, metadataMongoRepository, authConnector, stubControllerComponents())
 
-    def dropMetadata(internalId: String = testInternalId): WriteResult =
-      await(metadataMongoRepository.collection.remove(Json.obj("internalId" -> internalId)))
+    def dropMetadata(internalId: String = testInternalId): DeleteResult =
+      await(metadataMongoRepository.collection.deleteOne(Filters.equal("internalId", internalId)).toFuture())
 
     def insertMetadata(metadata: Metadata = buildMetadata()): Future[Metadata] =
       metadataMongoRepository.createMetadata(metadata)

@@ -19,85 +19,80 @@ package repositories.prepop
 import auth.AuthorisationResource
 import models.prepop.Address
 import org.joda.time.{DateTime, DateTimeZone}
+import org.mongodb.scala.bson.BsonRegularExpression
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, ReplaceOptions}
 import play.api.libs.json.JodaWrites.JodaDateTimeWrites
 import play.api.libs.json._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.{Index, IndexType}
-import reactivemongo.bson._
-import reactivemongo.play.json.ImplicitBSONHandlers.BSONDocumentWrites
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class AddressRepository @Inject()(mongo: ReactiveMongoComponent, val configuration: ServicesConfig) extends ReactiveRepository[JsObject, BSONObjectID](
-  collectionName = "SharedAddresses",
-  mongo = mongo.mongoConnector.db,
-  domainFormat = Address.format
-) with AuthorisationResource with TTLIndexing[JsObject, BSONObjectID] {
+class AddressRepository @Inject()(mongo: MongoComponent, val configuration: ServicesConfig)(implicit ec: ExecutionContext) extends
+  PlayMongoRepository[JsObject](
+    mongoComponent = mongo,
+    collectionName = "SharedAddresses",
+    domainFormat = Address.format,
+    indexes = Seq(
+      IndexModel(
+        ascending("registration_id", "addressLine1", "postcode", "country"),
+        IndexOptions()
+          .name("composite_address_index")
+          .unique(true)
+      ),
+      IndexModel(
+        ascending("lastUpdated"),
+        IndexOptions()
+          .name("lastUpdatedIndex")
+          .expireAfter(configuration.getInt("microservice.services.prePop.ttl"), TimeUnit.SECONDS)
+      )
+    )
+  ) with AuthorisationResource {
 
   private[repositories] def now: DateTime = DateTime.now(DateTimeZone.UTC)
 
   private[repositories] implicit class impBsonHelpers(value: String) {
-    def caseInsensitive: BSONRegex = BSONRegex("^" + value + "$", "i")
+    def caseInsensitive: BsonRegularExpression = BsonRegularExpression("^" + value + "$", "i")
   }
 
-  override def indexes: Seq[Index] = {
-    Seq(
-      Index(
-        key = Seq("registration_id" -> IndexType.Ascending,
-          "addressLine1" -> IndexType.Ascending,
-          "postcode" -> IndexType.Ascending,
-          "country" -> IndexType.Ascending),
-        name = Some("composite_address_index"), unique = true
-      )
-    )
-  }
-
-  override def ensureIndexes(implicit ec: ExecutionContext): Future[Seq[Boolean]] = {
-    super.ensureIndexes flatMap { l =>
-      ensureTTLIndexes map {
-        ttl => l ++ ttl
-      }
-    }
-  }
-
-  private def regIdSelector(regId: String): (String, Json.JsValueWrapper) = "registration_id" -> regId
+  private def regIdSelector(regId: String): Bson = equal("registration_id", regId)
 
   def fetchAddresses(regId: String)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
-    find(regIdSelector(regId)) map { addressList =>
-      if (addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id")))(Writes.list[JsObject]))) else None
+    collection.find(regIdSelector(regId)).toFuture().map { addressList =>
+      if (addressList.nonEmpty) Some(Json.obj("addresses" -> Json.toJson(addressList.map(_.-("_id")))(Writes.seq[JsObject]))) else None
     }
   }
 
-  private def fetchAddress(regId: String, selector: BSONDocument)(implicit ec: ExecutionContext): Future[Option[JsObject]] = {
-    collection.find(selector).one[JsObject]
-  }
-
-  def insertAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
-    collection.insert(address)(Address.mongoWrites, ec).map(_.writeErrors.isEmpty)
-  }
+  def insertAddress(address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] =
+    collection.insertOne(address).toFuture().map(_ => true)
 
   def updateAddress(regId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
     val a = address.as[Address](Address.addressReads)
-    val selector = BSONDocument("registration_id" -> regId.caseInsensitive) ++
-      BSONDocument("addressLine1" -> a.addressLine1.caseInsensitive) ++
-      a.postcode.fold(BSONDocument())(pc => BSONDocument("postcode" -> pc.caseInsensitive)) ++
-      a.country.fold(BSONDocument())(c => BSONDocument("country" -> c.caseInsensitive))
+    val selector =
+      Filters.and(Seq(
+        Some(equal("registration_id", regId.caseInsensitive)),
+        Some(equal("addressLine1", a.addressLine1.caseInsensitive)),
+        a.postcode.map(pc => equal("postcode", pc.caseInsensitive)),
+        a.country.map(c => equal("country", c.caseInsensitive))
+      ).flatten:_*)
 
-    val updatedTTL = Json.obj("lastUpdated" -> JodaDateTimeWrites.writes(now))
+    val updatedTTL = Json.obj("lastUpdated" -> MongoJodaFormats.dateTimeWrites.writes(now))
 
-    fetchAddress(regId, selector) flatMap { existingAddressOpt =>
-      existingAddressOpt.fold(Future.successful(false)) { existingAddress =>
-        val updatedAddress = address deepMerge updatedTTL
-        collection.update(selector, updatedAddress)(implicitly[OWrites[BSONDocument]], Address.mongoWrites, ec)
-          .map { err => err.writeErrors.isEmpty }
-      }
-    }
+    collection.replaceOne(
+      selector,
+      address deepMerge updatedTTL,
+      ReplaceOptions()
+        .upsert(false)
+    ).toFuture().map(_.getModifiedCount > 0)
   }
 
   override def getInternalId(registrationId: String)(implicit ec: ExecutionContext): Future[Option[String]] = {

@@ -17,12 +17,37 @@
 package models.prepop
 
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
 
+case class MongoTradingName(registrationID: String,
+                            internalID: String,
+                            tradingName: String,
+                            dateTime: DateTime = DateTime.now(DateTimeZone.UTC))
+
+object MongoTradingName {
+
+  val mongoReads: Reads[MongoTradingName] = (
+    (__ \ "_id").read[String] and
+      (__ \ "internalId").read[String] and
+      (__ \ "tradingName").read[String] and
+      (__ \ "lastUpdated").read[DateTime](MongoJodaFormats.dateTimeReads)
+    )(MongoTradingName.apply _)
+
+  val mongoWrites: OWrites[MongoTradingName] = (tn: MongoTradingName) =>
+    Json.obj(
+      "_id" -> tn.registrationID,
+      "internalId" -> tn.internalID,
+      "tradingName" -> tn.tradingName,
+      "lastUpdated" -> Json.toJson(tn.dateTime)(MongoJodaFormats.dateTimeFormat)
+    )
+
+  val mongoFormat: Format[MongoTradingName] = Format(mongoReads, mongoWrites)
+}
 
 object TradingName {
-  def now: DateTime = DateTime.now(DateTimeZone.UTC)
 
   def format: Format[String] = new Format[String] {
     override def writes(str: String): JsValue = Json.obj(
@@ -30,28 +55,5 @@ object TradingName {
     )
 
     override def reads(json: JsValue): JsResult[String] = json.\("tradingName").validate[String]
-  }
-
-  def mongoWrites(registrationID: String, internalID: String, dateTime: DateTime = now): OWrites[String] = new OWrites[String] {
-    override def writes(tradingName: String): JsObject = {
-      Json.obj(
-        "_id" -> registrationID,
-        "internalId" -> internalID,
-        "lastUpdated" -> Json.toJson(dateTime)(ReactiveMongoFormats.dateTimeWrite),
-        "tradingName" -> tradingName
-      )
-    }
-  }
-
-  val mongoTradingNameReads: Reads[String] = new Reads[String] {
-    def reads(json: JsValue): JsResult[String] = {
-      (json \ "tradingName").validate[String]
-    }
-  }
-
-  val mongoInternalIdReads: Reads[String] = new Reads[String] {
-    def reads(json: JsValue): JsResult[String] = {
-      (json \ "internalId").validate[String]
-    }
   }
 }

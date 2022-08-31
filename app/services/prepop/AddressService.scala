@@ -37,7 +37,7 @@ class AddressService @Inject()(addressesRepository: AddressRepository) {
 
   def updateAddress(registrationId: String, address: JsObject)(implicit ec: ExecutionContext): Future[Boolean] = {
     addressExists(registrationId, address) flatMap { exists =>
-      if (!exists) addressesRepository.insertAddress(registrationId, address) else addressesRepository.updateAddress(registrationId, address)
+      if (!exists) addressesRepository.insertAddress(address) else addressesRepository.updateAddress(registrationId, address)
     }
   }
 

@@ -17,8 +17,10 @@
 package controllers.test
 
 import helpers.SCRSSpec
+import models.Metadata
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import org.mongodb.scala.{MongoCollection, SingleObservable}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
@@ -30,15 +32,21 @@ import scala.concurrent.Future
 class MetadataTestControllerSpec extends SCRSSpec {
 
   val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
+  val mockCollection = mock[MongoCollection[Metadata]]
+  val mockSingleObservable = mock[SingleObservable[Void]]
+  val fakeVoid: Void = null
 
   class Setup {
+    when(mockMetadataRepository.collection).thenReturn(mockCollection)
+    when(mockCollection.drop()).thenReturn(mockSingleObservable)
     val controller = new MetadataTestController(mockMetadataRepository, stubControllerComponents())
   }
 
   "dropMetadataCollection" should {
 
     "return a 200 with a success message" in new Setup {
-      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(true))
+
+      when(mockSingleObservable.toFuture()).thenAnswer(_ => Future.successful(fakeVoid))
 
       val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
 
@@ -47,7 +55,8 @@ class MetadataTestControllerSpec extends SCRSSpec {
     }
 
     "return a 200 with an error message if the collection could not be dropped" in new Setup {
-      when(mockMetadataRepository.drop(any())).thenReturn(Future.successful(false))
+
+      when(mockSingleObservable.toFuture()).thenAnswer(_ => Future.failed(new Exception("bang")))
 
       val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
 

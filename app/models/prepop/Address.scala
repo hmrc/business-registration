@@ -18,48 +18,35 @@ package models.prepop
 
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
 
 import scala.util.{Failure, Success, Try}
 
 object Address {
 
-  val mongoWrites: OWrites[JsObject] = new OWrites[JsObject] {
-    override def writes(o: JsObject): JsObject = {
-      o.deepMerge(Json.obj("lastUpdated" -> Json.toJson(DateTime.now(DateTimeZone.UTC))(ReactiveMongoFormats.dateTimeWrite)))
-    }
-  }
+  val mongoWrites: OWrites[JsObject] = (o: JsObject) =>
+    o.deepMerge(Json.obj("lastUpdated" -> Json.toJson(DateTime.now(DateTimeZone.UTC))(MongoJodaFormats.dateTimeWrites)))
 
-  val writes: OWrites[JsObject] = new OWrites[JsObject] {
-    override def writes(o: JsObject): JsObject = o
-  }
+  val writes: OWrites[JsObject] = (o: JsObject) => o
 
-  val reads: Reads[JsObject] = new Reads[JsObject] {
-    override def reads(json: JsValue): JsResult[JsObject] = {
-      Try(json.as[JsObject]) match {
-        case Success(v) => JsSuccess(v)
-        case Failure(e) => JsError(e.getMessage)
-      }
+  val reads: Reads[JsObject] = (json: JsValue) =>
+    Try(json.as[JsObject]) match {
+      case Success(v) => JsSuccess(v)
+      case Failure(e) => JsError(e.getMessage)
     }
-  }
 
   val format: Format[JsObject] = Format(reads, writes)
 
-  val addressReads: Reads[Address] = new Reads[Address] {
-    override def reads(json: JsValue): JsResult[Address] = {
-      val addressLine1 = (json \ "addressLine1").as[String]
-      val postcode = (json \ "postcode").asOpt[String]
-      val country = (json \ "country").asOpt[String]
+  val addressReads: Reads[Address] = (json: JsValue) => {
+    val addressLine1 = (json \ "addressLine1").as[String]
+    val postcode = (json \ "postcode").asOpt[String]
+    val country = (json \ "country").asOpt[String]
 
-      JsSuccess(Address(addressLine1, postcode, country))
-    }
+    JsSuccess(Address(addressLine1, postcode, country))
   }
 
-  val listReads: Reads[Seq[Address]] = new Reads[Seq[Address]] {
-    override def reads(json: JsValue): JsResult[Seq[Address]] = {
-      JsSuccess((json \ "addresses").as[Seq[JsObject]].map(_.as[Address](Address.addressReads)))
-    }
-  }
+  val listReads: Reads[Seq[Address]] = (json: JsValue) =>
+    JsSuccess((json \ "addresses").as[Seq[JsObject]].map(_.as[Address](Address.addressReads)))
 }
 
 case class Address(addressLine1: String,
