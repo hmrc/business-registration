@@ -18,7 +18,8 @@ package auth
 
 import play.api.Logging
 import play.api.mvc.Result
-import uk.gov.hmrc.auth.core.retrieve.Retrievals.internalId
+import uk.gov.hmrc.auth.core.retrieve.Retrieval
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -37,6 +38,7 @@ final case class AuthResourceNotFound(intId: String) extends AuthorisationResult
 
 trait Authorisation extends AuthorisedFunctions with Logging {
   val resourceConn: AuthorisationResource
+  val internalId: Retrieval[Option[String]] = Retrievals.internalId
 
   def isAuthorised(id: String
                   )(failure: (String, AuthorisationResult) => Future[Result],
@@ -65,5 +67,4 @@ trait Authorisation extends AuthorisedFunctions with Logging {
           case _ => NotAuthorised(intId)
         }
     }
-
 }
