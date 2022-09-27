@@ -18,7 +18,6 @@ package repositories
 
 import auth.AuthorisationResource
 import models.{Metadata, MetadataResponse}
-import org.joda.time.DateTime
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
@@ -29,6 +28,7 @@ import repositories.CollectionsNames.METADATA
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
+import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -66,10 +66,10 @@ class MetadataMongoRepository @Inject()(mongo: MongoComponent)(implicit ec: Exec
     collection.updateOne(selector, update).toFuture() map (_ => completionCapacity)
   }
 
-  def updateLastSignedIn(registrationId: String, dateTime: DateTime)(implicit ec: ExecutionContext): Future[DateTime] = {
+  def updateLastSignedIn(registrationId: String, instant: Instant)(implicit ec: ExecutionContext): Future[Instant] = {
     val selector = regIDMetadataSelector(registrationId)
-    val update = set("lastSignedIn", dateTime.getMillis)
-    collection.updateOne(selector, update).toFuture().map(_ => dateTime)
+    val update = set("lastSignedIn", instant.toEpochMilli)
+    collection.updateOne(selector, update).toFuture().map(_ => instant)
   }
 
   def createMetadata(metadata: Metadata)(implicit ec: ExecutionContext): Future[Metadata] =

@@ -18,11 +18,12 @@ package repositories
 
 import helpers.MongoSpec
 import models.{Metadata, MetadataResponse}
-import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.test.Helpers._
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.language.postfixOps
 
@@ -49,7 +50,7 @@ class MetadataMongoRepositoryISpec extends MongoSpec with BeforeAndAfterAll with
 
     def updateCompletionCapacity(regId: String = randomRegid, cc: String): String = await(repository.updateCompletionCapacity(regId, cc))
 
-    def updateLastSignin(regId: String = randomRegid, timeNow: DateTime): DateTime = await(repository.updateLastSignedIn(regId, timeNow))
+    def updateLastSignin(regId: String = randomRegid, timeNow: Instant): Instant = await(repository.updateLastSignedIn(regId, timeNow))
 
     def count: Int = repository.awaitCount
 
@@ -103,10 +104,11 @@ class MetadataMongoRepositoryISpec extends MongoSpec with BeforeAndAfterAll with
 
     "Update Last Sign In" should {
       "update the last sign in date if record exists" in new Setup {
-        val metdataResponse: Metadata = createMetadata()
-        val timeNow: DateTime = DateTime.now()
 
-        val updateResponse: DateTime = updateLastSignin(timeNow = timeNow)
+        createMetadata()
+        val timeNow: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+
+        val updateResponse: Instant = updateLastSignin(timeNow = timeNow)
 
         updateResponse mustBe timeNow
 

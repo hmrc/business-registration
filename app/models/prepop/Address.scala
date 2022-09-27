@@ -16,16 +16,16 @@
 
 package models.prepop
 
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import java.time.Instant
 import scala.util.{Failure, Success, Try}
 
 object Address {
 
   val mongoWrites: OWrites[JsObject] = (o: JsObject) =>
-    o.deepMerge(Json.obj("lastUpdated" -> Json.toJson(DateTime.now(DateTimeZone.UTC))(MongoJodaFormats.dateTimeWrites)))
+    o.deepMerge(Json.obj("lastUpdated" -> Json.toJson(Instant.now())(MongoJavatimeFormats.instantWrites)))
 
   val writes: OWrites[JsObject] = (o: JsObject) => o
 

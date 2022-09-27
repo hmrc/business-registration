@@ -19,13 +19,11 @@ package controllers
 import fixtures.{AuthFixture, MetadataFixture}
 import helpers.SCRSSpec
 import mocks.{AuthMocks, MetricsServiceMock}
-import models.{ErrorResponse, MetadataRequest}
-import org.joda.time.{DateTime, DateTimeZone}
+import models.{ErrorResponse, Metadata, MetadataRequest}
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
@@ -34,6 +32,7 @@ import repositories.MetadataMongoRepository
 import services.MetadataService
 import uk.gov.hmrc.http.HeaderCarrier
 
+import java.time.Instant
 import scala.concurrent.Future
 
 class MetadataControllerSpec extends SCRSSpec
@@ -44,7 +43,7 @@ class MetadataControllerSpec extends SCRSSpec
   with MockitoSugar {
 
 
-  implicit val writer = JodaDateTimeNumberWrites
+  implicit val instantWriter = Metadata.milliInstantWrites
 
   val mockMetadataService: MetadataService = mock[MetadataService]
   val mockMetadataMongoRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
@@ -245,8 +244,8 @@ class MetadataControllerSpec extends SCRSSpec
   "update last signed in" should {
 
     val regId = "0123456789"
-    val currentTime = DateTime.now(DateTimeZone.UTC)
-    val currentTimeCaptor = ArgumentCaptor.forClass[DateTime, DateTime](classOf[DateTime])
+    val currentTime = Instant.now()
+    val currentTimeCaptor = ArgumentCaptor.forClass[Instant, Instant](classOf[Instant])
 
     "return a 200 if Json body can be parsed and last timestamp has been updated" in new Setup {
       mockSuccessfulAuthorisation(mockMetadataMongoRepository, regId)
@@ -257,7 +256,7 @@ class MetadataControllerSpec extends SCRSSpec
       val result: Future[Result] = controller.updateLastSignedIn(regId)(FakeRequest().withBody[JsValue](Json.toJson(currentTime)))
 
       status(result) mustBe OK
-      Json.toJson[DateTime](currentTimeCaptor.getValue) mustBe bodyAsJson(result)
+      Json.toJson[Instant](currentTimeCaptor.getValue) mustBe bodyAsJson(result)
     }
 
     "return a 403 when the user is not logged in" in new Setup {

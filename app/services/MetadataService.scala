@@ -16,16 +16,13 @@
 
 package services
 
-import java.text.SimpleDateFormat
-import java.util.{Date, TimeZone}
-
 import akka.event.slf4j.Logger
-import javax.inject.{Inject, Singleton}
 import models.{Links, Metadata, MetadataResponse}
-import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import repositories._
 
+import java.time.Instant
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -37,7 +34,7 @@ class MetadataService @Inject()(metadataRepository: MetadataMongoRepository, seq
       val newMetadata = Metadata(
         internalID,
         regID.toString,
-        generateTimestamp(new DateTime()),
+        Instant.now().toString,
         lang,
         None,
         None,
@@ -50,14 +47,6 @@ class MetadataService @Inject()(metadataRepository: MetadataMongoRepository, seq
 
   private def generateRegistrationId(implicit ec: ExecutionContext): Future[Int] = {
     sequenceRepository.getNext("registrationID")
-  }
-
-  private def generateTimestamp(timeStamp: DateTime): String = {
-    val timeStampFormat = "yyyy-MM-dd'T'HH:mm:ssXXX"
-    val UTC: TimeZone = TimeZone.getTimeZone("UTC")
-    val format: SimpleDateFormat = new SimpleDateFormat(timeStampFormat)
-    format.setTimeZone(UTC)
-    format.format(new Date(timeStamp.getMillis))
   }
 
   def searchMetadataRecord(internalID: String)(implicit ec: ExecutionContext): Future[Option[MetadataResponse]] = {
@@ -82,8 +71,8 @@ class MetadataService @Inject()(metadataRepository: MetadataMongoRepository, seq
     metadataRepository.removeMetadata(registrationId)
   }
 
-  def updateLastSignedIn(registrationId: String, dateTime: DateTime)(implicit ec: ExecutionContext): Future[DateTime] = {
-    metadataRepository.updateLastSignedIn(registrationId, dateTime)
+  def updateLastSignedIn(registrationId: String, instant: Instant)(implicit ec: ExecutionContext): Future[Instant] = {
+    metadataRepository.updateLastSignedIn(registrationId, instant)
   }
 
   def buildSelfLink(registrationId: String): JsObject = {
