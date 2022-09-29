@@ -35,7 +35,7 @@ trait InstantJsonUtil {
   private val flexibleDateFormatter = new DateTimeFormatterBuilder()
     .appendPattern("uuuu-MM-dd['T'][HH:mm:ss]")
     .optionalStart()
-    .appendFraction(ChronoField.MILLI_OF_SECOND, 1, 3, true)
+    .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
     .optionalEnd()
     .optionalStart()
     .appendZoneId()
@@ -43,7 +43,7 @@ trait InstantJsonUtil {
     .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
     .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
     .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
-    .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0)
+    .parseDefaulting(ChronoField.NANO_OF_SECOND, 0)
     .toFormatter
 
   val flexibleInstantReads = Reads[Instant] {
