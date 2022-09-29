@@ -16,11 +16,11 @@
 
 package models
 
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.functional.syntax._
-import play.api.libs.json.JodaReads.DefaultJodaDateTimeReads
-import play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
-import play.api.libs.json.{Json, _}
+import play.api.libs.json._
+import utils.InstantJsonUtil
+
+import java.time.Instant
 
 case class Metadata(internalId: String,
                     registrationID: String,
@@ -29,11 +29,11 @@ case class Metadata(internalId: String,
                     submissionResponseEmail: Option[String],
                     completionCapacity: Option[String],
                     declareAccurateAndComplete: Boolean,
-                    lastSignedIn: DateTime = Metadata.now)
+                    lastSignedIn: Instant = Metadata.now)
 
-object Metadata extends MetadataValidator {
+object Metadata extends MetadataValidator with InstantJsonUtil {
 
-  def now: DateTime = DateTime.now(DateTimeZone.UTC)
+  def now: Instant = Instant.now()
 
   val writes: OWrites[Metadata] = (
     (__ \ "internalId").write[String] and
@@ -43,7 +43,7 @@ object Metadata extends MetadataValidator {
       (__ \ "submissionResponseEmail").writeNullable[String] and
       (__ \ "completionCapacity").writeNullable[String](completionCapacityValidator) and
       (__ \ "declareAccurateAndComplete").write[Boolean] and
-      (__ \ "lastSignedIn").write[DateTime](JodaDateTimeNumberWrites)
+      (__ \ "lastSignedIn").write[Instant](milliInstantWrites)
     )(unlift(Metadata.unapply))
 
   val reads: Reads[Metadata] = (
@@ -54,7 +54,7 @@ object Metadata extends MetadataValidator {
       (__ \ "submissionResponseEmail").readNullable[String] and
       (__ \ "completionCapacity").readNullable[String](completionCapacityValidator) and
       (__ \ "declareAccurateAndComplete").read[Boolean] and
-      (__ \ "lastSignedIn").readWithDefault[DateTime](Metadata.now)
+      (__ \ "lastSignedIn").readWithDefault[Instant](Metadata.now)(milliInstantReads)
     )(Metadata.apply _)
 
   implicit val formats: OFormat[Metadata] = OFormat(reads, writes)

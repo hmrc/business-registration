@@ -28,7 +28,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test._
 
-import java.time.LocalDate
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent.Future
 
 trait IntegrationSpecBase extends PlaySpec
@@ -64,7 +64,8 @@ trait IntegrationSpecBase extends PlaySpec
 
   val testInternalId: String = "TestInternalIdForITTests"
   val testRegistrationId: String = "TestRegistrationIdForITTests"
-  val validNewDateTime: LocalDate = LocalDate.of(2010, 5, 12)
+  val validNewDate: LocalDate = LocalDate.of(2010, 5, 12)
+  val validNewDateTime = LocalDateTime.of(validNewDate, LocalTime.of(12, 15, 2, 956000000))
 
   def successfullAuth(internalId: String = testInternalId): JsValue = Json.parse(
     s"""

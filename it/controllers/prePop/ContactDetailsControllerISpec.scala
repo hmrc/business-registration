@@ -132,7 +132,7 @@ class ContactDetailsControllerISpec extends IntegrationSpecBase with MetadataFix
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
+      val result: Future[Result] = controller.insertUpdateContactDetails(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDate)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }

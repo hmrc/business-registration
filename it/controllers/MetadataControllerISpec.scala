@@ -21,7 +21,7 @@ import itutil.IntegrationSpecBase
 import models.Metadata
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.DeleteResult
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsString, JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -29,6 +29,8 @@ import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 
+import java.time.temporal.ChronoField
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -222,20 +224,44 @@ class MetadataControllerISpec extends IntegrationSpecBase with MetadataFixtures 
       stubSuccessfulLogin
       await(insertMetadata())
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDate)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe OK
       val json: Option[Metadata] = await(getMetadata())
       json.isEmpty mustBe false
-      json.get.lastSignedIn.toDateTime.dayOfMonth().get() mustBe validNewDateTime.getDayOfMonth
-      json.get.lastSignedIn.toDateTime.monthOfYear().get() mustBe validNewDateTime.getMonthValue
-      json.get.lastSignedIn.toDateTime.year().get() mustBe validNewDateTime.getYear
+
+      val dt: LocalDateTime = json.get.lastSignedIn.atZone(ZoneOffset.UTC).toLocalDateTime
+
+      dt.getDayOfMonth mustBe validNewDate.getDayOfMonth
+      dt.getMonthValue mustBe validNewDate.getMonthValue
+      dt.getYear mustBe validNewDate.getYear
+    }
+
+    "return a 200 with a response body (when provided with full timestamp)" in new Setup {
+      stubSuccessfulLogin
+      await(insertMetadata())
+
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](JsString(validNewDateTime.toString)).withHeaders("Authorization" -> "Bearer123"))
+
+      status(result) mustBe OK
+      val json: Option[Metadata] = await(getMetadata())
+      json.isEmpty mustBe false
+
+      val dt: LocalDateTime = json.get.lastSignedIn.atZone(ZoneOffset.UTC).toLocalDateTime
+
+      dt.getDayOfMonth mustBe validNewDateTime.getDayOfMonth
+      dt.getMonthValue mustBe validNewDateTime.getMonthValue
+      dt.getYear mustBe validNewDateTime.getYear
+      dt.getHour mustBe validNewDateTime.getHour
+      dt.getMinute mustBe validNewDateTime.getMinute
+      dt.getSecond mustBe validNewDateTime.getSecond
+      dt.getNano mustBe validNewDateTime.getNano
     }
 
     "return a Forbidden if the user is not LoggedIn" in new Setup {
       stubNotLoggedIn
 
-      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDateTime)).withHeaders("Authorization" -> "Bearer123"))
+      val result: Future[Result] = controller.updateLastSignedIn(testRegistrationId)(FakeRequest().withBody[JsValue](Json.toJson(validNewDate)).withHeaders("Authorization" -> "Bearer123"))
 
       status(result) mustBe FORBIDDEN
     }

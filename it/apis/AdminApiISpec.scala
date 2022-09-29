@@ -18,7 +18,6 @@ package apis
 
 import helpers.MongoSpec
 import models.Metadata
-import org.joda.time.DateTime
 import org.mongodb.scala.result.InsertOneResult
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
@@ -26,6 +25,8 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.test.Helpers._
 import repositories.MetadataMongoRepository
+
+import java.time.Instant
 
 class AdminApiISpec extends MongoSpec with GuiceOneServerPerSuite {
 
@@ -54,7 +55,7 @@ class AdminApiISpec extends MongoSpec with GuiceOneServerPerSuite {
     val path = s"/business-tax-registration/$regId"
 
     val metadata = Metadata(internalId, regId, formCreationTS, "ENG", None, Some("director"),
-      declareAccurateAndComplete = false, DateTime.parse("2017-08-09T17:10:30+01:00"))
+      declareAccurateAndComplete = false, Instant.parse("2017-08-09T17:10:30Z"))
 
     "return a 200 and a business registration document as json when one is found for the supplied regId" in new Setup {
 

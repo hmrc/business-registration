@@ -17,10 +17,12 @@
 package models
 
 import fixtures.MetadataFixture
-import org.joda.time.chrono.ISOChronology
-import org.joda.time.DateTime
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsPath, Json, JsonValidationError}
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.TimeUnit
 
 class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixture {
 
@@ -58,15 +60,15 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
           | "declareAccurateAndComplete":true
           |}""".stripMargin)
 
-      val before = Metadata.now.getMillis
-      val lastSignedIn = Json.fromJson[Metadata](json)(Metadata.reads).get.lastSignedIn.getMillis
-      val after = Metadata.now.getMillis
+      val before = Metadata.now.toEpochMilli
+      val lastSignedIn = Json.fromJson[Metadata](json)(Metadata.reads).get.lastSignedIn.toEpochMilli
+      val after = Metadata.now.toEpochMilli
 
       lastSignedIn >= before && lastSignedIn <= after mustBe true
     }
 
     "Be able to be parsed from a full JSON structure " in {
-      val dateTime = DateTime.now(ISOChronology.getInstance())
+      val dateTime = Instant.now().truncatedTo(ChronoUnit.MILLIS)
       val json = Json.parse(
         s"""
            |{
@@ -77,7 +79,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
            | "submissionResponseEmail":"email@test.com",
            | "completionCapacity":"Director",
            | "declareAccurateAndComplete":true,
-           | "lastSignedIn" : ${dateTime.getMillis}
+           | "lastSignedIn" : ${dateTime.toEpochMilli}
            |}""".stripMargin)
 
       val result = json.validate[Metadata]

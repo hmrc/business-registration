@@ -18,16 +18,16 @@ package services
 
 import fixtures.{MetadataFixture, MongoFixture}
 import models.Metadata
-import org.joda.time.{DateTime, DateTimeZone}
-import org.mockito.Mockito._
 import org.mockito.ArgumentMatchers.{any, contains, eq => eqTo}
+import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers._
 import repositories._
 
-import scala.concurrent.Future
+import java.time.Instant
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class MetadataServiceSpec extends PlaySpec with MockitoSugar with MetadataFixture with MongoFixture {
 
@@ -118,7 +118,7 @@ class MetadataServiceSpec extends PlaySpec with MockitoSugar with MetadataFixtur
   }
   "update last signed in" should {
     val service = setupService
-    val currentTime = DateTime.now(DateTimeZone.UTC)
+    val currentTime = Instant.now()
     "return a date time response" in {
       when(mockMetadataRepository.updateLastSignedIn(eqTo("testIntID"), eqTo(currentTime))(any()))
         .thenReturn(Future.successful(currentTime))

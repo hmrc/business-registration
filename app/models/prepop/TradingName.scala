@@ -16,16 +16,17 @@
 
 package models.prepop
 
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import java.time.Instant
 
 case class MongoTradingName(registrationID: String,
                             internalID: String,
                             tradingName: String,
-                            dateTime: DateTime = DateTime.now(DateTimeZone.UTC))
+                            dateTime: Instant = Instant.now())
 
 object MongoTradingName {
 
@@ -33,7 +34,7 @@ object MongoTradingName {
     (__ \ "_id").read[String] and
       (__ \ "internalId").read[String] and
       (__ \ "tradingName").read[String] and
-      (__ \ "lastUpdated").read[DateTime](MongoJodaFormats.dateTimeReads)
+      (__ \ "lastUpdated").read[Instant](MongoJavatimeFormats.instantReads)
     )(MongoTradingName.apply _)
 
   val mongoWrites: OWrites[MongoTradingName] = (tn: MongoTradingName) =>
@@ -41,7 +42,7 @@ object MongoTradingName {
       "_id" -> tn.registrationID,
       "internalId" -> tn.internalID,
       "tradingName" -> tn.tradingName,
-      "lastUpdated" -> Json.toJson(tn.dateTime)(MongoJodaFormats.dateTimeFormat)
+      "lastUpdated" -> Json.toJson(tn.dateTime)(MongoJavatimeFormats.instantWrites)
     )
 
   val mongoFormat: Format[MongoTradingName] = Format(mongoReads, mongoWrites)

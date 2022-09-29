@@ -18,12 +18,13 @@ package repositories.prepop
 
 import helpers.MongoSpec
 import models.prepop.Address
-import org.joda.time.DateTime
 import org.mongodb.scala.MongoException
 import org.mongodb.scala.bson.ObjectId
 import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import play.api.test.Helpers._
-import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJodaFormats}
+import uk.gov.hmrc.mongo.play.json.formats.{MongoFormats, MongoJavatimeFormats}
+
+import java.time.Instant
 
 class AddressesRepositoryISpec extends MongoSpec {
 
@@ -39,8 +40,8 @@ class AddressesRepositoryISpec extends MongoSpec {
   val regId1 = "regId1"
   val regId2 = "regId2"
 
-  val dateTime: DateTime = DateTime.parse("2017-06-15T10:06:28.434Z")
-  val now: JsValue = Json.toJson(dateTime)(MongoJodaFormats.dateTimeFormat)
+  val dateTime: Instant = Instant.parse("2017-06-15T10:06:28.434Z")
+  val now: JsValue = Json.toJson(dateTime)(MongoJavatimeFormats.instantWrites)
 
   def buildAddressJson(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false): JsObject = {
 
@@ -223,14 +224,14 @@ class AddressesRepositoryISpec extends MongoSpec {
 
       def getAddressesAsList: Seq[JsObject] = (o \ "addresses").as[Seq[JsObject]](Reads.seq(Address.reads))
 
-      def getTTL: DateTime = (o \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
+      def getTTL: Instant = (o \ "lastUpdated").as[Instant](MongoJavatimeFormats.instantReads)
     }
 
     "update the lastUpdated ttl value when the supplied address exactly matches an existing address for the regId" in new Setup {
       val existingAddress: JsObject = buildAddressJson(regId)
       val suppliedAddress: JsObject = buildAddressJson(regId, withOid = false)
 
-      val originalTTL: DateTime = (existingAddress \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
+      val originalTTL: Instant = (existingAddress \ "lastUpdated").as[Instant](MongoJavatimeFormats.instantReads)
       val oid: ObjectId = (existingAddress \ "_id").as[ObjectId](MongoFormats.objectIdFormat)
 
       repo.awaitInsert(existingAddress)
@@ -242,7 +243,7 @@ class AddressesRepositoryISpec extends MongoSpec {
       repo.awaitCount mustBe 1
 
       val updatedAddress: JsObject = repo.findById(oid).get
-      val updatedTTL: DateTime = (updatedAddress \ "lastUpdated").as[DateTime](MongoJodaFormats.dateTimeFormat)
+      val updatedTTL: Instant = (updatedAddress \ "lastUpdated").as[Instant](MongoJavatimeFormats.instantReads)
 
       updatedAddress - "lastUpdated" - "_id" mustBe suppliedAddress - "lastUpdated"
 

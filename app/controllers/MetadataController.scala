@@ -18,18 +18,17 @@ package controllers
 
 import auth._
 import controllers.helper.AuthControllerHelpers
-import javax.inject.{Inject, Singleton}
 import models._
-import org.joda.time.DateTime
-import play.api.libs.json.JodaReads._
-import play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import repositories.MetadataMongoRepository
 import services.{MetadataService, MetricsService}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import utils.InstantJsonUtil
 
+import java.time.Instant
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -38,7 +37,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
                                    val resourceConn: MetadataMongoRepository,
                                    val authConnector: AuthConnector,
                                    controllerComponents: ControllerComponents
-                                  ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers {
+                                  ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers with InstantJsonUtil {
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>
@@ -131,8 +130,9 @@ class MetadataController @Inject()(metadataService: MetadataService,
       isAuthorised(registrationId)(
         failure = authorisationResultHandler("updateLastSignedIn"),
         success = {
-          withJsonBody[DateTime] { dT =>
-            metadataService.updateLastSignedIn(registrationId, dT) map { updatedDT => Ok(Json.toJson(updatedDT)(JodaDateTimeNumberWrites)) }
+          implicit val instantReads = flexibleInstantReads
+          withJsonBody[Instant] { instant =>
+            metadataService.updateLastSignedIn(registrationId, instant) map { updatedDT => Ok(JsNumber(updatedDT.toEpochMilli)) }
           }
         })
   }

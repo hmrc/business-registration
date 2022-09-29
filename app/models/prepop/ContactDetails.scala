@@ -17,13 +17,13 @@
 package models.prepop
 
 import models.prepop.ContactDetails.formats
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logging
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
+import java.time.Instant
 import scala.util.control.NoStackTrace
 
 
@@ -58,7 +58,7 @@ object ContactDetails {
 case class MongoContactDetails(registrationID: String,
                                internalID: String,
                                contactDetails: Option[ContactDetails],
-                               dateTime: DateTime = DateTime.now(DateTimeZone.UTC))
+                               dateTime: Instant = Instant.now())
 
 object MongoContactDetails {
 
@@ -66,7 +66,7 @@ object MongoContactDetails {
     (__ \ "_id").read[String] and
       (__ \ "InternalID").read[String] and
       (__ \ "ContactDetails").readNullable[ContactDetails] and
-      (__ \ "lastUpdated").read[DateTime](MongoJodaFormats.dateTimeReads)
+      (__ \ "lastUpdated").read[Instant](MongoJavatimeFormats.instantReads)
     )(MongoContactDetails.apply _)
 
   val mongoWrites: OWrites[MongoContactDetails] = (cd: MongoContactDetails) =>
@@ -74,7 +74,7 @@ object MongoContactDetails {
       "_id" -> cd.registrationID,
       "InternalID" -> cd.internalID,
       "ContactDetails" -> Json.toJson(cd.contactDetails),
-      "lastUpdated" -> Json.toJson(cd.dateTime)(MongoJodaFormats.dateTimeFormat)
+      "lastUpdated" -> Json.toJson(cd.dateTime)(MongoJavatimeFormats.instantWrites)
     )
 
   val mongoFormat: Format[MongoContactDetails] = Format(mongoReads, mongoWrites)

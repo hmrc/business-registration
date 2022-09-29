@@ -18,19 +18,18 @@ package repositories.prepop
 
 import auth.AuthorisationResource
 import models.prepop.Address
-import org.joda.time.{DateTime, DateTimeZone}
 import org.mongodb.scala.bson.BsonRegularExpression
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, ReplaceOptions}
-import play.api.libs.json.JodaWrites.JodaDateTimeWrites
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.mongo.play.json.formats.MongoJodaFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +57,7 @@ class AddressRepository @Inject()(mongo: MongoComponent, val configuration: Serv
     )
   ) with AuthorisationResource {
 
-  private[repositories] def now: DateTime = DateTime.now(DateTimeZone.UTC)
+  private[repositories] def now: Instant = Instant.now()
 
   private[repositories] implicit class impBsonHelpers(value: String) {
     def caseInsensitive: BsonRegularExpression = BsonRegularExpression("^" + value + "$", "i")
@@ -85,7 +84,7 @@ class AddressRepository @Inject()(mongo: MongoComponent, val configuration: Serv
         a.country.map(c => equal("country", c.caseInsensitive))
       ).flatten:_*)
 
-    val updatedTTL = Json.obj("lastUpdated" -> MongoJodaFormats.dateTimeWrites.writes(now))
+    val updatedTTL = Json.obj("lastUpdated" -> MongoJavatimeFormats.instantWrites.writes(now))
 
     collection.replaceOne(
       selector,
