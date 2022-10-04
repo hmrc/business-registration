@@ -68,7 +68,7 @@ class AuthClient101Spec extends PlaySpec with MockitoSugar with AuthMocks {
 
     "return 200 if user is authorised" in {
       when(mockAuthConnector.authorise[Unit](ArgumentMatchers.any(),ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any()))
-        .thenReturn(Future())
+        .thenReturn(Future.successful((): Unit))
 
       val result = TestController.loginFunction(FakeRequest())
 

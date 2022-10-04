@@ -21,30 +21,28 @@ object AppDependencies {
 
   private val playVersion           = "-play-28"
 
-  private val bootstrap             =  "6.4.0"
+  private val bootstrap             =  "7.7.0"
   private val domain                = s"8.1.0$playVersion"
-  private val mongoLock             = s"7.1.0$playVersion"
   private val scalaTestPlusVersion  =  "5.1.0"
-  private val wireMockVersion       =  "2.27.2"
-  private val playJsonVersion       =  "2.6.14"
-  private val hmrcMongoVersion      =  "0.71.0"
+  private val wireMockVersion       =  "2.33.2"
+  private val hmrcMongoVersion      =  "0.73.0"
   private val scalaTestVersion      =  "3.2.12"
   private val flexmarkAllVersion    =  "0.62.2"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc.mongo"       %% s"hmrc-mongo$playVersion"          % hmrcMongoVersion,
-    "uk.gov.hmrc"             %% s"bootstrap-backend$playVersion"   % bootstrap,
-    "uk.gov.hmrc"             %%  "domain"                          % domain,
+    "uk.gov.hmrc.mongo"             %% s"hmrc-mongo$playVersion"          % hmrcMongoVersion,
+    "uk.gov.hmrc"                   %% s"bootstrap-backend$playVersion"   % bootstrap,
+    "uk.gov.hmrc"                   %%  "domain"                          % domain,
     ws
   )
 
   val test: Seq[ModuleID] = Seq(
-    "org.scalatest"           %%  "scalatest"                       % scalaTestVersion        % "test, it",
-    "org.scalatestplus.play"  %%  "scalatestplus-play"              % scalaTestPlusVersion    % "test, it",
-    "com.vladsch.flexmark"    %   "flexmark-all"                    % flexmarkAllVersion      % "test, it",
-    "uk.gov.hmrc.mongo"       %% s"hmrc-mongo-test$playVersion"     % hmrcMongoVersion        % "test, it",
-    "org.scalatestplus"       %%  "mockito-4-5"                     % s"$scalaTestVersion.0"  % "test, it",
-    "com.github.tomakehurst"  %   "wiremock-jre8"                   % wireMockVersion         % "it"
+    "org.scalatest"                 %%  "scalatest"                       % scalaTestVersion        % "test, it",
+    "org.scalatestplus.play"        %%  "scalatestplus-play"              % scalaTestPlusVersion    % "test, it",
+    "com.vladsch.flexmark"          %   "flexmark-all"                    % flexmarkAllVersion      % "test, it",
+    "uk.gov.hmrc.mongo"             %% s"hmrc-mongo-test$playVersion"     % hmrcMongoVersion        % "test, it",
+    "org.scalatestplus"             %%  "mockito-4-5"                     % s"$scalaTestVersion.0"  % "test, it",
+    "com.github.tomakehurst"        %   "wiremock-jre8-standalone"        % wireMockVersion         % "it"
   )
 
   def apply(): Seq[ModuleID] = compile ++ test

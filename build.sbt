@@ -24,8 +24,8 @@ val appName = "business-registration"
 
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;controllers.beta.*;Reverse.*;model.*;config.*;.*(AuthService|BuildInfo|Routes).*",
-  //ScoverageKeys.coverageMinimum := 80,
-  ScoverageKeys.coverageFailOnMinimum := false,
+  ScoverageKeys.coverageMinimumStmtTotal := 80,
+  ScoverageKeys.coverageFailOnMinimum := true,
   ScoverageKeys.coverageHighlighting := true
 )
 
@@ -40,12 +40,13 @@ lazy val microservice = Project(appName, file("."))
   .settings(majorVersion := 1)
   .settings(bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json")))
   .settings(
+    scalacOptions += "-Xlint:-unused",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     update / evictionWarningOptions := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
     routesGenerator := InjectedRoutesGenerator,
     scalaVersion := "2.12.15",
-     Test / Keys.fork := true,
+    Test / Keys.fork := true,
     resolvers ++= Seq(Resolver.bintrayRepo("hmrc", "releases"), Resolver.jcenterRepo
     )
   )
