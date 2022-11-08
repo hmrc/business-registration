@@ -24,14 +24,15 @@ import play.api.mvc.Results._
 import scala.concurrent.Future
 
 trait AuthControllerHelpers extends Authenticated with Logging {
-  def authenticationResultHandler(methodName: String)(authResult: AuthenticationResult): Future[Result] =
+  def authenticationFailureResultHandler(methodName: String)(authResult: AuthenticationResult): Future[Result] =
     authResult match {
       case NotLoggedIn =>
         logger.info(s"[Authentication] [$methodName] User not logged in")
         Future.successful(Forbidden)
+      case _ => Future.successful(Forbidden)
     }
 
-  def authorisationResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] =
+  def authorisationFailureResultHandler(methodName: String)(regId: String, authResult: AuthorisationResult): Future[Result] =
     authResult match {
       case NotLoggedInOrAuthorised =>
         logger.info(s"[Authorisation] [$methodName] User not logged in")
@@ -42,6 +43,7 @@ trait AuthControllerHelpers extends Authenticated with Logging {
       case AuthResourceNotFound(_) =>
         logger.info(s"[Authorisation] [$methodName] Could not match an Auth resource to registration id $regId")
         Future.successful(NotFound)
+      case _ => Future.successful(Forbidden)
     }
 
 }

@@ -43,7 +43,6 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions += "-Xlint:-unused",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
-    update / evictionWarningOptions := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
     routesGenerator := InjectedRoutesGenerator,
     scalaVersion := "2.12.15",
     Test / Keys.fork := true

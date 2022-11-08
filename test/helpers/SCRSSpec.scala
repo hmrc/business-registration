@@ -40,7 +40,7 @@ trait SCRSSpec extends PlaySpec
   with Status {
 
   implicit val defaultHC: HeaderCarrier = HeaderCarrier()
-  implicit val defaultEC: ExecutionContext = ExecutionContext.global.prepare()
+  implicit val defaultEC: ExecutionContext = ExecutionContext.global
 
   private val FIVE = 5L
   private implicit val timeout: Timeout = Timeout(FIVE, TimeUnit.SECONDS)

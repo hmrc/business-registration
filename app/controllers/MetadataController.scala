@@ -43,7 +43,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
     implicit request =>
       metricsService.createFootprintCounter.inc()
       isAuthenticated(
-        failure = authenticationResultHandler("createMetaData"),
+        failure = authenticationFailureResultHandler("createMetaData"),
         success = { internalId =>
           val timer = metricsService.createMetadataTimer.time()
           withJsonBody[MetadataRequest] {
@@ -63,7 +63,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
   def searchMetadata: Action[AnyContent] = Action.async {
     implicit request =>
       isAuthenticated(
-        failure = authenticationResultHandler("searchMetaData"),
+        failure = authenticationFailureResultHandler("searchMetaData"),
         success = { internalId =>
           val timer = metricsService.searchMetadataTimer.time()
           metadataService.searchMetadataRecord(internalId) map (
@@ -78,7 +78,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
   def retrieveMetadata(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationID)(
-        failure = authorisationResultHandler("retrieveMetadata"),
+        failure = authorisationFailureResultHandler("retrieveMetadata"),
         success = {
           val timer = metricsService.retrieveMetadataTimer.time()
           metadataService.retrieveMetadataRecord(registrationID) map (
@@ -94,7 +94,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
   def removeMetadata(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationID)(
-        failure = authorisationResultHandler("removeMetadata"),
+        failure = authorisationFailureResultHandler("removeMetadata"),
         success = {
           val timer = metricsService.removeMetadataTimer.time()
           metadataService.removeMetadata(registrationID) map (
@@ -111,7 +111,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
   def updateMetaData(registrationID: String): Action[JsValue] = Action.async[JsValue](parse.json) {
     implicit request =>
       isAuthorised(registrationID)(
-        failure = authorisationResultHandler("updateMetadata"),
+        failure = authorisationFailureResultHandler("updateMetadata"),
         success = {
           withJsonBody[MetadataResponse] {
             metaData =>
@@ -128,7 +128,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
   def updateLastSignedIn(registrationId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       isAuthorised(registrationId)(
-        failure = authorisationResultHandler("updateLastSignedIn"),
+        failure = authorisationFailureResultHandler("updateLastSignedIn"),
         success = {
           implicit val instantReads = flexibleInstantReads
           withJsonBody[Instant] { instant =>
