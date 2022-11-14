@@ -38,7 +38,7 @@ class ContactDetailsController @Inject()(val resourceConn: MetadataMongoReposito
   def getContactDetails(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthenticated(
-        failure = authenticationResultHandler("getContactDetails"),
+        failure = authenticationFailureResultHandler("getContactDetails"),
         success = { internalId =>
           contactDetailsRepository.getContactDetails(registrationID, internalId) map (
             _.fold[Result](NotFound)(s => Ok(Json.toJson(s)))
@@ -52,7 +52,7 @@ class ContactDetailsController @Inject()(val resourceConn: MetadataMongoReposito
   def insertUpdateContactDetails(registrationID: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       isAuthenticated(
-        failure = authenticationResultHandler("insertUpdateContactDetails"),
+        failure = authenticationFailureResultHandler("insertUpdateContactDetails"),
         success = { internalId =>
           withJsonBody[ContactDetails] { js =>
             contactDetailsRepository.upsertContactDetails(registrationID, internalId, js) map (

@@ -42,7 +42,7 @@ class AddressController @Inject()(addressService: AddressService,
   def fetchAddresses(registrationId: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthorised(registrationId)(
-        failure = authorisationResultHandler("fetchAddresses"),
+        failure = authorisationFailureResultHandler("fetchAddresses"),
         success = {
           addressService.fetchAddresses(registrationId) map {
             case Some(addresses) => Ok(addresses)
@@ -67,7 +67,7 @@ class AddressController @Inject()(addressService: AddressService,
   private[controllers] def authenticatedToUpdate(regId: String, address: JsObject)(body: JsObject => Future[Result])
                                                 (implicit hc: HeaderCarrier): Future[Result] = {
     isAuthenticated(
-      failure = authenticationResultHandler("authenticatedToUpdate"),
+      failure = authenticationFailureResultHandler("authenticatedToUpdate"),
       success = { internalId =>
         resourceConn.getInternalIds(regId) flatMap { ids =>
           if (!ids.exists(_ != internalId)) {
@@ -89,6 +89,7 @@ class AddressController @Inject()(addressService: AddressService,
       case Success(JsSuccess(a, _)) => if (a.isValid) body else Future.successful(BadRequest)
       case Success(JsError(_)) => Future.successful(BadRequest)
       case Failure(_: JsResultException) => Future.successful(BadRequest)
+      case _ => Future.successful(BadRequest)
     }
   }
 }

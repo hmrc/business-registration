@@ -36,7 +36,7 @@ class TradingNameController @Inject()(tradingNameRepository: TradingNameReposito
   def getTradingName(regId: String): Action[AnyContent] = Action.async {
     implicit request =>
       isAuthenticated(
-        failure = authenticationResultHandler("getTradingName"),
+        failure = authenticationFailureResultHandler("getTradingName"),
         success = { internalId =>
           tradingNameRepository.getTradingName(regId, internalId) map (
             _.fold[Result](NoContent)(s => Ok(Json.toJson(s)(TradingName.format)))
@@ -51,7 +51,7 @@ class TradingNameController @Inject()(tradingNameRepository: TradingNameReposito
     implicit request =>
       implicit val reads: Format[String] = TradingName.format
       isAuthenticated(
-        failure = authenticationResultHandler("getTradingName"),
+        failure = authenticationFailureResultHandler("getTradingName"),
         success = { internalId =>
           withJsonBody[String] { tradingName =>
             tradingNameRepository.upsertTradingName(regId, internalId, tradingName) map (
