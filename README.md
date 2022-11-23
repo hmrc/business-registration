@@ -1,5 +1,11 @@
 # business-registration
 
+Part of the SCRS (Streamlined Company Registration Service) suite which is a joint service between HMRC and Companies House allowing a user to Incorporate a Limited Company, register for Corporation Tax and optionally register for PAYE
+ 
+It can be started via Service Manager with the command sm --start SCRS_ALL -r
+
+Alternatively to start individually use the run.sh command which will start the service on port 9660
+
 Prepop.
 ------
 | Path                                                             | Supported Methods | Description  |
