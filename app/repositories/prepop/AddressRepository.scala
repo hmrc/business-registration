@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
@@ -105,6 +104,6 @@ class AddressRepository @Inject()(mongo: MongoComponent, val configuration: Serv
   }
 
   override def getInternalIds(registrationId: String)(implicit ec: ExecutionContext): Future[Seq[String]] = {
-    fetchAddresses(registrationId) map (_.fold[Seq[String]](Seq.empty)(addresses => (addresses \\ "internal_id").map(_.as[String])))
+    fetchAddresses(registrationId) map (_.fold[Seq[String]](Seq.empty)(addresses => (addresses \\ "internal_id").map(_.as[String]).toSeq))
   }
 }

@@ -16,8 +16,8 @@
 
 import scoverage.ScoverageKeys
 import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, integrationTestSettings, scalaSettings}
-import uk.gov.hmrc.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc.bobby.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.projectSettings
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "business-registration"
@@ -33,7 +33,7 @@ lazy val microservice = Project(appName, file("."))
   .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin): _*)
   .settings(scoverageSettings: _*)
   .settings(scalaSettings: _*)
-  .settings(publishingSettings: _*)
+  .settings(projectSettings: _*)
   .settings(defaultSettings(): _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings())
@@ -44,6 +44,6 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.13.8",
     Test / Keys.fork := true
   )
