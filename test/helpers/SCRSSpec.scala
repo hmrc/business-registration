@@ -16,9 +16,9 @@
 
 package helpers
 
-import java.util.concurrent.TimeUnit
+import org.apache.pekko.util.Timeout
 
-import akka.util.Timeout
+import java.util.concurrent.TimeUnit
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -42,7 +42,7 @@ trait SCRSSpec extends PlaySpec
   implicit val defaultHC: HeaderCarrier = HeaderCarrier()
   implicit val defaultEC: ExecutionContext = ExecutionContext.global
 
-  private val FIVE = 5L
+ private val FIVE = 5L
   private implicit val timeout: Timeout = Timeout(FIVE, TimeUnit.SECONDS)
 
   def bodyAsJson(res: Future[Result]): JsValue = Helpers.contentAsJson(res)

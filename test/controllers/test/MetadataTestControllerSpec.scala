@@ -24,7 +24,7 @@ import org.mongodb.scala.{MongoCollection, SingleObservable}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.test.Helpers.stubControllerComponents
+import play.api.test.Helpers.{status, stubControllerComponents}
 import repositories.MetadataMongoRepository
 
 import scala.concurrent.Future
@@ -39,7 +39,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
   class Setup {
     when(mockMetadataRepository.collection).thenReturn(mockCollection)
     when(mockCollection.drop()).thenReturn(mockSingleObservable)
-    val controller = new MetadataTestController(mockMetadataRepository, stubControllerComponents())
+    lazy val controller = new MetadataTestController(mockMetadataRepository, stubControllerComponents())
   }
 
   "dropMetadataCollection" should {

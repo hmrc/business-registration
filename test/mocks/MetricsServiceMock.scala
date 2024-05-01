@@ -17,9 +17,9 @@
 package mocks
 
 import com.codahale.metrics.{Counter, Timer}
-import com.kenshoo.play.metrics.Metrics
 import org.scalatestplus.mockito.MockitoSugar
 import services.MetricsService
+import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 trait MetricsServiceMock {
   this: MockitoSugar =>

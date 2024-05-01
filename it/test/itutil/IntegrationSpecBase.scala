@@ -28,7 +28,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test._
 
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.concurrent.Future
 
 trait IntegrationSpecBase extends PlaySpec

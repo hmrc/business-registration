@@ -15,12 +15,15 @@
  */
 
 import scoverage.ScoverageKeys
-import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, integrationTestSettings, scalaSettings}
+import uk.gov.hmrc.DefaultBuildSettings
 import uk.gov.hmrc.bobby.SbtBobbyPlugin.BobbyKeys.bobbyRulesURL
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.projectSettings
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
 val appName = "business-registration"
+
+ThisBuild / majorVersion := 1
+ThisBuild / scalaVersion := "2.13.13"
 
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;controllers.beta.*;Reverse.*;model.*;config.*;.*(AuthService|BuildInfo|Routes).*",
@@ -32,18 +35,18 @@ lazy val scoverageSettings = Seq(
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin): _*)
   .settings(scoverageSettings: _*)
-  .settings(scalaSettings: _*)
   .settings(projectSettings: _*)
-  .settings(defaultSettings(): _*)
-  .configs(IntegrationTest)
-  .settings(integrationTestSettings())
-  .settings(majorVersion := 1)
   .settings(bobbyRulesURL := Some(new URL("https://webstore.tax.service.gov.uk/bobby-config/deprecated-dependencies.json")))
   .settings(
     scalacOptions += "-Xlint:-unused",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
-    scalaVersion := "2.13.8",
     Test / Keys.fork := true
   )
+
+lazy val it = project
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test") // the "test->test" allows reusing test code and test dependencies
+  .settings(DefaultBuildSettings.itSettings())
+  .settings(libraryDependencies ++= AppDependencies.test)

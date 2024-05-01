@@ -16,7 +16,6 @@
 
 package repositories.prepop
 
-import helpers.MongoSpec
 import models.prepop.PermissionDenied
 import org.mockito.Mockito.when
 import org.mongodb.scala.model.Indexes.ascending
@@ -25,6 +24,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.Helpers._
+import repositories.prepop.TradingNameRepository
+import helpers.MongoSpec
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import java.util.concurrent.TimeUnit

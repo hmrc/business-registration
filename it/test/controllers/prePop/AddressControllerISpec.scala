@@ -16,7 +16,6 @@
 
 package controllers.prePop
 
-import itutil.IntegrationSpecBase
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.DeleteResult
 import play.api.libs.json._
@@ -25,6 +24,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.prepop.AddressRepository
 import services.prepop.AddressService
+import itutil.IntegrationSpecBase
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global

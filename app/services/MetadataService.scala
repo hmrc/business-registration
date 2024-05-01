@@ -16,8 +16,8 @@
 
 package services
 
-import akka.event.slf4j.Logger
 import models.{Links, Metadata, MetadataResponse}
+import org.apache.pekko.event.slf4j.Logger
 import play.api.libs.json.{JsObject, Json}
 import repositories._
 

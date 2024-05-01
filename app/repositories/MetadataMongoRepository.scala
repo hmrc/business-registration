@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class MetadataMongoRepository @Inject()(mongo: MongoComponent)(implicit ec: ExecutionContext) extends
-  PlayMongoRepository[Metadata](
+  PlayMongoRepository[Metadata] (
     mongo,
     METADATA,
     Metadata.formats,
