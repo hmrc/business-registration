@@ -24,7 +24,7 @@ import org.mongodb.scala.{MongoCollection, SingleObservable}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.test.Helpers.{status, stubControllerComponents}
+import play.api.test.Helpers.stubControllerComponents
 import repositories.MetadataMongoRepository
 
 import scala.concurrent.Future
@@ -32,8 +32,8 @@ import scala.concurrent.Future
 class MetadataTestControllerSpec extends SCRSSpec {
 
   val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
-  val mockCollection = mock[MongoCollection[Metadata]]
-  val mockSingleObservable = mock[SingleObservable[Void]]
+  val mockCollection: MongoCollection[Metadata] = mock[MongoCollection[Metadata]]
+  val mockSingleObservable: SingleObservable[Void] = mock[SingleObservable[Void]]
   val fakeVoid: Void = null
 
   class Setup {

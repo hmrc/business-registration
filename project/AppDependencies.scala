@@ -20,28 +20,25 @@ import sbt._
 object AppDependencies {
 
   private val playVersion           = "-play-30"
-
   private val bootstrap             =  "8.5.0"
-  private val domain                =  "9.0.0"
-  private val scalaTestPlusVersion  =  "7.0.1"
   private val hmrcMongoVersion      =  "1.9.0"
-  private val flexmarkAllVersion    =  "0.64.8"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc.mongo"             %% s"hmrc-mongo$playVersion"          % hmrcMongoVersion,
     "uk.gov.hmrc"                   %% s"bootstrap-backend$playVersion"   % bootstrap,
-    "uk.gov.hmrc"                   %%  s"domain$playVersion"             % domain,
+    "uk.gov.hmrc"                   %% s"domain$playVersion"              % "9.0.0",
     ws
   )
 
   val test: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                   %% "bootstrap-test-play-30"           % bootstrap,
     "uk.gov.hmrc.mongo"             %% s"hmrc-mongo-test$playVersion"     % hmrcMongoVersion,
-    "org.scalatestplus.play"        %%  "scalatestplus-play"              % scalaTestPlusVersion,
-    "com.vladsch.flexmark"          %   "flexmark-all"                    % flexmarkAllVersion,
+    "org.scalatestplus.play"        %%  "scalatestplus-play"              % "7.0.1",
+    "com.vladsch.flexmark"          %   "flexmark-all"                    % "0.64.8",
     "org.scalatestplus"             %%  "mockito-4-5"                     % "3.2.12.0"
   ).map(_ % Test)
 
   def apply(): Seq[ModuleID] = compile ++ test
 
 }
+
