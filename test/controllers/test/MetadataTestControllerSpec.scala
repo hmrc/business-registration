@@ -16,29 +16,23 @@
 
 package controllers.test
 
+
+
 import helpers.SCRSSpec
-import models.Metadata
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
-import org.mongodb.scala.{MongoCollection, SingleObservable}
+import org.mockito.Mockito.when
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.stubControllerComponents
-import repositories.MetadataMongoRepository
 
 import scala.concurrent.Future
 
 class MetadataTestControllerSpec extends SCRSSpec {
 
-  val mockMetadataRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
-  val mockCollection: MongoCollection[Metadata] = mock[MongoCollection[Metadata]]
-  val mockSingleObservable: SingleObservable[Void] = mock[SingleObservable[Void]]
-  val fakeVoid: Void = null
+  val mockMetadataRepository: MetadataMongoTestRepository = mock[MetadataMongoTestRepository]
 
   class Setup {
-    when(mockMetadataRepository.collection).thenReturn(mockCollection)
-    when(mockCollection.drop()).thenReturn(mockSingleObservable)
     lazy val controller = new MetadataTestController(mockMetadataRepository, stubControllerComponents())
   }
 
@@ -46,7 +40,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
     "return a 200 with a success message" in new Setup {
 
-      when(mockSingleObservable.toFuture()).thenAnswer(_ => Future.successful(fakeVoid))
+      when(mockMetadataRepository.dropDatabase).thenAnswer(_ => Future.successful(()))
 
       val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
 
@@ -56,7 +50,7 @@ class MetadataTestControllerSpec extends SCRSSpec {
 
     "return a 200 with an error message if the collection could not be dropped" in new Setup {
 
-      when(mockSingleObservable.toFuture()).thenAnswer(_ => Future.failed(new Exception("bang")))
+      when(mockMetadataRepository.dropDatabase).thenAnswer(_ => Future.failed(new Exception("bang")))
 
       val result: Future[Result] = controller.dropMetadataCollection(FakeRequest())
 

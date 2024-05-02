@@ -24,7 +24,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -43,7 +43,7 @@ class MetadataControllerSpec extends SCRSSpec
   with MockitoSugar {
 
 
-  implicit val instantWriter = Metadata.milliInstantWrites
+  implicit val instantWriter: Writes[Instant] = Metadata.milliInstantWrites
 
   val mockMetadataService: MetadataService = mock[MetadataService]
   val mockMetadataMongoRepository: MetadataMongoRepository = mock[MetadataMongoRepository]
@@ -57,7 +57,7 @@ class MetadataControllerSpec extends SCRSSpec
       stubControllerComponents())
   }
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override protected def beforeEach(): Unit = {
     reset(

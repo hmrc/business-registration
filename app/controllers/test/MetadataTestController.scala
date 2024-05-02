@@ -18,21 +18,20 @@ package controllers.test
 
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import repositories._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class MetadataTestController @Inject()(metadataMongoRepository: MetadataMongoRepository,
+class MetadataTestController @Inject()(metadataMongoRepository: MetadataMongoTestRepository,
                                        controllerComponents: ControllerComponents
                                       )(implicit ec: ExecutionContext) extends BackendController(controllerComponents) {
 
 
   def dropMetadataCollection: Action[AnyContent] = Action.async {
     implicit request =>
-      metadataMongoRepository.collection.drop().toFuture().map { _ =>
+      metadataMongoRepository.dropDatabase.map { _ =>
         Ok(Json.parse("""{"message":"Metadata collection dropped successfully"}"""))
       } recover { case _ =>
         Ok(Json.parse("""{"message":"An error occurred. Metadata collection could not be dropped"}"""))
