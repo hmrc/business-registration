@@ -17,6 +17,7 @@
 package controllers.prePop
 
 import controllers.helper.AuthControllerHelpers
+
 import javax.inject.{Inject, Singleton}
 import models.prepop.{PermissionDenied, TradingName}
 import play.api.libs.json.{Format, JsValue, Json}
@@ -25,13 +26,13 @@ import repositories.prepop.TradingNameRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class TradingNameController @Inject()(tradingNameRepository: TradingNameRepository,
                                       val authConnector: AuthConnector,
                                       controllerComponents: ControllerComponents
-                                     ) extends BackendController(controllerComponents) with AuthControllerHelpers {
+                                     ) (implicit e: ExecutionContext) extends BackendController(controllerComponents) with AuthControllerHelpers {
 
   def getTradingName(regId: String): Action[AnyContent] = Action.async {
     implicit request =>

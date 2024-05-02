@@ -20,11 +20,10 @@ import repositories.MetadataMongoRepository
 import uk.gov.hmrc.mongo.MongoComponent
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MetadataMongoTestRepository @Inject()(mongo: MongoComponent) extends MetadataMongoRepository(mongo) {
+class MetadataMongoTestRepository @Inject()(mongo: MongoComponent) (implicit e: ExecutionContext) extends MetadataMongoRepository(mongo) {
 
   def dropDatabase: Future[Unit] = collection.drop().toFuture()
 

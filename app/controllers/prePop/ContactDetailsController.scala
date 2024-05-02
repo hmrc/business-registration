@@ -17,7 +17,6 @@
 package controllers.prePop
 
 import controllers.helper.AuthControllerHelpers
-import javax.inject.{Inject, Singleton}
 import models.prepop.{ContactDetails, PermissionDenied}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
@@ -26,14 +25,15 @@ import repositories.prepop.ContactDetailsRepository
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class ContactDetailsController @Inject()(val resourceConn: MetadataMongoRepository,
                                          contactDetailsRepository: ContactDetailsRepository,
                                          val authConnector: AuthConnector,
                                          controllerComponents: ControllerComponents
-                                        ) extends BackendController(controllerComponents) with AuthControllerHelpers {
+                                        ) (implicit ec: ExecutionContext) extends BackendController(controllerComponents) with AuthControllerHelpers {
 
   def getContactDetails(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>
