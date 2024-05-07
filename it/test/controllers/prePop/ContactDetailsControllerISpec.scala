@@ -16,8 +16,6 @@
 
 package controllers.prePop
 
-import fixtures.MetadataFixtures
-import itutil.IntegrationSpecBase
 import models.prepop.ContactDetails
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.DeleteResult
@@ -27,6 +25,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.MetadataMongoRepository
 import repositories.prepop.ContactDetailsRepository
+import fixtures.MetadataFixtures
+import itutil.IntegrationSpecBase
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global

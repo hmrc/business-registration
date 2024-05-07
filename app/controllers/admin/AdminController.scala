@@ -16,19 +16,19 @@
 
 package controllers.admin
 
-import javax.inject.{Inject, Singleton}
 import models.ErrorResponse
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import services.MetadataService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class AdminController @Inject()(metadataService: MetadataService,
                                 controllerComponents: ControllerComponents
-                               ) extends BackendController(controllerComponents) {
+                               )  (implicit ec: ExecutionContext) extends BackendController(controllerComponents) {
 
   def retrieveBusinessRegistration(registrationID: String): Action[AnyContent] = Action.async {
     implicit request =>

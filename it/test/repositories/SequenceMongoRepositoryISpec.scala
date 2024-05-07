@@ -16,10 +16,10 @@
 
 package repositories
 
-import helpers.MongoSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.test.Helpers._
+import helpers.MongoSpec
 
 import scala.language.postfixOps
 

@@ -16,11 +16,12 @@
 
 package repositories
 
-import helpers.MongoSpec
 import models.{Metadata, MetadataResponse}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import play.api.test.Helpers._
+import repositories.MetadataMongoRepository
+import helpers.MongoSpec
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

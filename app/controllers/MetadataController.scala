@@ -29,7 +29,7 @@ import utils.InstantJsonUtil
 
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class MetadataController @Inject()(metadataService: MetadataService,
@@ -37,7 +37,7 @@ class MetadataController @Inject()(metadataService: MetadataService,
                                    val resourceConn: MetadataMongoRepository,
                                    val authConnector: AuthConnector,
                                    controllerComponents: ControllerComponents
-                                  ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers with InstantJsonUtil {
+                                  ) (implicit ec: ExecutionContext) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers with InstantJsonUtil {
 
   def createMetadata: Action[JsValue] = Action.async(parse.json) {
     implicit request =>

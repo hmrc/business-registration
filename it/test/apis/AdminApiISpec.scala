@@ -16,7 +16,6 @@
 
 package apis
 
-import helpers.MongoSpec
 import models.Metadata
 import org.mongodb.scala.result.InsertOneResult
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -25,6 +24,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.test.Helpers._
 import repositories.MetadataMongoRepository
+import helpers.MongoSpec
 
 import java.time.Instant
 

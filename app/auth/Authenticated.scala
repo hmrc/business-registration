@@ -22,8 +22,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals._
 import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait AuthenticationResult
 
@@ -35,7 +34,7 @@ trait Authenticated extends AuthorisedFunctions with Logging {
 
   def isAuthenticated(failure: AuthenticationResult => Future[Result],
                       success: String => Future[Result]
-                     )(implicit hc: HeaderCarrier): Future[Result] =
+                     )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
 
     authorised().retrieve(internalId) {
       case Some(id) =>

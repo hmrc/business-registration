@@ -16,8 +16,7 @@
 
 package controllers.prePop
 
-import fixtures.MetadataFixtures
-import itutil.IntegrationSpecBase
+import controllers.prePop.TradingNameController
 import models.prepop.MongoTradingName
 import org.mongodb.scala.model.{Filters, ReplaceOptions}
 import org.mongodb.scala.result.{DeleteResult, UpdateResult}
@@ -26,6 +25,8 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import repositories.prepop.TradingNameRepository
+import fixtures.MetadataFixtures
+import itutil.IntegrationSpecBase
 import uk.gov.hmrc.auth.core.AuthConnector
 
 import scala.concurrent.ExecutionContext.Implicits.global

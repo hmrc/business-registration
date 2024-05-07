@@ -28,8 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -37,7 +36,7 @@ class AddressController @Inject()(addressService: AddressService,
                                   val resourceConn: AddressRepository,
                                   val authConnector: AuthConnector,
                                   controllerComponents: ControllerComponents
-                                 ) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers {
+                                 ) (implicit ec: ExecutionContext) extends BackendController(controllerComponents) with Authorisation with AuthControllerHelpers {
 
   def fetchAddresses(registrationId: String): Action[AnyContent] = Action.async {
     implicit request =>
