@@ -42,7 +42,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
 
       val result = json.validate[Metadata]
       result.isSuccess mustBe true
-      val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true, result.get.lastSignedIn)
+      val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), declareAccurateAndComplete = true, result.get.lastSignedIn)
 
       result.get mustBe expected
     }
@@ -84,7 +84,7 @@ class MetadataSpec extends PlaySpec with JsonFormatValidation with MetadataFixtu
 
       val result = json.validate[Metadata]
       result.isSuccess mustBe true
-      val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), true, dateTime)
+      val expected = Metadata("tiid", "regId", "2001-12-31T12:00:00Z", "ENG", Some("email@test.com"), Some("Director"), declareAccurateAndComplete = true, dateTime)
       result.get mustBe expected
     }
 

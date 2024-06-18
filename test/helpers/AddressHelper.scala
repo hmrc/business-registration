@@ -27,7 +27,7 @@ trait AddressHelper {
 
   def generateOID: String = {
     val alpha = "abcdef123456789"
-    (1 to 24).map(x => alpha(Random.nextInt.abs % alpha.length)).mkString
+    (1 to 24).map(x => alpha(Random.nextInt().abs % alpha.length)).mkString
   }
 
   def buildAddressJson(regId: String, withOid: Boolean = true, invalid: Boolean = false, different: Boolean = false): JsObject = {

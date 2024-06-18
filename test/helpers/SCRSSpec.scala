@@ -27,6 +27,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc.{AnyContentAsJson, Request, Result}
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits, Helpers, ResultExtractors}
 import uk.gov.hmrc.http.HeaderCarrier
+import scala.language.implicitConversions
 
 import scala.concurrent.{ExecutionContext, Future}
 
