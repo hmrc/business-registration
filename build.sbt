@@ -33,7 +33,7 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin) *)
+  .enablePlugins(Seq(PlayScala, SbtDistributablesPlugin) *)
   .settings(scoverageSettings *)
   .settings(scalaSettings *)
   .settings(scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-language:reflectiveCalls"))
