@@ -23,7 +23,7 @@ import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 val appName = "business-registration"
 
 ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "2.13.13"
+ThisBuild / scalaVersion := "2.13.16"
 
 lazy val scoverageSettings = Seq(
   ScoverageKeys.coverageExcludedPackages := "<empty>;controllers.beta.*;Reverse.*;model.*;config.*;.*(AuthService|BuildInfo|Routes).*",
@@ -33,12 +33,12 @@ lazy val scoverageSettings = Seq(
 )
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin): _*)
-  .settings(scoverageSettings: _*)
-  .settings(scalaSettings: _*)
+  .enablePlugins(Seq(PlayScala, SbtDistributablesPlugin) *)
+  .settings(scoverageSettings *)
+  .settings(scalaSettings *)
   .settings(scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "-language:reflectiveCalls"))
-  .settings(projectSettings: _*)
-  .settings(defaultSettings(): _*)
+  .settings(projectSettings *)
+  .settings(defaultSettings() *)
   .settings(majorVersion := 1)
   .settings(
     scalacOptions += "-Xlint:-unused",
