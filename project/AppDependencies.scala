@@ -15,26 +15,25 @@
  */
 
 import play.sbt.PlayImport.ws
-import sbt._
+import sbt.*
 
 object AppDependencies {
 
-  private val playVersion           = "-play-30"
-  private val bootstrap             =  "8.5.0"
-  private val hmrcMongoVersion      =  "1.8.0"
+  private val playVersion      = "-play-30"
+  private val bootstrap        = "8.6.0"
+  private val hmrcMongoVersion = "2.3.0"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc.mongo"             %% s"hmrc-mongo$playVersion"          % hmrcMongoVersion,
-    "uk.gov.hmrc"                   %% s"bootstrap-backend$playVersion"   % bootstrap,
+    "uk.gov.hmrc.mongo" %% s"hmrc-mongo$playVersion"        % hmrcMongoVersion,
+    "uk.gov.hmrc"       %% s"bootstrap-backend$playVersion" % bootstrap,
     ws
   )
 
   val test: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"                   %% s"bootstrap-test$playVersion"      % bootstrap,
-    "uk.gov.hmrc.mongo"             %% s"hmrc-mongo-test$playVersion"     % hmrcMongoVersion
+    "uk.gov.hmrc"       %% s"bootstrap-test$playVersion"  % bootstrap,
+    "uk.gov.hmrc.mongo" %% s"hmrc-mongo-test$playVersion" % hmrcMongoVersion
   ).map(_ % Test)
 
   def apply(): Seq[ModuleID] = compile ++ test
 
 }
-
