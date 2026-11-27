@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import sbt.*
 object AppDependencies {
 
   private val playVersion      = "-play-30"
-  private val bootstrap        = "10.1.0"
+  private val bootstrap        = "10.6.0"
   private val hmrcMongoVersion = "2.7.0"
 
   val compile: Seq[ModuleID] = Seq(
